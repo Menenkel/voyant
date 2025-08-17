@@ -4,16 +4,101 @@ import { useState, useEffect } from 'react';
 import CountryMap from './CountryMap';
 import RiskRadarChart from './RiskRadarChart';
 
+interface RiskData {
+  hazard_score: number;
+  vulnerability_score: number;
+  coping_capacity: number;
+  overall_risk: number;
+}
+
+interface TravelDistance {
+  name: string;
+  distance: string;
+  duration: string;
+  public_transport: number;
+  car: number;
+}
+
+interface SeasonalClimate {
+  period: string;
+  temperature: {
+    trend: string;
+    average: number;
+    min: number;
+    max: number;
+    range?: string;
+  };
+  precipitation: {
+    trend: string;
+    average: number;
+    days: number;
+    rainy_days?: number;
+  };
+  best_time?: string;
+  recommendation?: string;
+  overview?: string;
+  considerations?: string;
+}
+
+interface RiskIndicators {
+  risk_class: {
+    class: string;
+    color: string;
+    bg: string;
+    border: string;
+  };
+  overall_risk: number;
+  hazard_indicators: Record<string, number>;
+  global_indices: Record<string, number>;
+}
+
+interface NewsData {
+  title: string;
+  summary: string;
+  source: string;
+  publishedAt: string;
+}
+
+interface WeatherData {
+  location: string;
+  forecast_date: string;
+  temperature: number;
+  precipitation: string;
+  outlook: string;
+  condition?: string;
+  description?: string;
+  feels_like?: number;
+  humidity?: number;
+  wind_speed?: number;
+}
+
+interface HealthData {
+  disease: string;
+  country: string;
+  risk_level: string;
+  date: string;
+  advice: string;
+}
+
+interface SecurityData {
+  event_type: string;
+  country: string;
+  actors: string;
+  fatalities: number;
+  date: string;
+  location: string;
+}
+
 interface SearchResult {
   destination: string;
-  riskData: any;
-  travelDistance: any;
-  seasonalClimate: any;
-  riskIndicators: any;
-  newsData: any[];
-  weatherData: any;
-  healthData: any;
-  securityData: any;
+  riskData: RiskData;
+  travelDistance: TravelDistance;
+  seasonalClimate: SeasonalClimate;
+  riskIndicators: RiskIndicators;
+  newsData: NewsData[];
+  weatherData: WeatherData;
+  healthData: HealthData;
+  securityData: SecurityData;
 }
 
 interface SearchHistory {
@@ -53,7 +138,7 @@ const getRiskColor = (score: number) => {
   return 'bg-yellow-800';
 };
 
-const generateRiskSummary = (destination: string, riskData: any, weatherData: any, healthData: any, securityData: any) => {
+const generateRiskSummary = (destination: string, riskData: RiskData, weatherData: WeatherData, healthData: HealthData, securityData: SecurityData) => {
   const riskLevel = getRiskLevel(riskData.hazard_score, riskData.vulnerability_score, riskData.coping_capacity);
   const globalRank = Math.floor(Math.random() * 150) + 1;
   
@@ -78,7 +163,7 @@ const generateRiskSummary = (destination: string, riskData: any, weatherData: an
   return { summary, globalRank };
 };
 
-const generateActionableAdvice = (destination: string, riskData: any, weatherData: any, healthData: any, securityData: any) => {
+const generateActionableAdvice = (destination: string, riskData: RiskData, weatherData: WeatherData, healthData: HealthData, securityData: SecurityData) => {
   const advice = [];
   
   if (riskData.hazard_score > 6) {
@@ -121,7 +206,7 @@ export default function DestinationSearch() {
   const [secondResults, setSecondResults] = useState<SearchResult | null>(null);
   const [error, setError] = useState('');
   const [searchHistory, setSearchHistory] = useState<SearchHistory[]>([]);
-  const [showHistory, setShowHistory] = useState(false);
+  const [_showHistory, setShowHistory] = useState(false);
 
 
   // Load search history from localStorage on component mount
@@ -182,12 +267,12 @@ export default function DestinationSearch() {
     handleSearch(destination);
   };
 
-  const clearHistory = () => {
+  const _clearHistory = () => {
     setSearchHistory([]);
     localStorage.removeItem('travelRiskSearchHistory');
   };
 
-  const toggleSection = (sectionName: string) => {
+  const _toggleSection = (sectionName: string) => {
     setExpandedSections(prev => ({
       ...prev,
       [sectionName]: !prev[sectionName]

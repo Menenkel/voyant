@@ -8,15 +8,15 @@ const MapContainer = dynamic(() => import('react-leaflet').then(mod => mod.MapCo
 const TileLayer = dynamic(() => import('react-leaflet').then(mod => mod.TileLayer), { ssr: false });
 const Marker = dynamic(() => import('react-leaflet').then(mod => mod.Marker), { ssr: false });
 const Popup = dynamic(() => import('react-leaflet').then(mod => mod.Popup), { ssr: false });
-const LayersControl = dynamic(() => import('react-leaflet').then(mod => mod.LayersControl), { ssr: false });
+// const LayersControl = dynamic(() => import('react-leaflet').then(mod => mod.LayersControl), { ssr: false });
 
 interface CountryMapProps {
   searchQuery: string;
   secondDestination?: string;
-  onCountrySelect: (country: string) => void;
+  onCountrySelect?: (country: string) => void;
 }
 
-export default function CountryMap({ searchQuery, secondDestination, onCountrySelect }: CountryMapProps) {
+export default function CountryMap({ searchQuery, secondDestination }: CountryMapProps) {
   const [coords, setCoords] = useState<[number, number] | null>(null);
   const [secondCoords, setSecondCoords] = useState<[number, number] | null>(null);
   const [locationName, setLocationName] = useState<string>('');
@@ -24,7 +24,7 @@ export default function CountryMap({ searchQuery, secondDestination, onCountrySe
   const [isLoading, setIsLoading] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [mapLayer, setMapLayer] = useState<'street' | 'satellite'>('street');
-  const mapRef = useRef<any>(null);
+  const mapRef = useRef(null);
 
   // Set client state
   useEffect(() => {

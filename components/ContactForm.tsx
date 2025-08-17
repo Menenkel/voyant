@@ -29,7 +29,7 @@ export default function ContactForm() {
       await new Promise(resolve => setTimeout(resolve, 1500));
       setSubmitStatus('success');
       setFormData({ name: '', email: '', subject: '', message: '' });
-    } catch (error) {
+    } catch (_error) {
       setSubmitStatus('error');
     } finally {
       setIsSubmitting(false);
@@ -40,12 +40,12 @@ export default function ContactForm() {
     <div className="bg-gray-800 rounded-lg p-8 border-2 border-yellow-500/30 shadow-lg">
       <h2 className="text-2xl font-bold text-yellow-400 mb-6 text-center">Contact Us</h2>
       <p className="text-gray-300 text-center mb-8">
-        Have questions about VOYANT? We'd love to hear from you. Send us a message and we'll respond as soon as possible.
+        Have questions about VOYANT? We&apos;d love to hear from you. Send us a message and we&apos;ll respond as soon as possible.
       </p>
 
       {submitStatus === 'success' && (
         <div className="mb-6 p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
-          <p className="text-green-400 text-center">Thank you for your message! We'll get back to you soon.</p>
+          <p className="text-green-400 text-center">Thank you for your message! We&apos;ll get back to you soon.</p>
         </div>
       )}
 

@@ -175,7 +175,7 @@ export default function PricingPage() {
         {/* Bottom CTA */}
         <div className="text-center mt-16 animate-fade-in-delay" style={{animationDelay: '0.6s'}}>
           <p className="text-gray-300 mb-4">
-            Still have questions? We're here to help.
+            Still have questions? We&apos;re here to help.
           </p>
           <Link
             href="/contact"

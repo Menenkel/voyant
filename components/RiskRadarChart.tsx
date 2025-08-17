@@ -23,12 +23,12 @@ export default function RiskRadarChart({
     fullMark: 10,
   }));
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: { color: string; name: string; value: number }[]; label?: string }) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-gray-800 border border-yellow-500/30 p-3 rounded-lg shadow-lg z-50">
           <p className="text-white font-semibold">{label}</p>
-          {payload.map((entry: any, index: number) => (
+          {payload.map((entry: { color: string; name: string; value: number }, index: number) => (
             <p key={index} style={{ color: entry.color }}>
               {entry.name}: <span className="text-white font-bold">{entry.value}/10</span>
             </p>
