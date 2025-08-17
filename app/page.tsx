@@ -8,7 +8,7 @@ export default function Home() {
       <Hero />
       
       {/* Search Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <DestinationSearch />
       </div>
       
@@ -30,7 +30,7 @@ export default function Home() {
                 View Pricing Plans
               </Link>
               <Link
-                href="#features"
+                href="/features"
                 className="text-yellow-400 hover:text-yellow-300 px-8 py-3 font-medium transition-colors"
               >
                 Learn More →

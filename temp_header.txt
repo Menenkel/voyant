@@ -1,0 +1,300 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import CountryMap from './CountryMap';
+import RiskRadarChart from './RiskRadarChart';
+
+interface SearchResult {
+  destination: string;
+  riskData: any;
+  travelDistance: any;
+  seasonalClimate: any;
+  riskIndicators: any;
+  newsData: any[];
+  weatherData: any;
+  healthData: any;
+  securityData: any;
+}
+
+interface SearchHistory {
+  destination: string;
+  timestamp: number;
+}
+
+const getRiskLevel = (hazard: number, vulnerability: number, coping: number) => {
+  const avgScore = (hazard + vulnerability + (11 - coping)) / 3;
+  if (avgScore <= 3) return { level: 'Low', color: 'text-green-400', bg: 'bg-green-400/10', border: 'border-green-400/30' };
+  if (avgScore <= 6) return { level: 'Medium', color: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/30' };
+  return { level: 'High', color: 'text-red-400', bg: 'bg-red-400/10', border: 'border-red-400/30' };
+};
+
+const getHealthRiskColor = (riskLevel: string) => {
+  switch (riskLevel.toLowerCase()) {
+    case 'low': return 'text-green-400 bg-green-400/10 border-green-400/30';
+    case 'medium': return 'text-yellow-400 bg-yellow-400/10 border-yellow-400/30';
+    case 'high': return 'text-red-400 bg-red-400/10 border-red-400/30';
+    case 'very high': return 'text-red-500 bg-red-500/10 border-red-500/30';
+    default: return 'text-gray-400 bg-gray-400/10 border-gray-400/30';
+  }
+};
+
+const getRiskLevelText = (score: number) => {
+  if (score <= 3) return 'Low Risk';
+  if (score <= 6) return 'Medium Risk';
+  if (score <= 8) return 'High Risk';
+  return 'Very High Risk';
+};
+
+const getRiskColor = (score: number) => {
+  if (score <= 2) return 'bg-white';
+  if (score <= 4) return 'bg-yellow-200';
+  if (score <= 6) return 'bg-yellow-400';
+  if (score <= 8) return 'bg-yellow-600';
+  return 'bg-yellow-800';
+};
+
+const generateRiskSummary = (destination: string, riskData: any, weatherData: any, healthData: any, securityData: any) => {
+  const riskLevel = getRiskLevel(riskData.hazard_score, riskData.vulnerability_score, riskData.coping_capacity);
+  const globalRank = Math.floor(Math.random() * 150) + 1;
+  
+  let summary = `${destination} presents a ${riskLevel.level.toLowerCase()} overall risk profile for travelers. `;
+  
+  if (riskLevel.level === 'Low') {
+    summary += `The destination has good infrastructure and emergency response capabilities, making it generally safe for visitors. `;
+  } else if (riskLevel.level === 'Medium') {
+    summary += `While generally safe, visitors should stay informed about local conditions and follow standard travel precautions. `;
+  } else {
+    summary += `Travelers should exercise increased caution and closely monitor local developments before and during their visit. `;
+  }
+  
+  if (weatherData.outlook.toLowerCase().includes('storm') || weatherData.outlook.toLowerCase().includes('rain')) {
+    summary += `Current weather conditions may impact travel plans and increase certain risks. `;
+  }
+  
+  if (healthData.risk_level.toLowerCase() !== 'low') {
+    summary += `Health considerations require attention for this destination. `;
+  }
+  
+  return { summary, globalRank };
+};
+
+const generateActionableAdvice = (destination: string, riskData: any, weatherData: any, healthData: any, securityData: any) => {
+  const advice = [];
+  
+  if (riskData.hazard_score > 6) {
+    advice.push('Monitor local emergency alerts and have contingency plans for natural events.');
+  }
+  
+  if (weatherData.outlook.toLowerCase().includes('storm') || weatherData.outlook.toLowerCase().includes('rain')) {
+    advice.push('Check weather forecasts regularly and plan for potential travel delays.');
+  }
+  
+  if (healthData.risk_level.toLowerCase() !== 'low') {
+    advice.push('Consult with healthcare providers about recommended vaccinations and health precautions.');
+  }
+  
+  if (securityData.event_type.toLowerCase().includes('protest') || securityData.event_type.toLowerCase().includes('rally')) {
+    advice.push('Avoid large gatherings and monitor local news for security updates.');
+  }
+  
+  if (advice.length === 0) {
+    advice.push('Standard travel precautions apply. Stay informed about local conditions.');
+  }
+  
+  return advice.slice(0, 3);
+};
+
+export default function DestinationSearch() {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [compareMode, setCompareMode] = useState(false);
+  const [secondDestination, setSecondDestination] = useState('');
+  const [expandedSections, setExpandedSections] = useState<{ [key: string]: boolean }>({
+    riskScores: false,
+    weatherClimate: false,
+    healthRisks: false,
+    securityStatus: false,
+    travelAdvisory: false,
+    news: false
+  });
+  const [isSearching, setIsSearching] = useState(false);
+  const [results, setResults] = useState<SearchResult | null>(null);
+  const [secondResults, setSecondResults] = useState<SearchResult | null>(null);
+  const [error, setError] = useState('');
+  const [searchHistory, setSearchHistory] = useState<SearchHistory[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
+
+
+  // Load search history from localStorage on component mount
+  useEffect(() => {
+    const savedHistory = localStorage.getItem('travelRiskSearchHistory');
+    if (savedHistory) {
+      try {
+        setSearchHistory(JSON.parse(savedHistory));
+      } catch (e) {
+        console.error('Failed to parse search history:', e);
+      }
+    }
+  }, []);
+
+  const saveToHistory = (destination: string) => {
+    const newHistory = [
+      { destination, timestamp: Date.now() },
+      ...searchHistory.filter(item => item.destination !== destination)
+    ].slice(0, 10);
+    
+    setSearchHistory(newHistory);
+    localStorage.setItem('travelRiskSearchHistory', JSON.stringify(newHistory));
+  };
+
+  const handleSearch = async (query?: string) => {
+    const searchTerm = query || searchQuery;
+    if (!searchTerm.trim()) return;
+
+    setIsSearching(true);
+    setError('');
+    setResults(null);
+    setShowHistory(false);
+
+    try {
+      const response = await fetch(`/api/search?destination=${encodeURIComponent(searchTerm)}`);
+      if (!response.ok) {
+        throw new Error('Search failed');
+      }
+      const data = await response.json();
+      setResults(data);
+      saveToHistory(searchTerm.trim());
+    } catch (err) {
+      setError('Failed to search destination. Please try again.');
+      console.error('Search error:', err);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
+
+  const handleHistoryClick = (destination: string) => {
+    setSearchQuery(destination);
+    handleSearch(destination);
+  };
+
+  const clearHistory = () => {
+    setSearchHistory([]);
+    localStorage.removeItem('travelRiskSearchHistory');
+  };
+
+  const toggleSection = (sectionName: string) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [sectionName]: !prev[sectionName]
+    }));
+  };
+
+  // Handle country selection from map
+  const handleCountrySelect = (countryName: string) => {
+    setSearchQuery(countryName);
+    handleSearch(countryName);
+  };
+
+  // Handle second destination search
+  const handleSecondSearch = async () => {
+    if (!secondDestination.trim()) return;
+
+    setIsSearching(true);
+    setError('');
+
+    try {
+      const response = await fetch(`/api/search?destination=${encodeURIComponent(secondDestination)}`);
+      if (!response.ok) {
+        throw new Error('Search failed');
+      }
+      const data = await response.json();
+      setSecondResults(data);
+      saveToHistory(secondDestination.trim());
+    } catch (err) {
+      setError('Failed to search second destination. Please try again.');
+      console.error('Search error:', err);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // Toggle comparison mode
+  const toggleCompareMode = () => {
+    setCompareMode(!compareMode);
+    if (compareMode) {
+      setSecondResults(null);
+      setSecondDestination('');
+    }
+  };
+
+  return (
+    <div className="w-full max-w-6xl mx-auto px-4 py-8">
+      {/* Search Section */}
+      <div className="bg-gray-900 rounded-lg p-6 border-2 border-yellow-500/30 shadow-lg mb-8">
+        
+        {/* Search Animation */}
+        {isSearching && (
+          <div className="mb-6 text-center animate-fade-in">
+            <div className="flex items-center justify-center space-x-3">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-yellow-400"></div>
+              <span className="text-yellow-400 font-medium">Searching for location...</span>
+            </div>
+            <div className="mt-2 text-sm text-gray-400">
+              Analyzing risk data and gathering insights
+            </div>
+          </div>
+        )}
+        
+        {/* Comparison Toggle */}
+        <div className="mb-6 text-center">
+          <button
+            onClick={toggleCompareMode}
+            className={`px-6 py-2 rounded-lg font-medium transition-all duration-200 ${
+              compareMode 
+                ? 'bg-blue-500 text-white hover:bg-blue-600' 
+                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+            }`}
+          >
+            {compareMode ? '🔄 Single Search' : '⚖️ Compare Destinations'}
+          </button>
+        </div>
+        
+        <div className={`max-w-4xl mx-auto ${compareMode ? 'grid grid-cols-1 md:grid-cols-2 gap-6' : 'max-w-lg'}`}>
+          {/* First Destination */}
+          <div className="relative">
+            <label className="block text-left text-sm font-medium text-yellow-400 mb-2">
+              {compareMode ? 'First Destination' : 'Search for any city or country'}
+            </label>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyPress={handleKeyPress}
+              onFocus={() => setShowHistory(true)}
+              placeholder="Enter a city or country"
+              className="w-full px-4 py-3 bg-gray-800 border-2 border-yellow-500/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-200"
+            />
+          </div>
+
+          {/* Second Destination (Comparison Mode) */}
+          {compareMode && (
+            <div className="relative">
+              <label className="block text-left text-sm font-medium text-gray-300 mb-2">
+                Second Destination
+              </label>
+              <input
+                type="text"
+                value={secondDestination}
+                onChange={(e) => setSecondDestination(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSecondSearch()}
+                placeholder="Enter a city or country"
+                className="w-full px-4 py-3 bg-gray-800 border-2 border-blue-500/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all duration-200"
+              />
+            </div>
+          )}
+        </div>

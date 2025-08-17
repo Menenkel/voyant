@@ -1,16 +1,25 @@
 'use client';
 
-import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer, Tooltip } from 'recharts';
+import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 
 interface RiskRadarChartProps {
   hazardIndicators: { [key: string]: number };
+  secondHazardIndicators?: { [key: string]: number };
+  firstDestination?: string;
+  secondDestination?: string;
 }
 
-export default function RiskRadarChart({ hazardIndicators }: RiskRadarChartProps) {
+export default function RiskRadarChart({ 
+  hazardIndicators, 
+  secondHazardIndicators, 
+  firstDestination = 'First Destination', 
+  secondDestination = 'Second Destination' 
+}: RiskRadarChartProps) {
   // Transform the hazard indicators into the format needed for the radar chart
   const data = Object.entries(hazardIndicators).map(([key, value]) => ({
     indicator: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-    value: value,
+    [firstDestination]: value,
+    ...(secondHazardIndicators && { [secondDestination]: secondHazardIndicators[key] || 0 }),
     fullMark: 10,
   }));
 
@@ -19,9 +28,11 @@ export default function RiskRadarChart({ hazardIndicators }: RiskRadarChartProps
       return (
         <div className="bg-gray-800 border border-yellow-500/30 p-3 rounded-lg shadow-lg z-50">
           <p className="text-white font-semibold">{label}</p>
-          <p className="text-yellow-400">
-            Risk Score: <span className="text-white font-bold">{payload[0].value}/10</span>
-          </p>
+          {payload.map((entry: any, index: number) => (
+            <p key={index} style={{ color: entry.color }}>
+              {entry.name}: <span className="text-white font-bold">{entry.value}/10</span>
+            </p>
+          ))}
         </div>
       );
     }
@@ -45,18 +56,34 @@ export default function RiskRadarChart({ hazardIndicators }: RiskRadarChartProps
             tickLine={{ stroke: '#374151' }}
           />
           <Radar
-            name="Risk Score"
-            dataKey="value"
+            name={firstDestination}
+            dataKey={firstDestination}
             stroke="#F59E0B"
             fill="#F59E0B"
             fillOpacity={0.3}
             strokeWidth={2}
           />
+          {secondHazardIndicators && (
+            <Radar
+              name={secondDestination}
+              dataKey={secondDestination}
+              stroke="#3B82F6"
+              fill="#3B82F6"
+              fillOpacity={0.3}
+              strokeWidth={2}
+            />
+          )}
           <Tooltip 
             content={<CustomTooltip />}
             cursor={{ fill: 'rgba(245, 158, 11, 0.1)' }}
             wrapperStyle={{ zIndex: 1000 }}
           />
+          {secondHazardIndicators && (
+            <Legend 
+              wrapperStyle={{ color: '#9CA3AF' }}
+              formatter={(value) => <span style={{ color: '#9CA3AF' }}>{value}</span>}
+            />
+          )}
         </RadarChart>
       </ResponsiveContainer>
     </div>

@@ -1,4 +1,4 @@
-# VOYANT - Travel Smart, Stay Safe
+# VOYANT - Travel Smarter, Stay Safer
 
 A modern, minimalist travel risk assessment platform that provides comprehensive destination insights and real-time travel updates.
 
@@ -64,10 +64,10 @@ VOYANT helps travelers make informed decisions by providing detailed risk assess
    ```
 
 3. **Run the development server**
-   ```bash
-   npm run dev
-   # or
-   pnpm dev
+```bash
+npm run dev
+# or
+pnpm dev
    ```
 
 4. **Open your browser**

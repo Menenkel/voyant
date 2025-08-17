@@ -8,12 +8,8 @@ export default function Footer() {
           {/* Brand Section */}
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center space-x-3 mb-4">
-              <div className="w-8 h-8 bg-yellow-500 rounded-lg flex items-center justify-center">
-                <span className="text-black font-bold text-lg">V</span>
-              </div>
               <div className="flex flex-col">
-                <span className="text-white font-bold text-xl">VOYANT</span>
-                <span className="text-yellow-400 text-xs font-medium">Travel smart - stay safe</span>
+                <span className="text-yellow-400 text-xs font-medium">Travel smarter. Stay safer.</span>
               </div>
             </div>
             <p className="text-gray-400 text-sm max-w-md">
@@ -28,7 +24,7 @@ export default function Footer() {
             <ul className="space-y-2">
               <li><a href="#" className="text-gray-400 hover:text-yellow-400 transition-colors duration-200">About</a></li>
               <li><a href="/pricing" className="text-gray-400 hover:text-yellow-400 transition-colors duration-200">Pricing</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-yellow-400 transition-colors duration-200">Features</a></li>
+              <li><a href="/features" className="text-gray-400 hover:text-yellow-400 transition-colors duration-200">Features</a></li>
               <li><a href="#" className="text-gray-400 hover:text-yellow-400 transition-colors duration-200">Support</a></li>
             </ul>
           </div>

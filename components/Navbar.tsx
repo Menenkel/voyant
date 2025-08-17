@@ -13,14 +13,11 @@ export default function Navbar() {
           {/* Logo and Brand */}
           <div className="flex items-center">
             <Link href="/" className="flex items-center space-x-3 group">
-              <div className="w-8 h-8 bg-yellow-500 rounded-lg flex items-center justify-center group-hover:bg-yellow-400 transition-colors duration-200">
-                <span className="text-black font-bold text-lg">V</span>
-              </div>
               <div className="flex flex-col">
                 <span className="text-white font-bold text-xl group-hover:text-yellow-400 transition-colors duration-200">
                   VOYANT
                 </span>
-                <span className="text-yellow-400 text-xs font-medium">
+                <span className="text-yellow-400 text-sm font-medium">
                   Travel smarter. Stay safer.
                 </span>
               </div>
@@ -30,7 +27,7 @@ export default function Navbar() {
           {/* Desktop Navigation Links */}
           <div className="hidden md:flex items-center space-x-8">
             <Link className="text-white hover:text-yellow-400 px-3 py-2 text-sm font-medium transition-all duration-200 hover-lift" href="/">
-              Search
+              Search Destinations
             </Link>
             <Link className="text-white hover:text-yellow-400 px-3 py-2 text-sm font-medium transition-all duration-200 hover-lift" href="/features">
               Features
@@ -68,7 +65,7 @@ export default function Navbar() {
                 className="text-white hover:text-yellow-400 block px-3 py-2 text-sm font-medium transition-all duration-200"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                Search
+                Search Destinations
               </Link>
               <Link 
                 href="/features"

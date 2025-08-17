@@ -13,7 +13,7 @@ const pricingPlans = [
     period: 'forever',
     description: 'Perfect for occasional travelers',
     features: [
-      '5 destination queries per month',
+      '20 destination queries per month',
       'Basic risk assessments',
       'Standard weather data',
       'Community support'
@@ -33,7 +33,7 @@ const pricingPlans = [
       'Historical pattern analysis',
       'Customizable notifications',
       'Priority support',
-      'Export reports'
+      'Save destinations for offline use'
     ],
     cta: 'Start Free Trial',
     ctaVariant: 'primary',
