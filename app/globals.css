@@ -1,8 +1,9 @@
 @import "tailwindcss";
+@import 'leaflet/dist/leaflet.css';
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #000000;
+  --foreground: #ffffff;
 }
 
 @theme inline {
@@ -12,15 +13,292 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Dark mode support */
+.dark {
+  --background: #000000;
+  --foreground: #ffffff;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Ensure navbar is visible */
+nav {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 50 !important;
+  background-color: #111827 !important;
+  border-bottom: 1px solid rgba(245, 158, 11, 0.3) !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Leaflet popup styling */
+.leaflet-popup-content-wrapper {
+  background-color: #1f2937 !important;
+  color: white !important;
+  border: 1px solid #f59e0b !important;
+}
+
+.leaflet-popup-content {
+  color: white !important;
+}
+
+.leaflet-popup-tip {
+  background-color: #1f2937 !important;
+  border: 1px solid #f59e0b !important;
+}
+
+.leaflet-popup-close-button {
+  color: white !important;
+}
+
+.leaflet-popup-close-button:hover {
+  color: #f59e0b !important;
+}
+
+/* Map styling */
+.leaflet-container {
+  background-color: black !important;
+  border: 2px solid white !important;
+}
+
+.leaflet-control-attribution {
+  color: white !important;
+  background-color: rgba(0, 0, 0, 0.8) !important;
+}
+
+.leaflet-control-attribution a {
+  color: #f59e0b !important;
+}
+
+/* Custom pin styling */
+.custom-pin {
+  background: transparent !important;
+  border: none !important;
+}
+
+.custom-pin-second {
+  background: transparent !important;
+  border: none !important;
+}
+
+/* Tooltip and hover styling */
+.recharts-tooltip-wrapper {
+  z-index: 1000 !important;
+}
+
+.recharts-tooltip {
+  background-color: #1f2937 !important;
+  border: 1px solid #f59e0b !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3) !important;
+}
+
+.recharts-tooltip-item {
+  color: white !important;
+}
+
+/* Hover effects for global rankings */
+.group:hover .group-hover\:opacity-100 {
+  opacity: 1 !important;
+  z-index: 10 !important;
+}
+
+/* Ensure hover overlays are visible */
+.absolute.inset-0.bg-gray-800\/90 {
+  z-index: 5 !important;
+}
+
+/* Ensure all map text is white */
+.leaflet-control-zoom a {
+  color: white !important;
+  background-color: #1f2937 !important;
+  border: 1px solid white !important;
+}
+
+.leaflet-control-zoom a:hover {
+  background-color: #374151 !important;
+  color: #f59e0b !important;
+}
+
+.leaflet-control-layers {
+  background-color: #1f2937 !important;
+  border: 1px solid white !important;
+  color: white !important;
+}
+
+.leaflet-control-layers label {
+  color: white !important;
+}
+
+.leaflet-control-layers input {
+  accent-color: #f59e0b !important;
+}
+
+/* Map tile attribution */
+.leaflet-control-attribution {
+  color: white !important;
+  background-color: rgba(0, 0, 0, 0.9) !important;
+  border: 1px solid white !important;
+}
+
+.leaflet-control-attribution a {
+  color: #f59e0b !important;
+}
+
+/* Ensure map container has white border */
+.leaflet-container {
+  border: 2px solid white !important;
+  background-color: black !important;
+}
+
+/* Map controls styling */
+.leaflet-control {
+  background-color: #1f2937 !important;
+  border: 1px solid white !important;
+  color: white !important;
+}
+
+/* Custom animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInDelay {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes slideInFromLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInFromRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes bounce {
+  0%, 20%, 53%, 80%, 100% {
+    transform: translate3d(0, 0, 0);
+  }
+  40%, 43% {
+    transform: translate3d(0, -8px, 0);
+  }
+  70% {
+    transform: translate3d(0, -4px, 0);
+  }
+  90% {
+    transform: translate3d(0, -2px, 0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.8s ease-out;
+}
+
+.animate-fade-in-delay {
+  animation: fadeInDelay 0.8s ease-out 0.2s both;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.6s ease-out;
+}
+
+.animate-pulse-slow {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.animate-slide-in-left {
+  animation: slideInFromLeft 0.6s ease-out;
+}
+
+.animate-slide-in-right {
+  animation: slideInFromRight 0.6s ease-out;
+}
+
+.animate-bounce-slow {
+  animation: bounce 2s infinite;
+}
+
+/* Hover effects */
+.hover-lift {
+  transition: transform 0.2s ease-in-out;
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+}
+
+.hover-glow {
+  transition: box-shadow 0.3s ease-in-out;
+}
+
+.hover-glow:hover {
+  box-shadow: 0 0 20px rgba(255, 255, 0, 0.3);
+}
+
+/* Focus styles */
+.focus-yellow:focus {
+  outline: 2px solid #fbbf24;
+  outline-offset: 2px;
+}
+
+/* Map styles */
+.rsm-geography {
+  transition: fill 0.2s ease-in-out;
+}
+
+.rsm-marker {
+  transition: transform 0.2s ease-in-out;
+}
+
+/* Globe styles */
+.globe-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.globe-container canvas {
+  border-radius: 8px;
 }

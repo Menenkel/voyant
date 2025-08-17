@@ -1,0 +1,29 @@
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  // Disable source maps in development to avoid warnings
+  productionBrowserSourceMaps: false,
+  
+  // Optimize for development
+  experimental: {
+    // Disable some experimental features that might cause warnings
+    optimizePackageImports: ['react-simple-maps'],
+  },
+  
+  // Webpack configuration to handle source maps
+  webpack: (config, { dev, isServer }) => {
+    if (dev) {
+      // Disable source maps in development to avoid warnings
+      config.devtool = 'eval';
+    }
+    
+    return config;
+  },
+  
+  // Compiler options
+  compiler: {
+    // Remove console logs in production
+    removeConsole: process.env.NODE_ENV === 'production',
+  },
+};
+
+module.exports = nextConfig;
