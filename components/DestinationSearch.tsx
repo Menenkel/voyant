@@ -422,7 +422,7 @@ export default function DestinationSearch() {
             
             {/* First Destination Results */}
             {results && (
-              <div className={compareMode && (results || secondResults) ? '' : 'w-full'}>
+              <div className={`${compareMode && (results || secondResults) ? '' : 'w-full'} space-y-6`}>
                 {/* First Destination Header */}
                 {secondResults && (
                   <div className="text-center mb-6">
