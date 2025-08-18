@@ -418,7 +418,7 @@ export default function DestinationSearch() {
           />
 
           {/* Results Grid - Side by side when comparing */}
-          <div className={`${compareMode && (results || secondResults) ? 'grid grid-cols-1 lg:grid-cols-2 gap-8' : ''}`}>
+          <div className={`${compareMode && (results || secondResults) ? 'grid grid-cols-1 lg:grid-cols-2 gap-8' : ''} space-y-6`}>
             
             {/* First Destination Results */}
             {results && (
@@ -819,9 +819,9 @@ export default function DestinationSearch() {
                 </div>
               )}
 
-              {/* Second Destination Results */}
-              {secondResults && (
-                <div className={compareMode && (results || secondResults) ? '' : 'w-full'}>
+                                {/* Second Destination Results */}
+                  {secondResults && (
+                    <div className={`${compareMode && (results || secondResults) ? '' : 'w-full'} space-y-6`}>
                   {/* Second Destination Header */}
                   {results && secondResults && (
                     <div className="text-center mb-6">
