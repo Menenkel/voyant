@@ -12,7 +12,7 @@ export default function Hero() {
     "When's the next heat wave in Mexico City?",
     "Are election protests expected in Nairobi?",
     "What's the air quality in Beijing?",
-    "Do I need malaria pills for Mozambique?"
+    "Do I need malaria pills for Mozambique?",
     "What’s the tsunami risk in Fiji?"
   ];
 
