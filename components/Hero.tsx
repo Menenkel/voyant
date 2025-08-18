@@ -10,9 +10,10 @@ export default function Hero() {
   const questions = [
     "Is New York's tap water safe to drink?",
     "When's the next heat wave in Mexico City?",
-    "Are there demonstrations planned in Nairobi?",
+    "Are election protests expected in Nairobi?",
     "What's the air quality in Beijing?",
-    "Is it safe to travel to Istanbul right now?"
+    "Do I need malaria pills for Mozambique?"
+    "What’s the tsunami risk in Fiji?"
   ];
 
   useEffect(() => {
