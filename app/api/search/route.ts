@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const generateRiskData = (_destination: string) => {
+const generateRiskData = () => {
   const hazard_score = Math.floor(Math.random() * 10) + 1;
   const vulnerability_score = Math.floor(Math.random() * 10) + 1;
   const coping_capacity = Math.floor(Math.random() * 10) + 1;
@@ -14,7 +14,7 @@ const generateRiskData = (_destination: string) => {
 };
 
 const generateTravelDistance = (destination: string) => {
-  const airports = {
+  const airports: Record<string, { name: string; distance: number; public_transport: number; car: number }> = {
     'tokyo': { name: 'Narita International Airport', distance: 60, public_transport: 90, car: 60 },
     'new york': { name: 'JFK International Airport', distance: 25, public_transport: 45, car: 35 },
     'london': { name: 'Heathrow Airport', distance: 23, public_transport: 50, car: 40 },
@@ -38,7 +38,7 @@ const generateTravelDistance = (destination: string) => {
   };
   
   const normalizedDestination = destination.toLowerCase().trim();
-  return (airports as Record<string, unknown>)[normalizedDestination] || {
+  return airports[normalizedDestination] || {
     name: 'Nearest International Airport',
     distance: Math.floor(Math.random() * 40) + 10,
     public_transport: Math.floor(Math.random() * 60) + 20,
@@ -46,7 +46,7 @@ const generateTravelDistance = (destination: string) => {
   };
 };
 
-const generateSeasonalClimateForecast = (_destination: string) => {
+const generateSeasonalClimateForecast = () => {
   const temperatureTrends = ['Likely above average', 'Very likely above average', 'Likely below average', 'Very likely below average', 'Near average'];
   const precipitationTrends = ['Likely above average', 'Very likely above average', 'Likely below average', 'Very likely below average', 'Near average'];
   
@@ -66,7 +66,7 @@ const generateSeasonalClimateForecast = (_destination: string) => {
   };
 };
 
-const generateComprehensiveRiskIndicators = (_destination: string) => {
+const generateComprehensiveRiskIndicators = () => {
   const getRiskClass = (score: number) => {
     if (score <= 2.5) return { class: 'Low', color: 'text-green-400', bg: 'bg-green-400/10', border: 'border-green-400/30' };
     if (score <= 5) return { class: 'Medium', color: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/30' };
@@ -220,10 +220,10 @@ export async function GET(request: NextRequest) {
     await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
 
     // Generate comprehensive data
-    const riskData = generateRiskData(destination);
+    const riskData = generateRiskData();
     const travelDistance = generateTravelDistance(destination);
-    const seasonalClimate = generateSeasonalClimateForecast(destination);
-    const riskIndicators = generateComprehensiveRiskIndicators(destination);
+    const seasonalClimate = generateSeasonalClimateForecast();
+    const riskIndicators = generateComprehensiveRiskIndicators();
     const newsData = generateNewsData(destination);
     const weatherData = generateWeatherData(destination);
     const healthData = generateHealthData(destination);
