@@ -54,14 +54,14 @@ const generateSeasonalClimateForecast = () => {
     period: 'September - November 2025',
     temperature: {
       trend: temperatureTrends[Math.floor(Math.random() * temperatureTrends.length)],
-      average: Math.floor(Math.random() * 30) + 5, // 5-35°C range
-      min: Math.floor(Math.random() * 15) + 0, // 0-15°C range
-      max: Math.floor(Math.random() * 20) + 20 // 20-40°C range
+      average: Math.floor(Math.random() * 30) + 5,
+      min: Math.floor(Math.random() * 15) + 0,
+      max: Math.floor(Math.random() * 20) + 20
     },
     precipitation: {
       trend: precipitationTrends[Math.floor(Math.random() * precipitationTrends.length)],
-      average: Math.floor(Math.random() * 200) + 50, // 50-250mm range
-      days: Math.floor(Math.random() * 30) + 10 // 10-40 rainy days
+      average: Math.floor(Math.random() * 200) + 50,
+      days: Math.floor(Math.random() * 30) + 10
     }
   };
 };
@@ -91,9 +91,9 @@ const generateComprehensiveRiskIndicators = () => {
       projected_conflict_risk: Math.floor(Math.random() * 10) + 1
     },
     global_indices: {
-      global_peace_index: Math.floor(Math.random() * 163) + 1, // 1-163 countries
-      fragile_states_index: Math.floor(Math.random() * 179) + 1, // 1-179 countries
-      corruption_index: Math.floor(Math.random() * 180) + 1 // 1-180 countries
+      global_peace_index: Math.floor(Math.random() * 163) + 1,
+      fragile_states_index: Math.floor(Math.random() * 179) + 1,
+      corruption_index: Math.floor(Math.random() * 180) + 1
     }
   };
 };
@@ -122,40 +122,10 @@ const generateNewsData = (destination: string) => {
       summary: `Authorities enhance security measures following recent incidents in popular tourist districts.`,
       source: newsSources[Math.floor(Math.random() * newsSources.length)],
       publishedAt: '2025-08-13T09:15:00Z'
-    },
-    {
-      title: `Climate Change Impact: ${destination} Faces Unusual Weather Patterns`,
-      summary: `Scientists report changing climate conditions affecting local tourism and agriculture sectors.`,
-      source: newsSources[Math.floor(Math.random() * newsSources.length)],
-      publishedAt: '2025-08-12T16:45:00Z'
-    },
-    {
-      title: `Tourism Infrastructure: New Hotels and Attractions Open in ${destination}`,
-      summary: `Major development projects completed to accommodate growing tourist demand and improve visitor experience.`,
-      source: newsSources[Math.floor(Math.random() * newsSources.length)],
-      publishedAt: '2025-08-11T11:30:00Z'
-    },
-    {
-      title: `Travel Advisory: Potential Civil Unrest Reported in ${destination}`,
-      summary: `Foreign embassies issue warnings about planned demonstrations that may affect tourist areas.`,
-      source: newsSources[Math.floor(Math.random() * newsSources.length)],
-      publishedAt: '2025-08-10T08:20:00Z'
-    },
-    {
-      title: `Weather Forecast: Ideal Conditions for Tourism in ${destination}`,
-      summary: `Perfect weather expected for the next two weeks, boosting local tourism and outdoor activities.`,
-      source: newsSources[Math.floor(Math.random() * newsSources.length)],
-      publishedAt: '2025-08-09T12:15:00Z'
-    },
-    {
-      title: `Natural Disaster Risk: ${destination} Monitors Earthquake Activity`,
-      summary: `Seismic monitoring stations detect unusual activity, prompting safety reviews for tourist facilities.`,
-      source: newsSources[Math.floor(Math.random() * newsSources.length)],
-      publishedAt: '2025-08-08T15:30:00Z'
     }
   ];
   
-  return newsTemplates.slice(0, 3);
+  return newsTemplates;
 };
 
 const generateWeatherData = (destination: string) => {
