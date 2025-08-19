@@ -6,7 +6,6 @@ const nextConfig = {
   // Optimize for development
   experimental: {
     // Disable some experimental features that might cause warnings
-    optimizePackageImports: ['react-simple-maps'],
   },
   
   // Webpack configuration to handle source maps

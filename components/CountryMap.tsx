@@ -16,7 +16,7 @@ interface CountryMapProps {
   onCountrySelect?: (country: string) => void;
 }
 
-export default function CountryMap({ searchQuery, secondDestination }: CountryMapProps) {
+export default function CountryMap({ searchQuery, secondDestination, onCountrySelect }: CountryMapProps) {
   const [coords, setCoords] = useState<[number, number] | null>(null);
   const [secondCoords, setSecondCoords] = useState<[number, number] | null>(null);
   const [locationName, setLocationName] = useState<string>('');
@@ -24,6 +24,9 @@ export default function CountryMap({ searchQuery, secondDestination }: CountryMa
   const [isLoading, setIsLoading] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [mapLayer, setMapLayer] = useState<'street' | 'satellite'>('street');
+  const [mapSearchQuery, setMapSearchQuery] = useState('');
+  const [searchSuggestions, setSearchSuggestions] = useState<any[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const mapRef = useRef(null);
 
   // Set client state
@@ -54,6 +57,55 @@ export default function CountryMap({ searchQuery, secondDestination }: CountryMa
       return null;
     }
   };
+
+  // Fetch search suggestions
+  const fetchSuggestions = async (query: string) => {
+    if (!query.trim() || query.length < 2) {
+      setSearchSuggestions([]);
+      return;
+    }
+    
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`
+      );
+      const data = await response.json();
+      setSearchSuggestions(data);
+    } catch (error) {
+      console.error('Error fetching suggestions:', error);
+    }
+  };
+
+  // Handle map search
+  const handleMapSearch = async (query: string) => {
+    if (!query.trim()) return;
+    
+    setIsLoading(true);
+    const result = await fetchCoords(query);
+    if (result) {
+      setCoords([result.lat, result.lon]);
+      setLocationName(result.name);
+      if (onCountrySelect) {
+        onCountrySelect(result.name);
+      }
+    }
+    setIsLoading(false);
+    setShowSuggestions(false);
+    setMapSearchQuery('');
+  };
+
+  // Handle click outside suggestions
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('.map-search-container')) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Update coordinates when search query changes
   useEffect(() => {
@@ -158,6 +210,50 @@ export default function CountryMap({ searchQuery, secondDestination }: CountryMa
       </div>
       
       <div className="relative h-64 w-full bg-gray-700 rounded-lg overflow-hidden border border-gray-600">
+        {/* Map Search Input */}
+        <div className="absolute bottom-4 left-4 z-20 w-64 map-search-container">
+          <div className="relative">
+            <div className="flex">
+              <input
+                type="text"
+                value={mapSearchQuery}
+                onChange={(e) => {
+                  setMapSearchQuery(e.target.value);
+                  fetchSuggestions(e.target.value);
+                  setShowSuggestions(true);
+                }}
+                onFocus={() => setShowSuggestions(true)}
+                onKeyPress={(e) => e.key === 'Enter' && handleMapSearch(mapSearchQuery)}
+                placeholder="Search for a location..."
+                className="flex-1 px-4 py-2 bg-gray-800 border-2 border-yellow-500/30 rounded-l-lg text-white placeholder-gray-400 focus:outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-200"
+              />
+              <button
+                onClick={() => handleMapSearch(mapSearchQuery)}
+                disabled={!mapSearchQuery.trim()}
+                className="px-4 py-2 bg-yellow-500 text-black font-medium rounded-r-lg hover:bg-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2 focus:ring-offset-gray-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                🔍
+              </button>
+            </div>
+            
+            {/* Search Suggestions */}
+            {showSuggestions && searchSuggestions.length > 0 && (
+              <div className="absolute bottom-full left-0 right-0 mb-1 bg-gray-800 border-2 border-yellow-500/30 rounded-lg shadow-lg z-30 max-h-48 overflow-y-auto">
+                {searchSuggestions.map((suggestion, index) => (
+                  <button
+                    key={index}
+                    onClick={() => handleMapSearch(suggestion.display_name)}
+                    className="w-full px-4 py-2 text-left text-white hover:bg-gray-700 transition-colors duration-200 border-b border-gray-600 last:border-b-0"
+                  >
+                    <div className="font-medium">{suggestion.display_name.split(',')[0]}</div>
+                    <div className="text-sm text-gray-400">{suggestion.display_name}</div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
         <MapContainer
           center={getMapCenter()}
           zoom={getMapZoom()}

@@ -1,6 +1,8 @@
 'use client';
 
-import { ComposableMap, Geographies, Geography, Marker } from 'react-simple-maps';
+import { useEffect, useRef } from 'react';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 
 interface LocationMapProps {
   countryName: string;
@@ -8,9 +10,35 @@ interface LocationMapProps {
   lon: number;
 }
 
-const geoUrl = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
-
 export default function LocationMap({ countryName, lat, lon }: LocationMapProps) {
+  const mapRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<L.Map | null>(null);
+
+  useEffect(() => {
+    if (!mapRef.current || mapInstanceRef.current) return;
+
+    // Create map instance
+    const map = L.map(mapRef.current).setView([lat, lon], 6);
+    mapInstanceRef.current = map;
+
+    // Add tile layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Add marker
+    const marker = L.marker([lat, lon]).addTo(map);
+    marker.bindPopup(`<b>${countryName}</b><br>${lat.toFixed(4)}, ${lon.toFixed(4)}`);
+
+    // Cleanup function
+    return () => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+      }
+    };
+  }, [lat, lon, countryName]);
+
   return (
     <div className="w-full max-w-4xl mx-auto mb-8">
       <div className="bg-gray-900 rounded-lg p-6 border-2 border-yellow-500/30 shadow-lg">
@@ -18,47 +46,11 @@ export default function LocationMap({ countryName, lat, lon }: LocationMapProps)
           📍 Location: {countryName}
         </h3>
         
-        <div className="relative">
-          <ComposableMap
-            projection="geoEqualEarth"
-            projectionConfig={{
-              scale: 200,
-              center: [lon, lat]
-            }}
-            className="w-full h-96"
-          >
-            <Geographies geography={geoUrl}>
-              {({ geographies }) =>
-                geographies.map((geo) => (
-                  <Geography
-                    key={geo.rsmKey}
-                    geography={geo}
-                    fill="#1F2937"
-                    stroke="#4B5563"
-                    strokeWidth={1}
-                    style={{
-                      default: { outline: 'none' },
-                      hover: { fill: '#374151', outline: 'none' },
-                      pressed: { outline: 'none' },
-                    }}
-                  />
-                ))
-              }
-            </Geographies>
-            
-            {/* Enhanced marker with better visibility */}
-            <Marker coordinates={[lon, lat]}>
-              <g>
-                {/* Outer glow */}
-                <circle r={8} fill="rgba(251, 191, 36, 0.3)" />
-                {/* Main marker */}
-                <circle r={6} fill="#FBBF24" stroke="#000" strokeWidth={2} />
-                {/* Inner highlight */}
-                <circle r={3} fill="#FCD34D" />
-              </g>
-            </Marker>
-          </ComposableMap>
-        </div>
+        <div 
+          ref={mapRef} 
+          className="w-full h-96 rounded-lg"
+          style={{ zIndex: 1 }}
+        />
         
         <div className="text-center mt-4">
           <p className="text-sm text-gray-300">

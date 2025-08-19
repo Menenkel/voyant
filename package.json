@@ -9,6 +9,9 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@supabase/auth-helpers-nextjs": "^0.10.0",
+    "@supabase/ssr": "^0.6.1",
+    "@supabase/supabase-js": "^2.39.0",
     "@types/leaflet": "^1.9.20",
     "d3-geo": "^3.1.1",
     "leaflet": "^1.9.4",
@@ -17,7 +20,6 @@
     "react-dom": "19.1.0",
     "react-globe.gl": "^2.35.0",
     "react-leaflet": "^5.0.0",
-    "react-simple-maps": "^3.0.0",
     "recharts": "^3.1.2"
   },
   "devDependencies": {
@@ -26,7 +28,6 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@types/react-simple-maps": "^3.0.6",
     "eslint": "^9",
     "eslint-config-next": "15.4.6",
     "tailwindcss": "^4",

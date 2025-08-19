@@ -339,7 +339,7 @@ export default function DestinationSearch() {
         <div className="mb-6 text-center">
           <button
             onClick={toggleCompareMode}
-            className={`px-6 py-2 rounded-lg font-medium transition-all duration-200 ${
+            className={`px-6 py-2 rounded-lg font-medium transition-all duration-200 comparison-toggle ${
               compareMode 
                 ? 'bg-blue-500 text-white hover:bg-blue-600' 
                 : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
@@ -347,6 +347,20 @@ export default function DestinationSearch() {
           >
             {compareMode ? '🔄 Single Search' : '⚖️ Compare Destinations'}
           </button>
+          
+          {compareMode && (
+            <div className="mt-4 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+              <p className="text-blue-300 text-sm">
+                💡 <strong>Comparison Mode:</strong> Search for two destinations to see them side by side with different colored markers on the map.
+              </p>
+              {results && secondResults && (
+                <div className="mt-2 flex items-center justify-center space-x-4 text-sm">
+                  <span className="text-yellow-400">📍 {results.destination}</span>
+                  <span className="text-blue-400">🔵 {secondResults.destination}</span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
         
         <div className={`max-w-4xl mx-auto ${compareMode ? 'grid grid-cols-1 md:grid-cols-2 gap-6' : 'max-w-lg'}`}>
@@ -355,31 +369,49 @@ export default function DestinationSearch() {
             <label className="block text-left text-sm font-medium text-yellow-400 mb-2">
               {compareMode ? 'First Destination' : 'Search for any city or country'}
             </label>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyPress={handleKeyPress}
-              onFocus={() => setShowHistory(true)}
-              placeholder="Enter a city or country"
-              className="w-full px-4 py-3 bg-gray-800 border-2 border-yellow-500/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-200"
-            />
+            <div className="flex space-x-2">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyPress={handleKeyPress}
+                onFocus={() => setShowHistory(true)}
+                placeholder="Enter a city or country"
+                className="flex-1 px-4 py-3 bg-gray-800 border-2 border-yellow-500/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-200"
+              />
+              <button
+                onClick={() => handleSearch()}
+                disabled={isSearching || !searchQuery.trim()}
+                className="px-4 py-3 bg-yellow-500 text-black font-medium rounded-lg hover:bg-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2 focus:ring-offset-gray-900 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Search
+              </button>
+            </div>
           </div>
 
           {/* Second Destination (Comparison Mode) */}
           {compareMode && (
             <div className="relative">
-              <label className="block text-left text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-left text-sm font-medium text-blue-400 mb-2">
                 Second Destination
               </label>
-              <input
-                type="text"
-                value={secondDestination}
-                onChange={(e) => setSecondDestination(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSecondSearch()}
-                placeholder="Enter a city or country"
-                className="w-full px-4 py-3 bg-gray-800 border-2 border-blue-500/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all duration-200"
-              />
+              <div className="flex space-x-2">
+                <input
+                  type="text"
+                  value={secondDestination}
+                  onChange={(e) => setSecondDestination(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSecondSearch()}
+                  placeholder="Enter a city or country"
+                  className="flex-1 px-4 py-3 bg-gray-800 border-2 border-blue-500/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all duration-200"
+                />
+                <button
+                  onClick={() => handleSecondSearch()}
+                  disabled={isSearching || !secondDestination.trim()}
+                  className="px-4 py-3 bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-gray-900 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Search
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -410,6 +442,23 @@ export default function DestinationSearch() {
       {/* Results Section */}
       {(results || secondResults) && (
         <div className="space-y-8">
+          {/* Comparison Status Indicator */}
+          {compareMode && results && secondResults && (
+            <div className="bg-gradient-to-r from-yellow-500/10 to-blue-500/10 border-2 border-yellow-500/30 border-r-blue-500/30 rounded-lg p-4">
+              <div className="flex items-center justify-center space-x-8">
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 bg-yellow-400 rounded-full"></div>
+                  <span className="text-yellow-400 font-medium">{results.destination}</span>
+                </div>
+                <div className="text-gray-400">vs</div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 bg-blue-400 rounded-full"></div>
+                  <span className="text-blue-400 font-medium">{secondResults.destination}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Map Section */}
           <CountryMap 
             searchQuery={results?.destination || ''} 
@@ -418,13 +467,13 @@ export default function DestinationSearch() {
           />
 
           {/* Results Grid - Side by side when comparing */}
-          <div className={`${compareMode && (results || secondResults) ? 'grid grid-cols-1 lg:grid-cols-2 gap-8' : ''} space-y-6`}>
+          <div className={`${compareMode ? 'grid grid-cols-1 lg:grid-cols-2 gap-8' : ''}`}>
             
             {/* First Destination Results */}
             {results && (
-              <div className={`${compareMode && (results || secondResults) ? '' : 'w-full'} space-y-6`}>
+              <div className={`${compareMode ? '' : 'w-full'} space-y-6`}>
                 {/* First Destination Header */}
-                {secondResults && (
+                {compareMode && (
                   <div className="text-center mb-6">
                     <h2 className="text-2xl font-bold text-yellow-400 mb-2">{results.destination}</h2>
                     <div className="w-16 h-1 bg-yellow-400 mx-auto rounded"></div>
@@ -432,25 +481,29 @@ export default function DestinationSearch() {
                 )}
 
                 {/* 1. AI-Generated Risk Summary */}
-                <div className="bg-gray-800 rounded-lg p-6 border-2 border-blue-500/30 shadow-lg hover:border-blue-400/50 transition-all duration-300 hover:shadow-blue-500/10 animate-fade-in hover:scale-[1.02]">
-            <h3 className="text-lg font-semibold text-yellow-400 mb-4">AI Risk Summary</h3>
-            <div className="space-y-4">
-              <p className="text-gray-200 leading-relaxed">
-                {generateRiskSummary(
-                  results.destination, 
-                  results.riskData, 
-                  results.weatherData, 
-                  results.healthData, 
-                  results.securityData
-                ).summary}
-              </p>
-            </div>
-          </div>
+                <div className="bg-gray-800 rounded-lg p-6 border-2 border-yellow-500/30 shadow-lg hover:border-yellow-400/50 transition-all duration-300 hover:shadow-yellow-500/10 animate-fade-in hover:scale-[1.02]">
+                  <h3 className="text-lg font-semibold text-yellow-400 mb-4">
+                    {compareMode ? `${results.destination} - AI Risk Summary` : 'AI Risk Summary'}
+                  </h3>
+                  <div className="space-y-4">
+                    <p className="text-gray-200 leading-relaxed">
+                      {generateRiskSummary(
+                        results.destination, 
+                        results.riskData, 
+                        results.weatherData, 
+                        results.healthData, 
+                        results.securityData
+                      ).summary}
+                    </p>
+                  </div>
+                </div>
 
           {/* 2. Risk Scores */}
-          <div className="bg-gray-800 rounded-lg p-6 border-2 border-blue-500/30 shadow-lg hover:border-blue-400/50 transition-all duration-300 hover:shadow-blue-500/10 animate-fade-in-delay hover:scale-[1.02]">
+          <div className="bg-gray-800 rounded-lg p-6 border-2 border-yellow-500/30 shadow-lg hover:border-yellow-400/50 transition-all duration-300 hover:shadow-yellow-500/10 animate-fade-in-delay hover:scale-[1.02]">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-yellow-400">Risk Assessment</h3>
+              <h3 className="text-lg font-semibold text-yellow-400">
+                {compareMode ? `${results.destination} - Risk Assessment` : 'Risk Assessment'}
+              </h3>
               <button 
                 onClick={() => setExpandedSections(prev => ({ ...prev, riskScores: !prev.riskScores }))}
                 className="flex items-center space-x-2 text-yellow-400 hover:text-yellow-300 transition-colors duration-200"
@@ -512,47 +565,46 @@ export default function DestinationSearch() {
 
             {/* Comprehensive Risk Indicators - Expandable */}
             {expandedSections.riskScores && results.riskIndicators && (
-              <div className="mt-6 pt-6 border-t border-blue-500/20">
-                <h4 className="text-md font-semibold text-blue-300 mb-3">Detailed Risk Indicators (0-10 Scale)</h4>
+              <div className="mt-6 pt-6 border-t border-yellow-500/20">
+                <h4 className="text-md font-semibold text-yellow-300 mb-3">Detailed Risk Indicators (0-10 Scale)</h4>
                 
                 {/* Radar Chart */}
-                                 {/* Radar Chart */}
-                 <div className="mb-6">
-                   <RiskRadarChart 
-                     hazardIndicators={results.riskIndicators.hazard_indicators}
-                     secondHazardIndicators={secondResults?.riskIndicators?.hazard_indicators}
-                     firstDestination={results.destination}
-                     secondDestination={secondResults?.destination}
-                   />
-                 </div>
-                 
-                                  {/* Global Rankings */}
-                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                   <div className="p-4 bg-gray-700 rounded-lg border border-blue-500/20 hover:border-blue-400/30 transition-all duration-300 group relative overflow-hidden">
-                     <h5 className="text-sm font-semibold text-blue-200 mb-2">Global Peace Index</h5>
-                     <span className="text-yellow-400 font-semibold text-lg">#{results.riskIndicators.global_indices?.global_peace_index || Math.floor(Math.random() * 163) + 1}{'/'}163</span>
-                     <div className="absolute inset-0 bg-gray-800 border border-yellow-500/30 rounded-lg p-3 opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col justify-center">
-                       <p className="text-white text-sm font-semibold">Lower ranking = More peaceful</p>
-                       <p className="text-yellow-400 text-xs mt-1">Based on 163 countries worldwide</p>
-                     </div>
-                   </div>
-                   <div className="p-4 bg-gray-700 rounded-lg border border-blue-500/20 hover:border-blue-400/30 transition-all duration-300 group relative overflow-hidden">
-                     <h5 className="text-sm font-semibold text-blue-200 mb-2">Fragile States Index</h5>
-                     <span className="text-yellow-400 font-semibold text-lg">#{results.riskIndicators.global_indices?.fragile_states_index || Math.floor(Math.random() * 179) + 1}{'/'}179</span>
-                     <div className="absolute inset-0 bg-gray-800 border border-yellow-500/30 rounded-lg p-3 opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col justify-center">
-                       <p className="text-white text-sm font-semibold">Lower ranking = More stable</p>
-                       <p className="text-yellow-400 text-xs mt-1">Based on 179 countries worldwide</p>
-                     </div>
-                   </div>
-                   <div className="p-4 bg-gray-700 rounded-lg border border-blue-500/20 hover:border-blue-400/30 transition-all duration-300 group relative overflow-hidden">
-                     <h5 className="text-sm font-semibold text-blue-200 mb-2">Corruption Index</h5>
-                     <span className="text-yellow-400 font-semibold text-lg">#{results.riskIndicators.global_indices?.corruption_index || Math.floor(Math.random() * 180) + 1}{'/'}180</span>
-                     <div className="absolute inset-0 bg-gray-800 border border-yellow-500/30 rounded-lg p-3 opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col justify-center">
-                       <p className="text-white text-sm font-semibold">Lower ranking = Less corrupt</p>
-                       <p className="text-yellow-400 text-xs mt-1">Based on 180 countries worldwide</p>
-                     </div>
-                   </div>
-                 </div>
+                <div className="mb-6">
+                  <RiskRadarChart 
+                    hazardIndicators={results.riskIndicators.hazard_indicators}
+                    secondHazardIndicators={secondResults?.riskIndicators?.hazard_indicators}
+                    firstDestination={results.destination}
+                    secondDestination={secondResults?.destination}
+                  />
+                </div>
+                
+                {/* Global Rankings */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="p-4 bg-gray-700 rounded-lg border border-yellow-500/20 hover:border-yellow-400/30 transition-all duration-300 group relative overflow-hidden">
+                    <h5 className="text-sm font-semibold text-yellow-200 mb-2">Global Peace Index</h5>
+                    <span className="text-yellow-400 font-semibold text-lg">#{results.riskIndicators.global_indices?.global_peace_index || Math.floor(Math.random() * 163) + 1}{'/'}163</span>
+                    <div className="absolute inset-0 bg-gray-800 border border-yellow-500/30 rounded-lg p-3 opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col justify-center">
+                      <p className="text-white text-sm font-semibold">Lower ranking = More peaceful</p>
+                      <p className="text-yellow-400 text-xs mt-1">Based on 163 countries worldwide</p>
+                    </div>
+                  </div>
+                  <div className="p-4 bg-gray-700 rounded-lg border border-yellow-500/20 hover:border-yellow-400/30 transition-all duration-300 group relative overflow-hidden">
+                    <h5 className="text-sm font-semibold text-yellow-200 mb-2">Fragile States Index</h5>
+                    <span className="text-yellow-400 font-semibold text-lg">#{results.riskIndicators.global_indices?.fragile_states_index || Math.floor(Math.random() * 179) + 1}{'/'}179</span>
+                    <div className="absolute inset-0 bg-gray-800 border border-yellow-500/30 rounded-lg p-3 opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col justify-center">
+                      <p className="text-white text-sm font-semibold">Lower ranking = More stable</p>
+                      <p className="text-yellow-400 text-xs mt-1">Based on 179 countries worldwide</p>
+                    </div>
+                  </div>
+                  <div className="p-4 bg-gray-700 rounded-lg border border-yellow-500/20 hover:border-yellow-400/30 transition-all duration-300 group relative overflow-hidden">
+                    <h5 className="text-sm font-semibold text-yellow-200 mb-2">Corruption Index</h5>
+                    <span className="text-yellow-400 font-semibold text-lg">#{results.riskIndicators.global_indices?.corruption_index || Math.floor(Math.random() * 180) + 1}{'/'}180</span>
+                    <div className="absolute inset-0 bg-gray-800 border border-yellow-500/30 rounded-lg p-3 opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col justify-center">
+                      <p className="text-white text-sm font-semibold">Lower ranking = Less corrupt</p>
+                      <p className="text-yellow-400 text-xs mt-1">Based on 180 countries worldwide</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -820,10 +872,10 @@ export default function DestinationSearch() {
               )}
 
                                 {/* Second Destination Results */}
-                  {secondResults && (
-                    <div className={`${compareMode && (results || secondResults) ? '' : 'w-full'} space-y-6`}>
+              {secondResults && (
+                <div className={`${compareMode ? '' : 'w-full'} space-y-6`}>
                   {/* Second Destination Header */}
-                  {results && secondResults && (
+                  {compareMode && (
                     <div className="text-center mb-6">
                       <h2 className="text-2xl font-bold text-blue-400 mb-2">{secondResults.destination}</h2>
                       <div className="w-16 h-1 bg-blue-400 mx-auto rounded"></div>
@@ -832,7 +884,9 @@ export default function DestinationSearch() {
 
                   {/* Second Destination AI Risk Summary */}
                   <div className="bg-gray-800 rounded-lg p-6 border-2 border-blue-500/30 shadow-lg hover:border-blue-400/50 transition-all duration-300 hover:shadow-blue-500/10 animate-fade-in hover:scale-[1.02]">
-                    <h3 className="text-lg font-semibold text-blue-400 mb-4">{secondResults.destination} - AI Risk Summary</h3>
+                    <h3 className="text-lg font-semibold text-blue-400 mb-4">
+                      {compareMode ? `${secondResults.destination} - AI Risk Summary` : 'AI Risk Summary'}
+                    </h3>
                     <div className="space-y-4">
                       <p className="text-gray-200 leading-relaxed">
                         {generateRiskSummary(
@@ -1052,6 +1106,24 @@ export default function DestinationSearch() {
                           </div>
                         </div>
                       ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Placeholder for second destination when in comparison mode but no second results */}
+              {compareMode && !secondResults && (
+                <div className="space-y-6">
+                  <div className="text-center mb-6">
+                    <h2 className="text-2xl font-bold text-blue-400 mb-2">Second Destination</h2>
+                    <div className="w-16 h-1 bg-blue-400 mx-auto rounded"></div>
+                  </div>
+                  
+                  <div className="bg-gray-800 rounded-lg p-6 border-2 border-blue-500/30 shadow-lg border-dashed">
+                    <div className="text-center py-12">
+                      <div className="text-blue-400 text-6xl mb-4">🔍</div>
+                      <h3 className="text-lg font-semibold text-blue-400 mb-2">Search for Second Destination</h3>
+                      <p className="text-gray-400">Enter a city or country in the second search field above to compare destinations side by side.</p>
                     </div>
                   </div>
                 </div>
