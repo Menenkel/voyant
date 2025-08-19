@@ -4,32 +4,38 @@ export default function FeaturesPage() {
   const features = [
     {
       id: 1,
-      title: "Search any place",
-      description: "Type a city or country name and instantly see where it is.",
+      title: "Real-Time Insights",
+      description: "Instantly access up-to-date travel, safety, and environmental information for any destination.",
       color: "from-yellow-500 to-yellow-600"
     },
     {
       id: 2,
-      title: "See the bigger picture",
-      description: "Even if you search a city, the whole country is highlighted so you know the context.",
+      title: "Advanced Weather & Climate Data",
+      description: "Plan ahead with state-of-the-art forecasts, showing conditions months in advance.",
       color: "from-yellow-500 to-yellow-600"
     },
     {
       id: 3,
-      title: "Follow along easily",
-      description: "A moving bar on the side shows where you are as you scroll through the page.",
+      title: "Risk Comparison",
+      description: "Compare hazards across cities or countries to make smarter travel and booking decisions.",
       color: "from-yellow-500 to-yellow-600"
     },
     {
       id: 4,
-      title: "Get insights and updates",
-      description: "Receive key information and alerts while exploring destinations or preparing for your trip.",
+      title: "Subscribe to Updates",
+      description: "Receive personalized alerts by email or notifications to stay prepared for both personal and professional trips.",
       color: "from-yellow-500 to-yellow-600"
     },
     {
       id: 5,
-      title: "Explore the world",
-      description: "Move across countries quickly to compare places and plan smarter.",
+      title: "Destination News Feed",
+      description: "Follow curated news and developments for your selected city or country in one place.",
+      color: "from-yellow-500 to-yellow-600"
+    },
+    {
+      id: 6,
+      title: "AI-Powered Contextualization",
+      description: "Let our AI engine synthesize data and insights, providing clear guidance tailored to your travel plans.",
       color: "from-yellow-500 to-yellow-600"
     }
   ];
