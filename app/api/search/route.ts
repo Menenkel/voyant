@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { searchDestinations, getCountryByName, transformCountryData } from '@/lib/database';
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const destination = searchParams.get('destination');
+
+    console.log('=== SEARCH API CALLED ===');
+    console.log('Searching for:', destination);
 
     if (!destination) {
       return NextResponse.json({ error: 'Destination parameter is required' }, { status: 400 });
@@ -12,7 +16,29 @@ export async function GET(request: NextRequest) {
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
 
-    // Generate simple mock data
+    // Try to find the destination in Supabase first
+    let countryData = await getCountryByName(destination);
+    console.log('getCountryByName result:', countryData);
+    
+    // If not found, try searching for partial matches and cities
+    if (!countryData) {
+      const searchResults = await searchDestinations(destination);
+      console.log('searchDestinations results:', searchResults);
+      if (searchResults.length > 0) {
+        countryData = searchResults[0]; // Use the first match
+      }
+    }
+
+    // If we found data in Supabase, use it
+    if (countryData) {
+      console.log('Found country data:', countryData);
+      const result = transformCountryData(countryData);
+      console.log('Transformed result:', result);
+      return NextResponse.json(result);
+    }
+
+    console.log('No country data found, falling back to mock data');
+    // Fallback to mock data for countries not in the database
     const result = {
       destination,
       riskData: {
