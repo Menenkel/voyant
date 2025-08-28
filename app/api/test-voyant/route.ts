@@ -6,9 +6,9 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const testQuery = searchParams.get('q') || 'Germany';
 
-    // Test the Voyant table connection
+    // Test the Voyant2 table connection
     const { data, error } = await supabase
-      .from('Voyant')
+      .from('Voyant2')
       .select('*')
       .ilike('country', `%${testQuery.toLowerCase()}%`)
       .limit(3);
@@ -17,13 +17,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         success: false,
         error: error.message,
-        details: 'Failed to connect to Voyant table'
+        details: 'Failed to connect to Voyant2 table'
       }, { status: 500 });
     }
 
     return NextResponse.json({
       success: true,
-      message: 'Voyant table connection successful',
+      message: 'Voyant2 table connection successful',
       testQuery,
       results: data,
       totalResults: data?.length || 0,
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Voyant test error:', error);
+    console.error('Voyant2 test error:', error);
     return NextResponse.json({
       success: false,
       error: 'Database connection failed',

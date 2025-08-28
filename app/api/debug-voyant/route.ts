@@ -3,9 +3,9 @@ import { supabase } from '@/lib/supabase';
 
 export async function GET(request: NextRequest) {
   try {
-    // Get all data from Voyant table to inspect structure
+    // Get all data from Voyant2 table to inspect structure
     const { data, error } = await supabase
-      .from('Voyant')
+      .from('Voyant2')
       .select('*')
       .limit(10);
 
@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         success: false,
         error: error.message,
-        details: 'Failed to connect to Voyant table'
+        details: 'Failed to connect to Voyant2 table'
       }, { status: 500 });
     }
 
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'Voyant table inspection',
+      message: 'Voyant2 table inspection',
       totalRows: data?.length || 0,
       columnNames,
       sampleCountries: countryNames,
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Voyant debug error:', error);
+    console.error('Voyant2 debug error:', error);
     return NextResponse.json({
       success: false,
       error: 'Database connection failed',

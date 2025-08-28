@@ -10,6 +10,7 @@ interface SearchHistory {
 
 interface SearchResult {
   destination: string;
+  fun_fact?: string;
   supabaseData?: {
     country: string;
     ISO3: string;
@@ -32,6 +33,7 @@ interface SearchResult {
     gdp_per_capita_usd: number;
     number_of_earths: number;
     human_dev_index: number;
+    fun_fact: string;
   };
   weatherData?: {
     location: string;
@@ -74,6 +76,15 @@ export default function DestinationSearch() {
   const [error, setError] = useState('');
   const [searchHistory, setSearchHistory] = useState<SearchHistory[]>([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [citySuggestions, setCitySuggestions] = useState<Array<{
+    city: string;
+    country: string;
+    iso3: string;
+    population: number;
+    display: string;
+    isCapital: boolean;
+  }>>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   // Load search history from localStorage on component mount
   useEffect(() => {
@@ -153,6 +164,47 @@ export default function DestinationSearch() {
     if (e.key === 'Enter') {
       handleSearch();
     }
+  };
+
+  // City search suggestions
+  const searchCitySuggestions = async (query: string) => {
+    if (query.length < 2) {
+      setCitySuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/city-search?q=${encodeURIComponent(query)}&limit=8`);
+      if (response.ok) {
+        const data = await response.json();
+        setCitySuggestions(data.suggestions || []);
+        setShowSuggestions(true);
+      }
+    } catch (error) {
+      console.error('City search error:', error);
+    }
+  };
+
+  // Handle input change with debounced city search
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    
+    // Debounce city search
+    const timeoutId = setTimeout(() => {
+      searchCitySuggestions(value);
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  };
+
+  // Handle city suggestion selection
+  const handleCitySelect = (suggestion: any) => {
+    setSearchQuery(suggestion.display);
+    setShowSuggestions(false);
+    setCitySuggestions([]);
+    handleSearch(suggestion.display);
   };
 
   const handleHistoryClick = (destination: string) => {
@@ -269,15 +321,46 @@ export default function DestinationSearch() {
               {compareMode ? 'First Destination' : 'Search for any city or country'}
             </label>
             <div className="flex space-x-2">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyPress={handleKeyPress}
-                onFocus={() => setShowHistory(true)}
-                placeholder="Enter a city or country"
-                className="flex-1 px-4 py-3 bg-gray-800 border-2 border-yellow-500/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-200"
-              />
+              <div className="flex-1 relative">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={handleInputChange}
+                  onKeyPress={handleKeyPress}
+                  onFocus={() => setShowHistory(true)}
+                  onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                  placeholder="Enter a city or country"
+                  className="w-full px-4 py-3 bg-gray-800 border-2 border-yellow-500/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-200"
+                />
+                
+                {/* City Suggestions Dropdown */}
+                {showSuggestions && citySuggestions.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-gray-800 border-2 border-yellow-500/30 rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto">
+                    {citySuggestions.map((suggestion, index) => (
+                      <button
+                        key={index}
+                        onClick={() => handleCitySelect(suggestion)}
+                        className="w-full px-4 py-3 text-left text-white hover:bg-gray-700 transition-colors duration-200 border-b border-gray-600 last:border-b-0"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="font-medium flex items-center">
+                              {suggestion.city}
+                              {suggestion.isCapital && (
+                                <span className="ml-2 text-xs bg-yellow-500 text-black px-2 py-1 rounded">Capital</span>
+                              )}
+                            </div>
+                            <div className="text-sm text-gray-400">{suggestion.country}</div>
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {suggestion.population > 0 ? `${(suggestion.population / 1000000).toFixed(1)}M` : 'N/A'}
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
               <button
                 onClick={() => handleSearch()}
                 disabled={isSearching || !searchQuery.trim()}
@@ -295,14 +378,16 @@ export default function DestinationSearch() {
                 Second Destination
               </label>
               <div className="flex space-x-2">
-                <input
-                  type="text"
-                  value={secondDestination}
-                  onChange={(e) => setSecondDestination(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSecondSearch()}
-                  placeholder="Enter a city or country"
-                  className="flex-1 px-4 py-3 bg-gray-800 border-2 border-blue-500/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all duration-200"
-                />
+                <div className="flex-1 relative">
+                  <input
+                    type="text"
+                    value={secondDestination}
+                    onChange={(e) => setSecondDestination(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleSecondSearch()}
+                    placeholder="Enter a city or country"
+                    className="w-full px-4 py-3 bg-gray-800 border-2 border-blue-500/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all duration-200"
+                  />
+                </div>
                 <button
                   onClick={() => handleSecondSearch()}
                   disabled={isSearching || !secondDestination.trim()}
@@ -360,6 +445,16 @@ export default function DestinationSearch() {
                 </div>
               </div>
             </div>
+
+            {/* Fun Fact */}
+            {results.fun_fact && (
+              <div className="bg-gray-800 rounded-lg p-6 border-2 border-purple-500/30 shadow-lg">
+                <h4 className="text-lg font-semibold text-purple-400 mb-4">💡 Fun Fact</h4>
+                <div className="p-4 bg-gray-700 rounded-lg">
+                  <p className="text-white font-medium italic">"{results.fun_fact}"</p>
+                </div>
+              </div>
+            )}
 
             {/* Economic Data */}
             <div className="bg-gray-800 rounded-lg p-6 border-2 border-green-500/30 shadow-lg">
@@ -560,6 +655,16 @@ export default function DestinationSearch() {
                   </div>
                 </div>
               </div>
+
+              {/* Fun Fact */}
+              {secondResults.fun_fact && (
+                <div className="bg-gray-800 rounded-lg p-6 border-2 border-purple-500/30 shadow-lg">
+                  <h4 className="text-lg font-semibold text-purple-400 mb-4">💡 Fun Fact</h4>
+                  <div className="p-4 bg-gray-700 rounded-lg">
+                    <p className="text-white font-medium italic">"{secondResults.fun_fact}"</p>
+                  </div>
+                </div>
+              )}
 
               {/* Economic Data */}
               <div className="bg-gray-800 rounded-lg p-6 border-2 border-green-500/30 shadow-lg">

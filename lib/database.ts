@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { searchCities, getCountryISO3ForCity } from './cities';
 
 export interface CountryData {
   country: string;
@@ -22,12 +23,13 @@ export interface CountryData {
   gdp_per_capita_usd: number;
   number_of_earths: number;
   human_dev_index: number;
+  fun_fact: string;
 }
 
 export async function searchCountries(query: string): Promise<CountryData[]> {
   try {
     const { data, error } = await supabase
-      .from('Voyant')
+      .from('Voyant2')
       .select('*')
       .or(`country.ilike.%${query.toLowerCase()}%,ISO3.ilike.%${query.toLowerCase()}%`)
       .limit(10);
@@ -47,7 +49,7 @@ export async function searchCountries(query: string): Promise<CountryData[]> {
 export async function getCountryByISO(isoCode: string): Promise<CountryData | null> {
   try {
     const { data, error } = await supabase
-      .from('Voyant')
+      .from('Voyant2')
       .select('*')
       .eq('ISO3', isoCode.toLowerCase())
       .single();
@@ -67,7 +69,7 @@ export async function getCountryByISO(isoCode: string): Promise<CountryData | nu
 export async function getCountryByName(countryName: string): Promise<CountryData | null> {
   try {
     const { data, error } = await supabase
-      .from('Voyant')
+      .from('Voyant2')
       .select('*')
       .ilike('country', `%${countryName.toLowerCase()}%`)
       .single();
@@ -89,7 +91,7 @@ export async function searchDestinations(query: string): Promise<CountryData[]> 
   try {
     // First try exact country match
     const { data: exactCountry, error: exactError } = await supabase
-      .from('Voyant')
+      .from('Voyant2')
       .select('*')
       .ilike('country', query.toLowerCase())
       .limit(1);
@@ -100,7 +102,7 @@ export async function searchDestinations(query: string): Promise<CountryData[]> 
 
     // Then try partial country match
     const { data: partialCountry, error: partialError } = await supabase
-      .from('Voyant')
+      .from('Voyant2')
       .select('*')
       .or(`country.ilike.%${query.toLowerCase()}%,ISO3.ilike.%${query.toLowerCase()}%`)
       .limit(5);
@@ -109,16 +111,27 @@ export async function searchDestinations(query: string): Promise<CountryData[]> 
       return partialCountry;
     }
 
-    // If no country found, try to match cities to countries
-    // This is a simplified approach - you can enhance this with a cities table later
+    // If no country found, try city search
+    const countryISO3 = await getCountryISO3ForCity(query);
+    if (countryISO3) {
+      const { data: cityCountry, error: cityError } = await supabase
+        .from('Voyant2')
+        .select('*')
+        .eq('ISO3', countryISO3)
+        .limit(1);
+
+      if (!cityError && cityCountry && cityCountry.length > 0) {
+        return cityCountry;
+      }
+    }
+
+    // Fallback: search for countries that might contain the query
     const { data: allCountries, error: allError } = await supabase
-      .from('Voyant')
+      .from('Voyant2')
       .select('*')
       .limit(50);
 
     if (!allError && allCountries) {
-      // Filter countries that might contain the city
-      // This is a basic implementation - you can improve this with geocoding
       return allCountries.filter(country => 
         country.country.toLowerCase().includes(query.toLowerCase()) ||
         query.toLowerCase().includes(country.country.toLowerCase())
@@ -132,15 +145,21 @@ export async function searchDestinations(query: string): Promise<CountryData[]> 
   }
 }
 
-// Function to get country data for a city (basic implementation)
+// Function to get country data for a city
 export async function getCountryForCity(cityName: string): Promise<CountryData | null> {
   try {
-    // This is a simplified approach - in a real implementation, you'd have a cities table
-    // For now, we'll search for countries that might contain this city
+    // Get the country ISO3 code for the city
+    const countryISO3 = await getCountryISO3ForCity(cityName);
+    
+    if (!countryISO3) {
+      return null;
+    }
+
+    // Get the country data using the ISO3 code
     const { data, error } = await supabase
-      .from('Voyant')
+      .from('Voyant2')
       .select('*')
-      .or(`country.ilike.%${cityName}%`)
+      .eq('ISO3', countryISO3)
       .limit(1);
 
     if (error || !data || data.length === 0) {
@@ -191,6 +210,7 @@ export function transformCountryData(countryData: CountryData) {
 
   return {
     destination: countryData.country,
+    fun_fact: countryData.fun_fact,
     // Supabase data
     supabaseData: {
       country: countryData.country,
@@ -213,7 +233,8 @@ export function transformCountryData(countryData: CountryData) {
       life_expectancy: countryData.life_expectancy,
       gdp_per_capita_usd: countryData.gdp_per_capita_usd,
       number_of_earths: countryData.number_of_earths,
-      human_dev_index: countryData.human_dev_index
+      human_dev_index: countryData.human_dev_index,
+      fun_fact: countryData.fun_fact
     },
     // Weather data
     weatherData: {
