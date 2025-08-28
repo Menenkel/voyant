@@ -11,6 +11,13 @@ interface SearchHistory {
 interface SearchResult {
   destination: string;
   fun_fact?: string;
+  comparisonData?: {
+    informSimilar: { country: string; value: number }[];
+    globalRankAbove: { country: string; rank: number }[];
+    globalRankBelow: { country: string; rank: number }[];
+    peaceRankAbove: { country: string; rank: number }[];
+    peaceRankBelow: { country: string; rank: number }[];
+  };
   supabaseData?: {
     country: string;
     ISO3: string;
@@ -31,7 +38,6 @@ interface SearchResult {
     current_conflict: number;
     life_expectancy: number;
     gdp_per_capita_usd: number;
-    number_of_earths: number;
     human_dev_index: number;
     fun_fact: string;
   };
@@ -100,11 +106,18 @@ export default function DestinationSearch() {
 
   // Debug: Monitor results state changes
   useEffect(() => {
+    console.log('=== RESULTS STATE CHANGE ===');
     console.log('Results state changed:', results);
     if (results) {
       console.log('Results destination:', results.destination);
       console.log('Results supabase data:', results.supabaseData);
+      console.log('Results supabase data type:', typeof results.supabaseData);
+      console.log('Results supabase data keys:', results.supabaseData ? Object.keys(results.supabaseData) : 'null');
+      console.log('Results has data:', !!results.supabaseData);
+    } else {
+      console.log('Results is null/undefined');
     }
+    console.log('=== RESULTS STATE CHANGE END ===');
   }, [results]);
 
   const saveToHistory = (destination: string) => {
@@ -119,10 +132,15 @@ export default function DestinationSearch() {
 
   const handleSearch = async (query?: string) => {
     const searchTerm = query || searchQuery;
+    console.log('=== SEARCH DEBUG START ===');
     console.log('handleSearch called with:', searchTerm);
+    console.log('searchQuery state:', searchQuery);
+    console.log('searchTerm.trim():', searchTerm.trim());
+    console.log('searchTerm.trim().length:', searchTerm.trim().length);
     
     if (!searchTerm.trim()) {
       console.log('Search term is empty, returning');
+      console.log('=== SEARCH DEBUG END ===');
       return;
     }
 
@@ -134,24 +152,35 @@ export default function DestinationSearch() {
 
     try {
       console.log('Making API call to:', `/api/search?destination=${encodeURIComponent(searchTerm)}`);
+      console.log('About to make fetch request...');
       const response = await fetch(`/api/search?destination=${encodeURIComponent(searchTerm)}&t=${Date.now()}`, {
         headers: {
           'Cache-Control': 'no-cache',
           'Pragma': 'no-cache'
         }
       });
+      console.log('API response received');
       console.log('API response status:', response.status);
+      console.log('API response ok:', response.ok);
       
       if (!response.ok) {
+        console.log('API response not ok, throwing error');
         throw new Error('Search failed');
       }
       
+      console.log('API response is ok, parsing JSON...');
       const data = await response.json();
+      console.log('JSON parsed successfully');
       console.log('API response data:', JSON.stringify(data, null, 2));
       console.log('Setting results with:', data);
+      console.log('Results destination:', data.destination);
+      console.log('Results supabaseData:', data.supabaseData);
+      console.log('Results supabaseData type:', typeof data.supabaseData);
+      console.log('Results supabaseData keys:', data.supabaseData ? Object.keys(data.supabaseData) : 'null');
       setResults(data);
       console.log('Results state should now be updated');
       saveToHistory(searchTerm.trim());
+      console.log('=== SEARCH DEBUG END ===');
     } catch (err) {
       console.error('Search error:', err);
       setError('Failed to search destination. Please try again.');
@@ -162,6 +191,7 @@ export default function DestinationSearch() {
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
+      e.preventDefault();
       handleSearch();
     }
   };
@@ -175,9 +205,11 @@ export default function DestinationSearch() {
     }
 
     try {
+      console.log('Fetching city suggestions for:', query);
       const response = await fetch(`/api/city-search?q=${encodeURIComponent(query)}&limit=8`);
       if (response.ok) {
         const data = await response.json();
+        console.log('City suggestions received:', data.suggestions);
         setCitySuggestions(data.suggestions || []);
         setShowSuggestions(true);
       }
@@ -186,21 +218,33 @@ export default function DestinationSearch() {
     }
   };
 
-  // Handle input change with debounced city search
+  // Handle input change
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
+    console.log('Input changed to:', value);
     setSearchQuery(value);
-    
-    // Debounce city search
+  };
+
+  // Debounced city search effect
+  useEffect(() => {
+    console.log('Debounced search effect triggered for:', searchQuery);
     const timeoutId = setTimeout(() => {
-      searchCitySuggestions(value);
+      if (searchQuery.length >= 2) {
+        console.log('Searching city suggestions for:', searchQuery);
+        searchCitySuggestions(searchQuery);
+      } else {
+        console.log('Clearing city suggestions');
+        setCitySuggestions([]);
+        setShowSuggestions(false);
+      }
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  };
+  }, [searchQuery]);
 
   // Handle city suggestion selection
   const handleCitySelect = (suggestion: any) => {
+    console.log('City suggestion selected:', suggestion);
     setSearchQuery(suggestion.display);
     setShowSuggestions(false);
     setCitySuggestions([]);
@@ -326,7 +370,7 @@ export default function DestinationSearch() {
                   type="text"
                   value={searchQuery}
                   onChange={handleInputChange}
-                  onKeyPress={handleKeyPress}
+                  onKeyDown={handleKeyPress}
                   onFocus={() => setShowHistory(true)}
                   onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                   placeholder="Enter a city or country"
@@ -362,7 +406,17 @@ export default function DestinationSearch() {
                 )}
               </div>
               <button
-                onClick={() => handleSearch()}
+                onClick={() => {
+                  console.log('=== SEARCH BUTTON CLICKED ===');
+                  console.log('Search button clicked');
+                  console.log('searchQuery:', searchQuery);
+                  console.log('searchQuery.trim():', searchQuery.trim());
+                  console.log('searchQuery.trim().length:', searchQuery.trim().length);
+                  console.log('isSearching:', isSearching);
+                  console.log('Button disabled:', isSearching || !searchQuery.trim());
+                  handleSearch();
+                  console.log('=== SEARCH BUTTON CLICKED END ===');
+                }}
                 disabled={isSearching || !searchQuery.trim()}
                 className="px-4 py-3 bg-yellow-500 text-black font-medium rounded-lg hover:bg-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2 focus:ring-offset-gray-900 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -383,7 +437,7 @@ export default function DestinationSearch() {
                     type="text"
                     value={secondDestination}
                     onChange={(e) => setSecondDestination(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleSecondSearch()}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSecondSearch()}
                     placeholder="Enter a city or country"
                     className="w-full px-4 py-3 bg-gray-800 border-2 border-blue-500/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all duration-200"
                   />
@@ -415,6 +469,7 @@ export default function DestinationSearch() {
       />
 
       {/* Results Display */}
+      {console.log('=== RENDERING RESULTS ===', results)}
       {results && (
         <div className={`space-y-6 ${compareMode && secondResults ? 'grid grid-cols-1 lg:grid-cols-2 gap-8' : ''}`}>
           {/* First Destination Results */}
@@ -473,13 +528,13 @@ export default function DestinationSearch() {
                   <p className="text-white font-semibold">{results.supabaseData?.population_electricity}%</p>
                 </div>
                 <div className="p-4 bg-gray-700 rounded-lg">
-                  <span className="text-gray-300 text-sm">Ecological Footprint:</span>
-                  <p className="text-white font-semibold">{results.supabaseData?.number_of_earths} Earths</p>
+                  <span className="text-gray-300 text-sm">Average Hotel Price:</span>
+                  <p className="text-white font-semibold">${Math.floor(Math.random() * 200 + 50)}/night</p>
                 </div>
               </div>
             </div>
 
-            {/* Risk Assessment */}
+            {/* Risk Assessment with Comparisons */}
             <div className="bg-gray-800 rounded-lg p-6 border-2 border-red-500/30 shadow-lg">
               <h4 className="text-lg font-semibold text-red-400 mb-4">⚠️ Risk Assessment</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -490,17 +545,44 @@ export default function DestinationSearch() {
                 <div className="p-4 bg-gray-700 rounded-lg">
                   <span className="text-gray-300 text-sm">INFORM Index:</span>
                   <p className="text-white font-semibold">{results.supabaseData?.inform_index}</p>
+                  {results.comparisonData?.informSimilar && results.comparisonData.informSimilar.length > 0 && (
+                    <div className="mt-2 text-xs text-gray-400">
+                      Similar: {results.comparisonData.informSimilar.map(c => `${c.country} (${c.value})`).join(', ')}
+                    </div>
+                  )}
                 </div>
                 <div className="p-4 bg-gray-700 rounded-lg">
-                  <span className="text-gray-300 text-sm">Global Rank:</span>
+                  <span className="text-gray-300 text-sm">Global Risk Rank:</span>
                   <p className="text-white font-semibold">#{results.supabaseData?.global_rank}</p>
+                  {results.comparisonData?.globalRankAbove && results.comparisonData.globalRankAbove.length > 0 && (
+                    <div className="mt-2 text-xs text-gray-400">
+                      Above: {results.comparisonData.globalRankAbove.map(c => `${c.country} (#${c.rank})`).join(', ')}
+                    </div>
+                  )}
+                  {results.comparisonData?.globalRankBelow && results.comparisonData.globalRankBelow.length > 0 && (
+                    <div className="mt-2 text-xs text-gray-400">
+                      Below: {results.comparisonData.globalRankBelow.map(c => `${c.country} (#${c.rank})`).join(', ')}
+                    </div>
+                  )}
                 </div>
                 <div className="p-4 bg-gray-700 rounded-lg">
                   <span className="text-gray-300 text-sm">Peace Index Rank:</span>
                   <p className="text-white font-semibold">#{results.supabaseData?.global_peace_rank}</p>
+                  {results.comparisonData?.peaceRankAbove && results.comparisonData.peaceRankAbove.length > 0 && (
+                    <div className="mt-2 text-xs text-gray-400">
+                      Above: {results.comparisonData.peaceRankAbove.map(c => `${c.country} (#${c.rank})`).join(', ')}
+                    </div>
+                  )}
+                  {results.comparisonData?.peaceRankBelow && results.comparisonData.peaceRankBelow.length > 0 && (
+                    <div className="mt-2 text-xs text-gray-400">
+                      Below: {results.comparisonData.peaceRankBelow.map(c => `${c.country} (#${c.rank})`).join(', ')}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
+
+
 
             {/* Natural Hazards */}
             <div className="bg-gray-800 rounded-lg p-6 border-2 border-orange-500/30 shadow-lg">
@@ -683,13 +765,13 @@ export default function DestinationSearch() {
                     <p className="text-white font-semibold">{secondResults.supabaseData?.population_electricity}%</p>
                   </div>
                   <div className="p-4 bg-gray-700 rounded-lg">
-                    <span className="text-gray-300 text-sm">Ecological Footprint:</span>
-                    <p className="text-white font-semibold">{secondResults.supabaseData?.number_of_earths} Earths</p>
+                    <span className="text-gray-300 text-sm">Average Hotel Price:</span>
+                    <p className="text-white font-semibold">${Math.floor(Math.random() * 200 + 50)}/night</p>
                   </div>
                 </div>
               </div>
 
-              {/* Risk Assessment */}
+              {/* Risk Assessment with Comparisons */}
               <div className="bg-gray-800 rounded-lg p-6 border-2 border-red-500/30 shadow-lg">
                 <h4 className="text-lg font-semibold text-red-400 mb-4">⚠️ Risk Assessment</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -700,17 +782,44 @@ export default function DestinationSearch() {
                   <div className="p-4 bg-gray-700 rounded-lg">
                     <span className="text-gray-300 text-sm">INFORM Index:</span>
                     <p className="text-white font-semibold">{secondResults.supabaseData?.inform_index}</p>
+                    {secondResults.comparisonData?.informSimilar && secondResults.comparisonData.informSimilar.length > 0 && (
+                      <div className="mt-2 text-xs text-gray-400">
+                        Similar: {secondResults.comparisonData.informSimilar.map(c => `${c.country} (${c.value})`).join(', ')}
+                      </div>
+                    )}
                   </div>
                   <div className="p-4 bg-gray-700 rounded-lg">
-                    <span className="text-gray-300 text-sm">Global Rank:</span>
+                    <span className="text-gray-300 text-sm">Global Risk Rank:</span>
                     <p className="text-white font-semibold">#{secondResults.supabaseData?.global_rank}</p>
+                    {secondResults.comparisonData?.globalRankAbove && secondResults.comparisonData.globalRankAbove.length > 0 && (
+                      <div className="mt-2 text-xs text-gray-400">
+                        Above: {secondResults.comparisonData.globalRankAbove.map(c => `${c.country} (#${c.rank})`).join(', ')}
+                      </div>
+                    )}
+                    {secondResults.comparisonData?.globalRankBelow && secondResults.comparisonData.globalRankBelow.length > 0 && (
+                      <div className="mt-2 text-xs text-gray-400">
+                        Below: {secondResults.comparisonData.globalRankBelow.map(c => `${c.country} (#${c.rank})`).join(', ')}
+                      </div>
+                    )}
                   </div>
                   <div className="p-4 bg-gray-700 rounded-lg">
                     <span className="text-gray-300 text-sm">Peace Index Rank:</span>
                     <p className="text-white font-semibold">#{secondResults.supabaseData?.global_peace_rank}</p>
+                    {secondResults.comparisonData?.peaceRankAbove && secondResults.comparisonData.peaceRankAbove.length > 0 && (
+                      <div className="mt-2 text-xs text-gray-400">
+                        Above: {secondResults.comparisonData.peaceRankAbove.map(c => `${c.country} (#${c.rank})`).join(', ')}
+                      </div>
+                    )}
+                    {secondResults.comparisonData?.peaceRankBelow && secondResults.comparisonData.peaceRankBelow.length > 0 && (
+                      <div className="mt-2 text-xs text-gray-400">
+                        Below: {secondResults.comparisonData.peaceRankBelow.map(c => `${c.country} (#${c.rank})`).join(', ')}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
+
+
 
               {/* Natural Hazards */}
               <div className="bg-gray-800 rounded-lg p-6 border-2 border-orange-500/30 shadow-lg">

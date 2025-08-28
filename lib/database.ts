@@ -21,9 +21,16 @@ export interface CountryData {
   current_conflict: number;
   life_expectancy: number;
   gdp_per_capita_usd: number;
-  number_of_earths: number;
   human_dev_index: number;
   fun_fact: string;
+}
+
+export interface ComparisonData {
+  informSimilar: { country: string; value: number }[];
+  globalRankAbove: { country: string; rank: number }[];
+  globalRankBelow: { country: string; rank: number }[];
+  peaceRankAbove: { country: string; rank: number }[];
+  peaceRankBelow: { country: string; rank: number }[];
 }
 
 export async function searchCountries(query: string): Promise<CountryData[]> {
@@ -89,6 +96,44 @@ export async function getCountryByName(countryName: string): Promise<CountryData
 // Enhanced search function that handles both countries and cities
 export async function searchDestinations(query: string): Promise<CountryData[]> {
   try {
+    console.log('searchDestinations called with:', query);
+    
+    // Handle city,country format (e.g., "Berlin, Germany")
+    if (query.includes(',')) {
+      const parts = query.split(',').map(part => part.trim());
+      const cityName = parts[0];
+      const countryName = parts[1];
+      
+      console.log('Detected city,country format:', { cityName, countryName });
+      
+      // First try to find the country by name
+      const { data: countryData, error: countryError } = await supabase
+        .from('Voyant2')
+        .select('*')
+        .ilike('country', countryName.toLowerCase())
+        .limit(1);
+
+      if (!countryError && countryData && countryData.length > 0) {
+        console.log('Found country by name:', countryData[0].country);
+        return countryData;
+      }
+      
+      // If country not found by name, try city search
+      const countryISO3 = await getCountryISO3ForCity(cityName);
+      if (countryISO3) {
+        const { data: cityCountry, error: cityError } = await supabase
+          .from('Voyant2')
+          .select('*')
+          .eq('ISO3', countryISO3)
+          .limit(1);
+
+        if (!cityError && cityCountry && cityCountry.length > 0) {
+          console.log('Found country by city ISO3:', cityCountry[0].country);
+          return cityCountry;
+        }
+      }
+    }
+
     // First try exact country match
     const { data: exactCountry, error: exactError } = await supabase
       .from('Voyant2')
@@ -97,6 +142,7 @@ export async function searchDestinations(query: string): Promise<CountryData[]> 
       .limit(1);
 
     if (!exactError && exactCountry && exactCountry.length > 0) {
+      console.log('Found exact country match:', exactCountry[0].country);
       return exactCountry;
     }
 
@@ -108,6 +154,7 @@ export async function searchDestinations(query: string): Promise<CountryData[]> 
       .limit(5);
 
     if (!partialError && partialCountry && partialCountry.length > 0) {
+      console.log('Found partial country match:', partialCountry[0].country);
       return partialCountry;
     }
 
@@ -121,6 +168,7 @@ export async function searchDestinations(query: string): Promise<CountryData[]> 
         .limit(1);
 
       if (!cityError && cityCountry && cityCountry.length > 0) {
+        console.log('Found country by city search:', cityCountry[0].country);
         return cityCountry;
       }
     }
@@ -132,12 +180,18 @@ export async function searchDestinations(query: string): Promise<CountryData[]> 
       .limit(50);
 
     if (!allError && allCountries) {
-      return allCountries.filter(country => 
+      const filtered = allCountries.filter(country => 
         country.country.toLowerCase().includes(query.toLowerCase()) ||
         query.toLowerCase().includes(country.country.toLowerCase())
       ).slice(0, 5);
+      
+      if (filtered.length > 0) {
+        console.log('Found country by fallback search:', filtered[0].country);
+        return filtered;
+      }
     }
 
+    console.log('No country found for query:', query);
     return [];
   } catch (error) {
     console.error('Destination search error:', error);
@@ -232,7 +286,6 @@ export function transformCountryData(countryData: CountryData) {
       current_conflict: countryData.current_conflict,
       life_expectancy: countryData.life_expectancy,
       gdp_per_capita_usd: countryData.gdp_per_capita_usd,
-      number_of_earths: countryData.number_of_earths,
       human_dev_index: countryData.human_dev_index,
       fun_fact: countryData.fun_fact
     },
@@ -298,5 +351,114 @@ function getRiskClassBorder(riskClass: string): string {
     case 'high': return 'border-orange-400/30';
     case 'very high': return 'border-red-400/30';
     default: return 'border-yellow-400/30';
+  }
+}
+
+// Get comparison data for a country
+export async function getComparisonData(countryData: CountryData): Promise<ComparisonData> {
+  try {
+    // Get all countries for comparison
+    const { data: allCountries, error } = await supabase
+      .from('Voyant2')
+      .select('*')
+      .order('inform_index', { ascending: true });
+
+    if (error || !allCountries) {
+      return {
+        informSimilar: [],
+        globalRankAbove: [],
+        globalRankBelow: [],
+        peaceRankAbove: [],
+        peaceRankBelow: []
+      };
+    }
+
+    // Find countries with similar INFORM index (closest values)
+    const informSimilar = allCountries
+      .filter(country => country.ISO3 !== countryData.ISO3)
+      .map(country => ({
+        country: country.country,
+        value: country.inform_index,
+        distance: Math.abs(country.inform_index - countryData.inform_index)
+      }))
+      .sort((a, b) => a.distance - b.distance)
+      .slice(0, 3)
+      .map(country => ({
+        country: country.country,
+        value: country.value
+      }));
+
+    // Find countries above and below in global rank (closest available ranks)
+    const currentGlobalRank = parseInt(countryData.global_rank) || 0;
+    
+    // Find countries with the closest rank below current (directly above)
+    const globalRankAbove = allCountries
+      .filter(country => {
+        const rank = parseInt(country.global_rank) || 0;
+        return rank < currentGlobalRank && rank > 0;
+      })
+      .sort((a, b) => parseInt(b.global_rank) - parseInt(a.global_rank))
+      .slice(0, 1)
+      .map(country => ({
+        country: country.country,
+        rank: parseInt(country.global_rank)
+      }));
+
+    // Find countries with the closest rank above current (directly below)
+    const globalRankBelow = allCountries
+      .filter(country => {
+        const rank = parseInt(country.global_rank) || 0;
+        return rank > currentGlobalRank && rank > 0;
+      })
+      .sort((a, b) => parseInt(a.global_rank) - parseInt(b.global_rank))
+      .slice(0, 1)
+      .map(country => ({
+        country: country.country,
+        rank: parseInt(country.global_rank)
+      }));
+
+    // Find countries above and below in peace rank (closest available ranks)
+    const currentPeaceRank = countryData.global_peace_rank || 0;
+    
+    // Find countries with the closest peace rank below current (directly above)
+    const peaceRankAbove = allCountries
+      .filter(country => 
+        country.global_peace_rank < currentPeaceRank && country.global_peace_rank > 0
+      )
+      .sort((a, b) => b.global_peace_rank - a.global_peace_rank)
+      .slice(0, 1)
+      .map(country => ({
+        country: country.country,
+        rank: country.global_peace_rank
+      }));
+
+    // Find countries with the closest peace rank above current (directly below)
+    const peaceRankBelow = allCountries
+      .filter(country => 
+        country.global_peace_rank > currentPeaceRank && country.global_peace_rank > 0
+      )
+      .sort((a, b) => a.global_peace_rank - b.global_peace_rank)
+      .slice(0, 1)
+      .map(country => ({
+        country: country.country,
+        rank: country.global_peace_rank
+      }));
+
+    return {
+      informSimilar,
+      globalRankAbove,
+      globalRankBelow,
+      peaceRankAbove,
+      peaceRankBelow
+    };
+  } catch (error) {
+    console.error('Error getting comparison data:', error);
+    return {
+      informSimilar: [],
+      globalRankAbove: [],
+      globalRankBelow: [],
+      peaceRankAbove: [],
+      peaceRankBelow: []
+    };
   }
 }

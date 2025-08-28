@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { searchDestinations, getCountryByName, transformCountryData } from '@/lib/database';
+import { searchDestinations, getCountryByName, transformCountryData, getComparisonData } from '@/lib/database';
 
 export async function GET(request: NextRequest) {
   try {
@@ -33,8 +33,12 @@ export async function GET(request: NextRequest) {
     if (countryData) {
       console.log('Found country data:', countryData);
       const result = transformCountryData(countryData);
+      const comparisonData = await getComparisonData(countryData);
       console.log('Transformed result:', result);
-      return NextResponse.json(result);
+      return NextResponse.json({
+        ...result,
+        comparisonData
+      });
     }
 
     console.log('No country data found, falling back to mock data');

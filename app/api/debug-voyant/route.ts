@@ -6,8 +6,7 @@ export async function GET(request: NextRequest) {
     // Get all data from Voyant2 table to inspect structure
     const { data, error } = await supabase
       .from('Voyant2')
-      .select('*')
-      .limit(10);
+      .select('*');
 
     if (error) {
       return NextResponse.json({
