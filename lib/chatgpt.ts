@@ -34,29 +34,31 @@ export async function generateSummary(
 MANDATORY STRUCTURE - Follow this exact format:
 1. Quick Intro - Brief overview of the destination (NO headline above this)
 2. Main Attractions - Key places to visit and things to do
-3. Weather and Climate - Climate information and best times to visit
+3. Weather and Climate - Climate information and best times to visit (MUST include best times to visit)
 4. Risks - Only mention HIGH risks (7+ on the risk scale) - ALWAYS LAST
 
 Guidelines:
 - Follow the exact 4-section structure above
 - Start directly with "## Quick Intro" - NO main title/headline above it
 - End with "## Risks" - this must always be the last section
+- ALWAYS include "best times to visit" in the Weather and Climate section
+- ALWAYS include a Risks section - even if no high risks exist, mention "No significant high risks identified"
 - Only mention HIGH risks (7+ on the risk scale) - ignore low/medium risks
 - Never mention specific INFORM numbers (like "epidemic risk is 1.8")
 - Use only the data provided from Supabase and Wikipedia
 - Be engaging and informative for travelers
-- Keep the summary concise and focused (maximum 150 words)
+- Keep the summary concise and focused (maximum 200 words)
 - Structure with clear headlines (use ## for all sections)
 - NEVER use ** for bold formatting - this is strictly forbidden
 - Use simple bullet points (-) for lists without any bold formatting
 - Write in plain text with headlines only - no markdown bold formatting
-- Example format: "## Quick Intro\nBrief overview\n\n## Main Attractions\n- Attraction 1\n- Attraction 2\n\n## Weather and Climate\nClimate info\n\n## Risks\nHigh risk factors only"
+- Example format: "## Quick Intro\nBrief overview\n\n## Main Attractions\n- Attraction 1\n- Attraction 2\n\n## Weather and Climate\nClimate info and best times to visit\n\n## Risks\nHigh risk factors only or 'No significant high risks identified'"
 - If comparing two locations, highlight key differences for tourists
 - Focus on what makes each destination special and worth visiting`
   };
 
   // Prepare the user message with data
-  let userContent = `Please create a comprehensive travel guide for ${destination} based on the following data. IMPORTANT: Do not use ** for bold formatting anywhere in your response. Use only headlines (# and ##) and simple bullet points (-).
+  let userContent = `Please create a comprehensive travel guide for ${destination} based on the following data. IMPORTANT: Do not use ** for bold formatting anywhere in your response. Use only headlines (# and ##) and simple bullet points (-). CRITICAL: You MUST include all 4 sections: Quick Intro, Main Attractions, Weather and Climate (with best times to visit), and Risks (even if no high risks exist).
 
 DESTINATION DATA:
 - Country: ${supabaseData.country}
@@ -127,7 +129,7 @@ DESTINATION DATA:
       body: JSON.stringify({
         model: 'gpt-3.5-turbo',
         messages: [systemMessage, userMessage],
-        max_tokens: 200,
+        max_tokens: 300,
         temperature: 0.7,
       }),
     });

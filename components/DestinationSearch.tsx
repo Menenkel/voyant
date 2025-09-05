@@ -582,16 +582,19 @@ export default function DestinationSearch() {
                 <div className="p-4 bg-gray-700 rounded-lg">
                   <div className="text-white leading-relaxed whitespace-pre-line">
                     {results.chatgptSummary.split('\n').map((line, index) => {
-                      if (line.startsWith('# ')) {
-                        return <h1 key={index} className="text-xl font-bold text-blue-300 mb-3 mt-4">{line.substring(2)}</h1>;
-                      } else if (line.startsWith('## ')) {
-                        return <h2 key={index} className="text-lg font-semibold text-blue-200 mb-2 mt-3">{line.substring(3)}</h2>;
-                      } else if (line.startsWith('- ')) {
-                        return <div key={index} className="ml-4 mb-1">• {line.substring(2)}</div>;
-                      } else if (line.trim() === '') {
+                      // Remove any markdown formatting that might slip through
+                      const cleanLine = line.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1');
+                      
+                      if (cleanLine.startsWith('# ')) {
+                        return <h1 key={index} className="text-xl font-bold text-blue-300 mb-3 mt-4">{cleanLine.substring(2)}</h1>;
+                      } else if (cleanLine.startsWith('## ')) {
+                        return <h2 key={index} className="text-lg font-semibold text-blue-200 mb-2 mt-3">{cleanLine.substring(3)}</h2>;
+                      } else if (cleanLine.startsWith('- ')) {
+                        return <div key={index} className="ml-4 mb-1">• {cleanLine.substring(2)}</div>;
+                      } else if (cleanLine.trim() === '') {
                         return <br key={index} />;
                       } else {
-                        return <p key={index} className="mb-2">{line}</p>;
+                        return <p key={index} className="mb-2">{cleanLine}</p>;
                       }
                     })}
                   </div>
@@ -843,16 +846,19 @@ export default function DestinationSearch() {
                   <div className="p-4 bg-gray-700 rounded-lg">
                     <div className="text-white leading-relaxed whitespace-pre-line">
                       {secondResults.chatgptSummary.split('\n').map((line, index) => {
-                        if (line.startsWith('# ')) {
-                          return <h1 key={index} className="text-xl font-bold text-blue-300 mb-3 mt-4">{line.substring(2)}</h1>;
-                        } else if (line.startsWith('## ')) {
-                          return <h2 key={index} className="text-lg font-semibold text-blue-200 mb-2 mt-3">{line.substring(3)}</h2>;
-                        } else if (line.startsWith('- ')) {
-                          return <div key={index} className="ml-4 mb-1">• {line.substring(2)}</div>;
-                        } else if (line.trim() === '') {
+                        // Remove any markdown formatting that might slip through
+                        const cleanLine = line.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1');
+                        
+                        if (cleanLine.startsWith('# ')) {
+                          return <h1 key={index} className="text-xl font-bold text-blue-300 mb-3 mt-4">{cleanLine.substring(2)}</h1>;
+                        } else if (cleanLine.startsWith('## ')) {
+                          return <h2 key={index} className="text-lg font-semibold text-blue-200 mb-2 mt-3">{cleanLine.substring(3)}</h2>;
+                        } else if (cleanLine.startsWith('- ')) {
+                          return <div key={index} className="ml-4 mb-1">• {cleanLine.substring(2)}</div>;
+                        } else if (cleanLine.trim() === '') {
                           return <br key={index} />;
                         } else {
-                          return <p key={index} className="mb-2">{line}</p>;
+                          return <p key={index} className="mb-2">{cleanLine}</p>;
                         }
                       })}
                     </div>
@@ -1065,16 +1071,19 @@ export default function DestinationSearch() {
               <div className="p-4 bg-gray-700 rounded-lg">
                 <div className="text-white leading-relaxed whitespace-pre-line">
                   {comparisonSummary.split('\n').map((line, index) => {
-                    if (line.startsWith('# ')) {
-                      return <h1 key={index} className="text-xl font-bold text-yellow-300 mb-3 mt-4">{line.substring(2)}</h1>;
-                    } else if (line.startsWith('## ')) {
-                      return <h2 key={index} className="text-lg font-semibold text-yellow-200 mb-2 mt-3">{line.substring(3)}</h2>;
-                    } else if (line.startsWith('- ')) {
-                      return <div key={index} className="ml-4 mb-1">• {line.substring(2)}</div>;
-                    } else if (line.trim() === '') {
+                    // Remove any markdown formatting that might slip through
+                    const cleanLine = line.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1');
+                    
+                    if (cleanLine.startsWith('# ')) {
+                      return <h1 key={index} className="text-xl font-bold text-yellow-300 mb-3 mt-4">{cleanLine.substring(2)}</h1>;
+                    } else if (cleanLine.startsWith('## ')) {
+                      return <h2 key={index} className="text-lg font-semibold text-yellow-200 mb-2 mt-3">{cleanLine.substring(3)}</h2>;
+                    } else if (cleanLine.startsWith('- ')) {
+                      return <div key={index} className="ml-4 mb-1">• {cleanLine.substring(2)}</div>;
+                    } else if (cleanLine.trim() === '') {
                       return <br key={index} />;
                     } else {
-                      return <p key={index} className="mb-2">{line}</p>;
+                      return <p key={index} className="mb-2">{cleanLine}</p>;
                     }
                   })}
                 </div>
