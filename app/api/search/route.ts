@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { searchDestinations, getCountryByName, transformCountryData, getComparisonData } from '@/lib/database';
+import { getWikipediaData, getWikipediaDataForCountry } from '@/lib/wikipedia';
+import { generateSummary } from '@/lib/chatgpt';
 
 export async function GET(request: NextRequest) {
   try {
@@ -60,10 +62,40 @@ export async function GET(request: NextRequest) {
       
       const result = transformCountryData(countryData, cityCoordinates || undefined);
       const comparisonData = await getComparisonData(countryData);
+      
+      // Get Wikipedia data for summarization
+      let wikipediaData = null;
+      try {
+        if (destination.includes(',')) {
+          // It's a city search
+          wikipediaData = await getWikipediaData(destination);
+        } else {
+          // It's a country search
+          wikipediaData = await getWikipediaDataForCountry(destination);
+        }
+      } catch (error) {
+        console.error('Wikipedia data fetch error:', error);
+      }
+      
+      // Generate ChatGPT summary
+      let chatgptSummary = null;
+      try {
+        chatgptSummary = await generateSummary(
+          countryData,
+          wikipediaData,
+          result.destination || destination,
+          false
+        );
+      } catch (error) {
+        console.error('ChatGPT summary generation error:', error);
+        chatgptSummary = 'Summary generation temporarily unavailable.';
+      }
+      
       console.log('Transformed result:', result);
       return NextResponse.json({
         ...result,
-        comparisonData
+        comparisonData,
+        chatgptSummary
       });
     }
 

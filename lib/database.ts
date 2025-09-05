@@ -264,7 +264,7 @@ export function transformCountryData(countryData: CountryData, cityCoordinates?:
 
   return {
     destination: cityCoordinates?.cityName || countryData.country,
-    fun_fact: countryData.fun_fact,
+    fun_fact: countryData.fun_fact?.replace(/^"|"$/g, '') || 'No fun fact available',
     coordinates: cityCoordinates,
     // Supabase data
     supabaseData: {
@@ -288,7 +288,7 @@ export function transformCountryData(countryData: CountryData, cityCoordinates?:
       life_expectancy: countryData.life_expectancy,
       gdp_per_capita_usd: countryData.gdp_per_capita_usd,
       human_dev_index: countryData.human_dev_index,
-      fun_fact: countryData.fun_fact
+      fun_fact: countryData.fun_fact?.replace(/^"|"$/g, '') || 'No fun fact available'
     },
     // Weather data
     weatherData: {
