@@ -42,6 +42,14 @@ VOYANT helps travelers make informed decisions by providing detailed risk assess
 - Side-by-side analysis of multiple destinations
 - Comprehensive comparison of all risk factors
 
+### 🤖 **Globaltrot-Bot AI Travel Guide**
+- AI-powered travel summaries using ChatGPT integration
+- Structured 4-section format: Quick Intro, Main Attractions, Weather & Climate, Risks
+- Wikipedia data integration for comprehensive destination information
+- Intelligent risk filtering (shows only high risks 7+ on scale)
+- Concise 150-word summaries for quick insights
+- Comparison mode for side-by-side destination analysis
+
 ## 🚀 Getting Started
 
 ### Prerequisites
@@ -63,14 +71,21 @@ VOYANT helps travelers make informed decisions by providing detailed risk assess
    pnpm install
    ```
 
-3. **Run the development server**
+3. **Set up environment variables**
+   Create a `.env.local` file in the root directory:
+   ```bash
+   # ChatGPT API Configuration
+   OPENAI_API_KEY=your_openai_api_key_here
+   ```
+
+4. **Run the development server**
 ```bash
 npm run dev
 # or
 pnpm dev
    ```
 
-4. **Open your browser**
+5. **Open your browser**
    Navigate to [http://localhost:3000](http://localhost:3000)
 
 ## 🛠️ Tech Stack
@@ -81,6 +96,8 @@ pnpm dev
 - **Maps:** Leaflet with React-Leaflet
 - **Charts:** Recharts
 - **Icons:** Heroicons
+- **AI Integration:** OpenAI ChatGPT API
+- **Data Sources:** Wikipedia API, Supabase
 - **Deployment:** Vercel (recommended)
 
 ## 📁 Project Structure
@@ -89,6 +106,9 @@ pnpm dev
 voyant/
 ├── app/                    # Next.js app directory
 │   ├── api/               # API routes
+│   │   ├── search/        # Destination search endpoint
+│   │   ├── compare/       # Destination comparison endpoint
+│   │   └── city-search/   # City suggestions endpoint
 │   ├── contact/           # Contact page
 │   ├── features/          # Features page
 │   ├── globals.css        # Global styles
@@ -102,6 +122,11 @@ voyant/
 │   ├── Navbar.tsx         # Navigation
 │   ├── RiskRadarChart.tsx # Risk visualization
 │   └── ScrollProgressBar.tsx # Scroll indicator
+├── lib/                   # Utility libraries
+│   ├── chatgpt.ts         # ChatGPT API integration
+│   ├── database.ts        # Supabase database functions
+│   ├── wikipedia.ts       # Wikipedia API integration
+│   └── cities.ts          # City data utilities
 ├── public/                # Static assets
 └── README.md             # This file
 ```
@@ -135,6 +160,17 @@ voyant/
   - Security status
   - Travel distance
   - News updates
+  - AI-generated travel summary
+
+### `/api/compare`
+- **Method:** POST
+- **Parameters:** `firstDestination`, `secondDestination` (strings)
+- **Returns:** Side-by-side comparison with AI-generated comparison summary
+
+### `/api/city-search`
+- **Method:** GET
+- **Parameters:** `q` (query string), `limit` (number)
+- **Returns:** City suggestions for autocomplete functionality
 
 ## 🌟 Key Features in Detail
 
@@ -153,6 +189,14 @@ voyant/
 - **Water Quality:** Low/Medium/High ratings with specific advice
 - **Health Risks:** Disease information and traveler precautions
 - **Security Updates:** Current events and safety recommendations
+
+### AI-Powered Travel Intelligence
+- **Globaltrot-Bot Integration:** ChatGPT-powered travel summaries
+- **Structured Format:** Quick Intro, Main Attractions, Weather & Climate, Risks
+- **Wikipedia Data:** Comprehensive destination information from Wikipedia
+- **Risk Filtering:** Shows only high risks (7+ on scale) for safety awareness
+- **Concise Summaries:** 150-word maximum for quick, focused insights
+- **Comparison Mode:** AI-generated side-by-side destination analysis
 
 ## 🚀 Deployment
 
