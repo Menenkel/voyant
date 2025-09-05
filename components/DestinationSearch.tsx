@@ -91,6 +91,15 @@ export default function DestinationSearch() {
     isCapital: boolean;
   }>>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [secondCitySuggestions, setSecondCitySuggestions] = useState<Array<{
+    city: string;
+    country: string;
+    iso3: string;
+    population: number;
+    display: string;
+    isCapital: boolean;
+  }>>([]);
+  const [showSecondSuggestions, setShowSecondSuggestions] = useState(false);
 
   // Load search history from localStorage on component mount
   useEffect(() => {
@@ -104,21 +113,7 @@ export default function DestinationSearch() {
     }
   }, []);
 
-  // Debug: Monitor results state changes
-  useEffect(() => {
-    console.log('=== RESULTS STATE CHANGE ===');
-    console.log('Results state changed:', results);
-    if (results) {
-      console.log('Results destination:', results.destination);
-      console.log('Results supabase data:', results.supabaseData);
-      console.log('Results supabase data type:', typeof results.supabaseData);
-      console.log('Results supabase data keys:', results.supabaseData ? Object.keys(results.supabaseData) : 'null');
-      console.log('Results has data:', !!results.supabaseData);
-    } else {
-      console.log('Results is null/undefined');
-    }
-    console.log('=== RESULTS STATE CHANGE END ===');
-  }, [results]);
+
 
   const saveToHistory = (destination: string) => {
     const newHistory = [
@@ -132,55 +127,31 @@ export default function DestinationSearch() {
 
   const handleSearch = async (query?: string) => {
     const searchTerm = query || searchQuery;
-    console.log('=== SEARCH DEBUG START ===');
-    console.log('handleSearch called with:', searchTerm);
-    console.log('searchQuery state:', searchQuery);
-    console.log('searchTerm.trim():', searchTerm.trim());
-    console.log('searchTerm.trim().length:', searchTerm.trim().length);
     
     if (!searchTerm.trim()) {
-      console.log('Search term is empty, returning');
-      console.log('=== SEARCH DEBUG END ===');
       return;
     }
 
-    console.log('Starting search for:', searchTerm);
     setIsSearching(true);
     setError('');
     setResults(null);
     setShowHistory(false);
 
     try {
-      console.log('Making API call to:', `/api/search?destination=${encodeURIComponent(searchTerm)}`);
-      console.log('About to make fetch request...');
       const response = await fetch(`/api/search?destination=${encodeURIComponent(searchTerm)}&t=${Date.now()}`, {
         headers: {
           'Cache-Control': 'no-cache',
           'Pragma': 'no-cache'
         }
       });
-      console.log('API response received');
-      console.log('API response status:', response.status);
-      console.log('API response ok:', response.ok);
       
       if (!response.ok) {
-        console.log('API response not ok, throwing error');
         throw new Error('Search failed');
       }
       
-      console.log('API response is ok, parsing JSON...');
       const data = await response.json();
-      console.log('JSON parsed successfully');
-      console.log('API response data:', JSON.stringify(data, null, 2));
-      console.log('Setting results with:', data);
-      console.log('Results destination:', data.destination);
-      console.log('Results supabaseData:', data.supabaseData);
-      console.log('Results supabaseData type:', typeof data.supabaseData);
-      console.log('Results supabaseData keys:', data.supabaseData ? Object.keys(data.supabaseData) : 'null');
       setResults(data);
-      console.log('Results state should now be updated');
       saveToHistory(searchTerm.trim());
-      console.log('=== SEARCH DEBUG END ===');
     } catch (err) {
       console.error('Search error:', err);
       setError('Failed to search destination. Please try again.');
@@ -218,22 +189,44 @@ export default function DestinationSearch() {
     }
   };
 
+  const searchSecondCitySuggestions = async (query: string) => {
+    if (query.length < 2) {
+      setSecondCitySuggestions([]);
+      setShowSecondSuggestions(false);
+      return;
+    }
+
+    try {
+      console.log('Fetching second city suggestions for:', query);
+      const response = await fetch(`/api/city-search?q=${encodeURIComponent(query)}&limit=8`);
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Second city suggestions received:', data.suggestions);
+        setSecondCitySuggestions(data.suggestions || []);
+        setShowSecondSuggestions(true);
+      }
+    } catch (error) {
+      console.error('Second city search error:', error);
+    }
+  };
+
   // Handle input change
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    console.log('Input changed to:', value);
     setSearchQuery(value);
+  };
+
+  const handleSecondInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSecondDestination(value);
   };
 
   // Debounced city search effect
   useEffect(() => {
-    console.log('Debounced search effect triggered for:', searchQuery);
     const timeoutId = setTimeout(() => {
       if (searchQuery.length >= 2) {
-        console.log('Searching city suggestions for:', searchQuery);
         searchCitySuggestions(searchQuery);
       } else {
-        console.log('Clearing city suggestions');
         setCitySuggestions([]);
         setShowSuggestions(false);
       }
@@ -242,13 +235,33 @@ export default function DestinationSearch() {
     return () => clearTimeout(timeoutId);
   }, [searchQuery]);
 
+  // Debounced city search effect for second destination
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (secondDestination.length >= 2) {
+        searchSecondCitySuggestions(secondDestination);
+      } else {
+        setSecondCitySuggestions([]);
+        setShowSecondSuggestions(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [secondDestination]);
+
   // Handle city suggestion selection
   const handleCitySelect = (suggestion: any) => {
-    console.log('City suggestion selected:', suggestion);
     setSearchQuery(suggestion.display);
     setShowSuggestions(false);
     setCitySuggestions([]);
     handleSearch(suggestion.display);
+  };
+
+  const handleSecondCitySelect = (suggestion: any) => {
+    setSecondDestination(suggestion.display);
+    setShowSecondSuggestions(false);
+    setSecondCitySuggestions([]);
+    handleSecondSearch(suggestion.display);
   };
 
   const handleHistoryClick = (destination: string) => {
@@ -268,14 +281,15 @@ export default function DestinationSearch() {
   };
 
   // Handle second destination search
-  const handleSecondSearch = async () => {
-    if (!secondDestination.trim()) return;
+  const handleSecondSearch = async (query?: string) => {
+    const searchTerm = query || secondDestination;
+    if (!searchTerm.trim()) return;
 
     setIsSearching(true);
     setError('');
 
     try {
-      const response = await fetch(`/api/search?destination=${encodeURIComponent(secondDestination)}&t=${Date.now()}`, {
+      const response = await fetch(`/api/search?destination=${encodeURIComponent(searchTerm)}&t=${Date.now()}`, {
         headers: {
           'Cache-Control': 'no-cache',
           'Pragma': 'no-cache'
@@ -286,7 +300,7 @@ export default function DestinationSearch() {
       }
       const data = await response.json();
       setSecondResults(data);
-      saveToHistory(secondDestination.trim());
+      saveToHistory(searchTerm.trim());
     } catch (err) {
       setError('Failed to search second destination. Please try again.');
       console.error('Search error:', err);
@@ -371,10 +385,12 @@ export default function DestinationSearch() {
                   value={searchQuery}
                   onChange={handleInputChange}
                   onKeyDown={handleKeyPress}
-                  onFocus={() => setShowHistory(true)}
+                  onFocus={() => setShowHistory(false)}
                   onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                   placeholder="Enter a city or country"
                   className="w-full px-4 py-3 bg-gray-800 border-2 border-yellow-500/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-200"
+                  autoComplete="off"
+                  spellCheck="false"
                 />
                 
                 {/* City Suggestions Dropdown */}
@@ -406,17 +422,7 @@ export default function DestinationSearch() {
                 )}
               </div>
               <button
-                onClick={() => {
-                  console.log('=== SEARCH BUTTON CLICKED ===');
-                  console.log('Search button clicked');
-                  console.log('searchQuery:', searchQuery);
-                  console.log('searchQuery.trim():', searchQuery.trim());
-                  console.log('searchQuery.trim().length:', searchQuery.trim().length);
-                  console.log('isSearching:', isSearching);
-                  console.log('Button disabled:', isSearching || !searchQuery.trim());
-                  handleSearch();
-                  console.log('=== SEARCH BUTTON CLICKED END ===');
-                }}
+                onClick={() => handleSearch()}
                 disabled={isSearching || !searchQuery.trim()}
                 className="px-4 py-3 bg-yellow-500 text-black font-medium rounded-lg hover:bg-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2 focus:ring-offset-gray-900 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -436,11 +442,43 @@ export default function DestinationSearch() {
                   <input
                     type="text"
                     value={secondDestination}
-                    onChange={(e) => setSecondDestination(e.target.value)}
+                    onChange={handleSecondInputChange}
                     onKeyDown={(e) => e.key === 'Enter' && handleSecondSearch()}
+                    onFocus={() => setShowSecondSuggestions(false)}
+                    onBlur={() => setTimeout(() => setShowSecondSuggestions(false), 200)}
                     placeholder="Enter a city or country"
                     className="w-full px-4 py-3 bg-gray-800 border-2 border-blue-500/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all duration-200"
+                    autoComplete="off"
+                    spellCheck="false"
                   />
+                  
+                  {/* Second City Suggestions Dropdown */}
+                  {showSecondSuggestions && secondCitySuggestions.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-gray-800 border-2 border-blue-500/30 rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto">
+                      {secondCitySuggestions.map((suggestion, index) => (
+                        <button
+                          key={index}
+                          onClick={() => handleSecondCitySelect(suggestion)}
+                          className="w-full px-4 py-3 text-left text-white hover:bg-gray-700 transition-colors duration-200 border-b border-gray-600 last:border-b-0"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <div className="font-medium flex items-center">
+                                {suggestion.city}
+                                {suggestion.isCapital && (
+                                  <span className="ml-2 text-xs bg-blue-500 text-white px-2 py-1 rounded">Capital</span>
+                                )}
+                              </div>
+                              <div className="text-sm text-gray-400">{suggestion.country}</div>
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {suggestion.population > 0 ? `${(suggestion.population / 1000000).toFixed(1)}M` : 'N/A'}
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <button
                   onClick={() => handleSecondSearch()}
@@ -465,11 +503,12 @@ export default function DestinationSearch() {
       <CountryMap 
         searchQuery={results?.destination || ''} 
         secondDestination={compareMode && secondResults ? secondResults.destination : undefined}
+        coordinates={results?.coordinates}
+        secondCoordinates={compareMode && secondResults ? secondResults.coordinates : undefined}
         onCountrySelect={handleCountrySelect}
       />
 
       {/* Results Display */}
-      {console.log('=== RENDERING RESULTS ===', results)}
       {results && (
         <div className={`space-y-6 ${compareMode && secondResults ? 'grid grid-cols-1 lg:grid-cols-2 gap-8' : ''}`}>
           {/* First Destination Results */}

@@ -228,7 +228,7 @@ export async function getCountryForCity(cityName: string): Promise<CountryData |
 }
 
 // Convert Supabase data to the format expected by your app
-export function transformCountryData(countryData: CountryData) {
+export function transformCountryData(countryData: CountryData, cityCoordinates?: { lat: number; lng: number; cityName?: string }) {
   // Generate realistic fake weather data
   const weatherConditions = ['Sunny', 'Partly Cloudy', 'Cloudy', 'Rainy', 'Stormy'];
   const precipitationLevels = ['Low', 'Moderate', 'High'];
@@ -263,8 +263,9 @@ export function transformCountryData(countryData: CountryData) {
   const drinkingAdviceText = drinkingAdvice[Math.floor(Math.random() * drinkingAdvice.length)];
 
   return {
-    destination: countryData.country,
+    destination: cityCoordinates?.cityName || countryData.country,
     fun_fact: countryData.fun_fact,
+    coordinates: cityCoordinates,
     // Supabase data
     supabaseData: {
       country: countryData.country,

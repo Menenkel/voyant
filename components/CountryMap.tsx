@@ -13,10 +13,12 @@ const Popup = dynamic(() => import('react-leaflet').then(mod => mod.Popup), { ss
 interface CountryMapProps {
   searchQuery: string;
   secondDestination?: string;
+  coordinates?: { lat: number; lng: number; cityName?: string };
+  secondCoordinates?: { lat: number; lng: number; cityName?: string };
   onCountrySelect?: (country: string) => void;
 }
 
-export default function CountryMap({ searchQuery, secondDestination, onCountrySelect }: CountryMapProps) {
+export default function CountryMap({ searchQuery, secondDestination, coordinates, secondCoordinates, onCountrySelect }: CountryMapProps) {
   const [coords, setCoords] = useState<[number, number] | null>(null);
   const [secondCoords, setSecondCoords] = useState<[number, number] | null>(null);
   const [locationName, setLocationName] = useState<string>('');
@@ -33,6 +35,21 @@ export default function CountryMap({ searchQuery, secondDestination, onCountrySe
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  // Use provided coordinates when available
+  useEffect(() => {
+    if (coordinates) {
+      setCoords([coordinates.lat, coordinates.lng]);
+      setLocationName(coordinates.cityName || searchQuery);
+    }
+  }, [coordinates, searchQuery]);
+
+  useEffect(() => {
+    if (secondCoordinates) {
+      setSecondCoords([secondCoordinates.lat, secondCoordinates.lng]);
+      setSecondLocationName(secondCoordinates.cityName || secondDestination || '');
+    }
+  }, [secondCoordinates, secondDestination]);
 
   // Fetch coordinates for search query
   const fetchCoords = async (query: string) => {

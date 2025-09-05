@@ -32,7 +32,33 @@ export async function GET(request: NextRequest) {
     // If we found data in Supabase, use it
     if (countryData) {
       console.log('Found country data:', countryData);
-      const result = transformCountryData(countryData);
+      
+      // Check if this is a city search and get coordinates
+      let cityCoordinates = null;
+      if (destination.includes(',')) {
+        const parts = destination.split(',').map(part => part.trim());
+        const cityName = parts[0];
+        const countryName = parts[1];
+        
+        // Get city coordinates from the cities database
+        const { getCountryISO3ForCity } = await import('@/lib/cities');
+        const countryISO3 = await getCountryISO3ForCity(cityName);
+        if (countryISO3) {
+          // Get city coordinates from the cities CSV data
+          const { searchCities } = await import('@/lib/cities');
+          const cities = await searchCities(cityName, 1);
+          if (cities.length > 0) {
+            cityCoordinates = {
+              lat: cities[0].lat,
+              lng: cities[0].lng,
+              cityName: cities[0].city
+            };
+            console.log('Found city coordinates:', cityCoordinates);
+          }
+        }
+      }
+      
+      const result = transformCountryData(countryData, cityCoordinates || undefined);
       const comparisonData = await getComparisonData(countryData);
       console.log('Transformed result:', result);
       return NextResponse.json({
