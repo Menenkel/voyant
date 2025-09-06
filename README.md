@@ -15,15 +15,19 @@ VOYANT helps travelers make informed decisions by providing detailed risk assess
 
 ### 📊 **Comprehensive Risk Assessment**
 - Overall risk level scoring (0-10 scale)
-- Detailed hazard indicators with radar chart visualization
-- Global rankings (Peace Index, Fragile States, Corruption Index)
+- Interactive natural hazards spider chart for all destinations
+- Global rankings with explanatory text (Peace Index, Global Risk Rank, INFORM Index)
+- Clear risk indicator explanations (higher ranks = less risky/more peaceful)
 - Expandable sections for detailed insights
 
-### 🌤️ **Weather & Climate Intelligence**
-- Current weather conditions and travel impact
-- Seasonal climate forecasts with fun, contextual advice
-- Precipitation and temperature trend analysis
-- Packing recommendations based on weather patterns
+### 🌤️ **Advanced Weather & Climate Intelligence**
+- Real-time weather data from Open-Meteo API
+- 16-day weather forecasts with expandable daily views
+- Current conditions: temperature, precipitation, wind speed, humidity
+- Interactive weather charts with temperature and precipitation trends
+- Comprehensive air quality data (PM2.5, PM10, UV Index, Ozone)
+- Detailed air quality descriptions with health context
+- Seasonal climate forecasts with contextual advice
 
 ### 💧 **Health & Safety Insights**
 - Drinking water quality assessment (Low/Medium/High)
@@ -44,10 +48,12 @@ VOYANT helps travelers make informed decisions by providing detailed risk assess
 
 ### 🤖 **Globaltrot-Bot AI Travel Guide**
 - AI-powered travel summaries using ChatGPT integration
-- Structured 4-section format: Quick Intro, Main Attractions, Weather & Climate, Risks
+- Smart city vs country query differentiation
+- City queries: Quick Intro, Main Attractions, Weather & Climate (no national risks)
+- Country queries: Quick Intro, Main Attractions, Weather & Climate, Risks
 - Wikipedia data integration for comprehensive destination information
-- Intelligent risk filtering (shows only high risks 7+ on scale)
-- Concise 150-word summaries for quick insights
+- Intelligent risk filtering (shows only high risks 7+ on scale for countries)
+- Enhanced 300-word summaries for detailed insights
 - Comparison mode for side-by-side destination analysis
 
 ## 🚀 Getting Started
@@ -94,9 +100,10 @@ pnpm dev
 - **Language:** TypeScript
 - **Styling:** Tailwind CSS
 - **Maps:** Leaflet with React-Leaflet
-- **Charts:** Recharts
+- **Charts:** Recharts, Chart.js with react-chartjs-2
 - **Icons:** Heroicons
 - **AI Integration:** OpenAI ChatGPT API
+- **Weather Data:** Open-Meteo API
 - **Data Sources:** Wikipedia API, Supabase
 - **Deployment:** Vercel (recommended)
 
@@ -108,7 +115,8 @@ voyant/
 │   ├── api/               # API routes
 │   │   ├── search/        # Destination search endpoint
 │   │   ├── compare/       # Destination comparison endpoint
-│   │   └── city-search/   # City suggestions endpoint
+│   │   ├── city-search/   # City suggestions endpoint
+│   │   └── weather/       # Weather data endpoint
 │   ├── contact/           # Contact page
 │   ├── features/          # Features page
 │   ├── globals.css        # Global styles
@@ -121,11 +129,13 @@ voyant/
 │   ├── Hero.tsx           # Hero section
 │   ├── Navbar.tsx         # Navigation
 │   ├── RiskRadarChart.tsx # Risk visualization
+│   ├── WeatherChart.tsx   # Weather data visualization
 │   └── ScrollProgressBar.tsx # Scroll indicator
 ├── lib/                   # Utility libraries
 │   ├── chatgpt.ts         # ChatGPT API integration
 │   ├── database.ts        # Supabase database functions
 │   ├── wikipedia.ts       # Wikipedia API integration
+│   ├── weather.ts         # Weather data integration
 │   └── cities.ts          # City data utilities
 ├── public/                # Static assets
 └── README.md             # This file
@@ -154,13 +164,12 @@ voyant/
 - **Method:** GET
 - **Parameters:** `destination` (string)
 - **Returns:** Comprehensive destination data including:
-  - Risk assessment scores
-  - Weather information
-  - Health data
-  - Security status
-  - Travel distance
-  - News updates
-  - AI-generated travel summary
+  - Risk assessment scores with explanatory text
+  - Real-time weather data (16-day forecast)
+  - Air quality information (PM2.5, PM10, UV Index, Ozone)
+  - Health data and security status
+  - Interactive natural hazards spider chart
+  - AI-generated travel summary (city vs country optimized)
 
 ### `/api/compare`
 - **Method:** POST
@@ -172,18 +181,29 @@ voyant/
 - **Parameters:** `q` (query string), `limit` (number)
 - **Returns:** City suggestions for autocomplete functionality
 
+### `/api/weather`
+- **Method:** GET
+- **Parameters:** `city` (string), `lat` (number), `lng` (number)
+- **Returns:** Detailed weather data including:
+  - Current conditions and 16-day forecast
+  - Air quality metrics with health descriptions
+  - Interactive weather charts
+
 ## 🌟 Key Features in Detail
 
 ### Risk Assessment
 - **Overall Risk Level:** Single 0-10 score with color-coded indicators
-- **Hazard Indicators:** Radar chart showing earthquake, flood, tsunami, cyclone, and other risks
-- **Global Rankings:** Peace Index, Fragile States Index, and Corruption Index
+- **Natural Hazards Spider Chart:** Interactive visualization for all destinations
+- **Global Rankings:** Peace Index, Global Risk Rank, INFORM Index with explanatory text
+- **Clear Explanations:** Higher ranks = less risky/more peaceful, lower INFORM scores = less risk
 - **Expandable Details:** Click to see comprehensive risk breakdowns
 
 ### Weather Intelligence
-- **Current Conditions:** Temperature, precipitation, and outlook
-- **Seasonal Forecasts:** 3-month weather predictions
-- **Fun Packing Tips:** Contextual advice like "Better bring an umbrella - Mother Nature's having a water party!"
+- **Real-time Data:** Open-Meteo API integration for accurate weather information
+- **16-Day Forecasts:** Expandable daily views with temperature and precipitation charts
+- **Air Quality Monitoring:** PM2.5, PM10, UV Index, Ozone with detailed health descriptions
+- **Interactive Charts:** Temperature trends and precipitation patterns
+- **Current Conditions:** Temperature, precipitation, wind speed, humidity, and weather outlook
 
 ### Health & Safety
 - **Water Quality:** Low/Medium/High ratings with specific advice
@@ -192,10 +212,12 @@ voyant/
 
 ### AI-Powered Travel Intelligence
 - **Globaltrot-Bot Integration:** ChatGPT-powered travel summaries
-- **Structured Format:** Quick Intro, Main Attractions, Weather & Climate, Risks
+- **Smart Query Differentiation:** City vs country optimized summaries
+- **City Queries:** Quick Intro, Main Attractions, Weather & Climate (no national risks)
+- **Country Queries:** Quick Intro, Main Attractions, Weather & Climate, Risks
 - **Wikipedia Data:** Comprehensive destination information from Wikipedia
-- **Risk Filtering:** Shows only high risks (7+ on scale) for safety awareness
-- **Concise Summaries:** 150-word maximum for quick, focused insights
+- **Risk Filtering:** Shows only high risks (7+ on scale) for country queries
+- **Enhanced Summaries:** 300-word maximum for detailed, focused insights
 - **Comparison Mode:** AI-generated side-by-side destination analysis
 
 ## 🚀 Deployment
@@ -222,12 +244,34 @@ voyant/
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
+## 🆕 Recent Updates
+
+### Enhanced AI Summaries & Risk Visualization
+- **Smart City vs Country Queries:** AI summaries now differentiate between city and country searches
+- **Removed National Risks from City Queries:** City summaries focus on local attractions and weather
+- **Interactive Natural Hazards Spider Chart:** Replaced grid-based display with interactive radar charts
+- **Explanatory Risk Text:** Added clear explanations for INFORM Index, Global Risk Rank, and Peace Index
+
+### Advanced Weather Integration
+- **Open-Meteo API Integration:** Real-time weather data with 16-day forecasts
+- **Expandable Weather Views:** Interactive charts with expandable daily summaries
+- **Comprehensive Air Quality:** PM2.5, PM10, UV Index, Ozone with detailed health descriptions
+- **Weather Charts:** Temperature and precipitation trends with Chart.js visualization
+
+### Improved User Experience
+- **Enhanced AI Summaries:** Increased from 150 to 300 words for more detailed insights
+- **Better Risk Understanding:** Clear explanations of what risk indicators mean
+- **Visual Weather Data:** Interactive charts and expandable daily forecasts
+- **Optimized Performance:** Caching and retry mechanisms for reliable data fetching
+
 ## 🙏 Acknowledgments
 
 - [Next.js](https://nextjs.org/) for the amazing React framework
 - [Tailwind CSS](https://tailwindcss.com/) for the utility-first CSS framework
 - [Leaflet](https://leafletjs.com/) for the interactive maps
 - [Recharts](https://recharts.org/) for the beautiful charts
+- [Open-Meteo](https://open-meteo.com/) for comprehensive weather data
+- [Chart.js](https://www.chartjs.org/) for interactive weather visualizations
 
 ## 📞 Contact
 
