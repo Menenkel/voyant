@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { searchDestinations, getCountryByName, transformCountryData } from '@/lib/database';
 import { getWikipediaData, getWikipediaDataForCountry } from '@/lib/wikipedia';
 import { generateSummary } from '@/lib/chatgpt';
+import { getWeatherForCity, getWeatherDescription, getAirQualityDescription, getWindSpeedDescription, getPM10Description, getUVIndexDescription, getOzoneDescription } from '@/lib/weather';
 
 export async function POST(request: NextRequest) {
   try {
@@ -115,17 +116,138 @@ export async function POST(request: NextRequest) {
         true, // isComparison = true
         secondCountryData,
         secondWikipediaData,
-        secondResult.destination || secondDestination
+        secondResult.destination || secondDestination,
+        !!(firstCityCoordinates || secondCityCoordinates) // isCityQuery: true if either destination has city coordinates
       );
     } catch (error) {
       console.error('ChatGPT comparison summary generation error:', error);
       comparisonSummary = 'Comparison summary generation temporarily unavailable.';
     }
 
+    // Get real weather data for both destinations
+    let firstWeatherData = null;
+    let secondWeatherData = null;
+
+    try {
+      const firstWeatherCity = firstResult.destination || firstDestination;
+      console.log(`Fetching weather data for first destination: ${firstWeatherCity}`);
+      const weatherData1 = await getWeatherForCity(firstWeatherCity);
+      
+      firstWeatherData = {
+        location: weatherData1.city,
+        coordinates: weatherData1.coordinates,
+        current: {
+          temperature: Math.round(weatherData1.current.temperature),
+          apparent_temperature: Math.round(weatherData1.current.apparent_temperature),
+          precipitation: weatherData1.current.precipitation,
+          wind_speed: Math.round(weatherData1.current.wind_speed * 10) / 10,
+          humidity: weatherData1.current.humidity,
+          weather_code: weatherData1.current.weather_code,
+          weather_description: getWeatherDescription(weatherData1.current.weather_code),
+          wind_description: getWindSpeedDescription(weatherData1.current.wind_speed),
+          time: weatherData1.current.time
+        },
+        forecast: {
+          next_24h: {
+            max_temp: Math.round(Math.max(...weatherData1.hourly.temperature_2m.slice(0, 24))),
+            min_temp: Math.round(Math.min(...weatherData1.hourly.temperature_2m.slice(0, 24))),
+            total_precipitation: Math.round(weatherData1.hourly.precipitation.slice(0, 24).reduce((sum, val) => sum + val, 0) * 10) / 10,
+            avg_wind_speed: Math.round(weatherData1.hourly.wind_speed_10m.slice(0, 24).reduce((sum, val) => sum + val, 0) / 24 * 10) / 10
+          },
+          next_16_days: weatherData1.daily.time.slice(0, 16).map((date, index) => ({
+            date,
+            max_temp: Math.round(weatherData1.daily.temperature_2m_max[index]),
+            min_temp: Math.round(weatherData1.daily.temperature_2m_min[index]),
+            precipitation: Math.round(weatherData1.daily.precipitation_sum[index] * 10) / 10,
+            wind_speed: Math.round(weatherData1.daily.wind_speed_10m_max[index] * 10) / 10,
+            weather_code: weatherData1.daily.weather_code[index],
+            weather_description: getWeatherDescription(weatherData1.daily.weather_code[index])
+          }))
+        },
+        air_quality: weatherData1.air_quality ? {
+          pm10: Math.round(weatherData1.air_quality.pm10 * 10) / 10,
+          pm2_5: Math.round(weatherData1.air_quality.pm2_5 * 10) / 10,
+          carbon_monoxide: Math.round(weatherData1.air_quality.carbon_monoxide * 10) / 10,
+          nitrogen_dioxide: Math.round(weatherData1.air_quality.nitrogen_dioxide * 10) / 10,
+          sulphur_dioxide: Math.round(weatherData1.air_quality.sulphur_dioxide * 10) / 10,
+          ozone: Math.round(weatherData1.air_quality.ozone * 10) / 10,
+          dust: Math.round(weatherData1.air_quality.dust * 10) / 10,
+          uv_index: Math.round(weatherData1.air_quality.uv_index * 10) / 10,
+          pm2_5_description: getAirQualityDescription(weatherData1.air_quality.pm2_5),
+          pm10_description: getPM10Description(weatherData1.air_quality.pm10),
+          uv_index_description: getUVIndexDescription(weatherData1.air_quality.uv_index),
+          ozone_description: getOzoneDescription(weatherData1.air_quality.ozone)
+        } : null
+      };
+      
+      console.log(`Weather data successfully fetched for first destination: ${firstWeatherCity}`);
+    } catch (error) {
+      console.error('First destination weather data fetch error:', error);
+    }
+
+    try {
+      const secondWeatherCity = secondResult.destination || secondDestination;
+      console.log(`Fetching weather data for second destination: ${secondWeatherCity}`);
+      const weatherData2 = await getWeatherForCity(secondWeatherCity);
+      
+      secondWeatherData = {
+        location: weatherData2.city,
+        coordinates: weatherData2.coordinates,
+        current: {
+          temperature: Math.round(weatherData2.current.temperature),
+          apparent_temperature: Math.round(weatherData2.current.apparent_temperature),
+          precipitation: weatherData2.current.precipitation,
+          wind_speed: Math.round(weatherData2.current.wind_speed * 10) / 10,
+          humidity: weatherData2.current.humidity,
+          weather_code: weatherData2.current.weather_code,
+          weather_description: getWeatherDescription(weatherData2.current.weather_code),
+          wind_description: getWindSpeedDescription(weatherData2.current.wind_speed),
+          time: weatherData2.current.time
+        },
+        forecast: {
+          next_24h: {
+            max_temp: Math.round(Math.max(...weatherData2.hourly.temperature_2m.slice(0, 24))),
+            min_temp: Math.round(Math.min(...weatherData2.hourly.temperature_2m.slice(0, 24))),
+            total_precipitation: Math.round(weatherData2.hourly.precipitation.slice(0, 24).reduce((sum, val) => sum + val, 0) * 10) / 10,
+            avg_wind_speed: Math.round(weatherData2.hourly.wind_speed_10m.slice(0, 24).reduce((sum, val) => sum + val, 0) / 24 * 10) / 10
+          },
+          next_16_days: weatherData2.daily.time.slice(0, 16).map((date, index) => ({
+            date,
+            max_temp: Math.round(weatherData2.daily.temperature_2m_max[index]),
+            min_temp: Math.round(weatherData2.daily.temperature_2m_min[index]),
+            precipitation: Math.round(weatherData2.daily.precipitation_sum[index] * 10) / 10,
+            wind_speed: Math.round(weatherData2.daily.wind_speed_10m_max[index] * 10) / 10,
+            weather_code: weatherData2.daily.weather_code[index],
+            weather_description: getWeatherDescription(weatherData2.daily.weather_code[index])
+          }))
+        },
+        air_quality: weatherData2.air_quality ? {
+          pm10: Math.round(weatherData2.air_quality.pm10 * 10) / 10,
+          pm2_5: Math.round(weatherData2.air_quality.pm2_5 * 10) / 10,
+          carbon_monoxide: Math.round(weatherData2.air_quality.carbon_monoxide * 10) / 10,
+          nitrogen_dioxide: Math.round(weatherData2.air_quality.nitrogen_dioxide * 10) / 10,
+          sulphur_dioxide: Math.round(weatherData2.air_quality.sulphur_dioxide * 10) / 10,
+          ozone: Math.round(weatherData2.air_quality.ozone * 10) / 10,
+          dust: Math.round(weatherData2.air_quality.dust * 10) / 10,
+          uv_index: Math.round(weatherData2.air_quality.uv_index * 10) / 10,
+          pm2_5_description: getAirQualityDescription(weatherData2.air_quality.pm2_5),
+          pm10_description: getPM10Description(weatherData2.air_quality.pm10),
+          uv_index_description: getUVIndexDescription(weatherData2.air_quality.uv_index),
+          ozone_description: getOzoneDescription(weatherData2.air_quality.ozone)
+        } : null
+      };
+      
+      console.log(`Weather data successfully fetched for second destination: ${secondWeatherCity}`);
+    } catch (error) {
+      console.error('Second destination weather data fetch error:', error);
+    }
+
     return NextResponse.json({
       firstResult,
       secondResult,
-      comparisonSummary
+      comparisonSummary,
+      firstWeatherData,
+      secondWeatherData
     });
 
   } catch (error) {

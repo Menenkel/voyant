@@ -18,7 +18,8 @@ export async function generateSummary(
   isComparison: boolean = false,
   secondSupabaseData?: any,
   secondWikipediaData?: string | null,
-  secondDestination?: string
+  secondDestination?: string,
+  isCityQuery: boolean = false
 ): Promise<string> {
   const apiKey = process.env.OPENAI_API_KEY;
   
@@ -47,18 +48,20 @@ Guidelines:
 - Never mention specific INFORM numbers (like "epidemic risk is 1.8")
 - Use only the data provided from Supabase and Wikipedia
 - Be engaging and informative for travelers
-- Keep the summary concise and focused (maximum 200 words)
+- Keep the summary concise and focused (maximum 300 words)
 - Structure with clear headlines (use ## for all sections)
 - NEVER use ** for bold formatting - this is strictly forbidden
 - Use simple bullet points (-) for lists without any bold formatting
 - Write in plain text with headlines only - no markdown bold formatting
-- Example format: "## Quick Intro\nBrief overview\n\n## Main Attractions\n- Attraction 1\n- Attraction 2\n\n## Weather and Climate\nClimate info and best times to visit\n\n## Risks\nHigh risk factors only or 'No significant high risks identified'"
+- Example format for country queries: "## Quick Intro\nBrief overview\n\n## Main Attractions\n- Attraction 1\n- Attraction 2\n\n## Weather and Climate\nClimate info and best times to visit\n\n## Risks\nHigh risk factors only or 'No significant high risks identified'"
+- Example format for city queries: "## Quick Intro\nBrief overview\n\n## Main Attractions\n- Attraction 1\n- Attraction 2\n\n## Weather and Climate\nClimate info and best times to visit"
 - If comparing two locations, highlight key differences for tourists
-- Focus on what makes each destination special and worth visiting`
+- Focus on what makes each destination special and worth visiting
+- IMPORTANT: For city queries, focus on city-specific information and avoid mentioning national-level statistics (like population, GDP, life expectancy, HDI) or any natural disaster risks in your summary. For city queries, do NOT include a Risks section at all - end your summary after the Weather and Climate section`
   };
 
   // Prepare the user message with data
-  let userContent = `Please create a comprehensive travel guide for ${destination} based on the following data. IMPORTANT: Do not use ** for bold formatting anywhere in your response. Use only headlines (# and ##) and simple bullet points (-). CRITICAL: You MUST include all 4 sections: Quick Intro, Main Attractions, Weather and Climate (with best times to visit), and Risks (even if no high risks exist).
+  let userContent = `Please create a comprehensive travel guide for ${destination} based on the following data. IMPORTANT: Do not use ** for bold formatting anywhere in your response. Use only headlines (# and ##) and simple bullet points (-). CRITICAL: You MUST include all required sections: Quick Intro, Main Attractions, and Weather and Climate (with best times to visit). For country queries, also include a Risks section. For city queries, do NOT include a Risks section - end your summary after the Weather and Climate section.
 
 DESTINATION DATA:
 - Country: ${supabaseData.country}
@@ -66,7 +69,11 @@ DESTINATION DATA:
 - Population: ${supabaseData.population_mio} million
 - Life Expectancy: ${supabaseData.life_expectancy} years
 - GDP per Capita: $${supabaseData.gdp_per_capita_usd}
-- Human Development Index: ${supabaseData.human_dev_index}
+- Human Development Index: ${supabaseData.human_dev_index}`;
+
+  // Only include national-level risk factors for country queries, not city queries
+  if (!isCityQuery) {
+    userContent += `
 - High Risk Factors (only mention if 7+ on scale):
   * Earthquake Risk: ${supabaseData.earthquake >= 7 ? supabaseData.earthquake : 'Low'}
   * River Flood Risk: ${supabaseData.river_flood >= 7 ? supabaseData.river_flood : 'Low'}
@@ -76,13 +83,24 @@ DESTINATION DATA:
   * Drought Risk: ${supabaseData.drought >= 7 ? supabaseData.drought : 'Low'}
   * Epidemic Risk: ${supabaseData.epidemic >= 7 ? supabaseData.epidemic : 'Low'}
   * Projected Conflict: ${supabaseData.projected_conflict >= 7 ? supabaseData.projected_conflict : 'Low'}
-  * Current Conflict: ${supabaseData.current_conflict >= 7 ? supabaseData.current_conflict : 'Low'}
+  * Current Conflict: ${supabaseData.current_conflict >= 7 ? supabaseData.current_conflict : 'Low'}`;
+  }
+  // For city queries, don't include any risk factors in the prompt
+
+  userContent += `
 - Fun Fact: ${supabaseData.fun_fact?.replace(/^"|"$/g, '') || 'No fun fact available'}`;
 
   if (wikipediaData) {
     userContent += `\n\nWIKIPEDIA INFORMATION:\n${wikipediaData}`;
   } else {
     userContent += `\n\nWIKIPEDIA INFORMATION: No Wikipedia data available for this location.`;
+  }
+
+  // Add explicit instruction based on query type
+  if (isCityQuery) {
+    userContent += `\n\nIMPORTANT: This is a CITY query. Do NOT include a Risks section in your response. End your summary after the Weather and Climate section.`;
+  } else {
+    userContent += `\n\nIMPORTANT: This is a COUNTRY query. Include a Risks section in your response.`;
   }
 
   // Add comparison data if provided
@@ -94,7 +112,11 @@ DESTINATION DATA:
 - Population: ${secondSupabaseData.population_mio} million
 - Life Expectancy: ${secondSupabaseData.life_expectancy} years
 - GDP per Capita: $${secondSupabaseData.gdp_per_capita_usd}
-- Human Development Index: ${secondSupabaseData.human_dev_index}
+- Human Development Index: ${secondSupabaseData.human_dev_index}`;
+
+    // Only include national-level risk factors for country queries, not city queries
+    if (!isCityQuery) {
+      userContent += `
 - High Risk Factors (only mention if 7+ on scale):
   * Earthquake Risk: ${secondSupabaseData.earthquake >= 7 ? secondSupabaseData.earthquake : 'Low'}
   * River Flood Risk: ${secondSupabaseData.river_flood >= 7 ? secondSupabaseData.river_flood : 'Low'}
@@ -104,7 +126,11 @@ DESTINATION DATA:
   * Drought Risk: ${secondSupabaseData.drought >= 7 ? secondSupabaseData.drought : 'Low'}
   * Epidemic Risk: ${secondSupabaseData.epidemic >= 7 ? secondSupabaseData.epidemic : 'Low'}
   * Projected Conflict: ${secondSupabaseData.projected_conflict >= 7 ? secondSupabaseData.projected_conflict : 'Low'}
-  * Current Conflict: ${secondSupabaseData.current_conflict >= 7 ? secondSupabaseData.current_conflict : 'Low'}
+  * Current Conflict: ${secondSupabaseData.current_conflict >= 7 ? secondSupabaseData.current_conflict : 'Low'}`;
+    }
+    // For city queries, don't include any risk factors in the prompt
+
+    userContent += `
 - Fun Fact: ${secondSupabaseData.fun_fact?.replace(/^"|"$/g, '') || 'No fun fact available'}`;
 
     if (secondWikipediaData) {
@@ -129,7 +155,7 @@ DESTINATION DATA:
       body: JSON.stringify({
         model: 'gpt-3.5-turbo',
         messages: [systemMessage, userMessage],
-        max_tokens: 300,
+        max_tokens: 500,
         temperature: 0.7,
       }),
     });

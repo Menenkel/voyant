@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { searchDestinations, getCountryByName, transformCountryData, getComparisonData } from '@/lib/database';
 import { getWikipediaData, getWikipediaDataForCountry } from '@/lib/wikipedia';
 import { generateSummary } from '@/lib/chatgpt';
+import { getWeatherForCity, getWeatherDescription, getAirQualityDescription, getWindSpeedDescription, getPM10Description, getUVIndexDescription, getOzoneDescription } from '@/lib/weather';
 
 export async function GET(request: NextRequest) {
   try {
@@ -84,18 +85,83 @@ export async function GET(request: NextRequest) {
           countryData,
           wikipediaData,
           result.destination || destination,
-          false
+          false,
+          undefined,
+          undefined,
+          undefined,
+          !!cityCoordinates // isCityQuery: true if city coordinates were found
         );
       } catch (error) {
         console.error('ChatGPT summary generation error:', error);
         chatgptSummary = 'Summary generation temporarily unavailable.';
+      }
+
+      // Get real weather data from Open-Meteo
+      let realWeatherData = null;
+      try {
+        const weatherCity = result.destination || destination;
+        console.log(`Fetching real weather data for: ${weatherCity}`);
+        const weatherData = await getWeatherForCity(weatherCity);
+        
+        realWeatherData = {
+          location: weatherData.city,
+          coordinates: weatherData.coordinates,
+          current: {
+            temperature: Math.round(weatherData.current.temperature),
+            apparent_temperature: Math.round(weatherData.current.apparent_temperature),
+            precipitation: weatherData.current.precipitation,
+            wind_speed: Math.round(weatherData.current.wind_speed * 10) / 10,
+            humidity: weatherData.current.humidity,
+            weather_code: weatherData.current.weather_code,
+            weather_description: getWeatherDescription(weatherData.current.weather_code),
+            wind_description: getWindSpeedDescription(weatherData.current.wind_speed),
+            time: weatherData.current.time
+          },
+          forecast: {
+            next_24h: {
+              max_temp: Math.round(Math.max(...weatherData.hourly.temperature_2m.slice(0, 24))),
+              min_temp: Math.round(Math.min(...weatherData.hourly.temperature_2m.slice(0, 24))),
+              total_precipitation: Math.round(weatherData.hourly.precipitation.slice(0, 24).reduce((sum, val) => sum + val, 0) * 10) / 10,
+              avg_wind_speed: Math.round(weatherData.hourly.wind_speed_10m.slice(0, 24).reduce((sum, val) => sum + val, 0) / 24 * 10) / 10
+            },
+            next_16_days: weatherData.daily.time.slice(0, 16).map((date, index) => ({
+              date,
+              max_temp: Math.round(weatherData.daily.temperature_2m_max[index]),
+              min_temp: Math.round(weatherData.daily.temperature_2m_min[index]),
+              precipitation: Math.round(weatherData.daily.precipitation_sum[index] * 10) / 10,
+              wind_speed: Math.round(weatherData.daily.wind_speed_10m_max[index] * 10) / 10,
+              weather_code: weatherData.daily.weather_code[index],
+              weather_description: getWeatherDescription(weatherData.daily.weather_code[index])
+            }))
+          },
+          air_quality: weatherData.air_quality ? {
+            pm10: Math.round(weatherData.air_quality.pm10 * 10) / 10,
+            pm2_5: Math.round(weatherData.air_quality.pm2_5 * 10) / 10,
+            carbon_monoxide: Math.round(weatherData.air_quality.carbon_monoxide * 10) / 10,
+            nitrogen_dioxide: Math.round(weatherData.air_quality.nitrogen_dioxide * 10) / 10,
+            sulphur_dioxide: Math.round(weatherData.air_quality.sulphur_dioxide * 10) / 10,
+            ozone: Math.round(weatherData.air_quality.ozone * 10) / 10,
+            dust: Math.round(weatherData.air_quality.dust * 10) / 10,
+            uv_index: Math.round(weatherData.air_quality.uv_index * 10) / 10,
+            pm2_5_description: getAirQualityDescription(weatherData.air_quality.pm2_5),
+            pm10_description: getPM10Description(weatherData.air_quality.pm10),
+            uv_index_description: getUVIndexDescription(weatherData.air_quality.uv_index),
+            ozone_description: getOzoneDescription(weatherData.air_quality.ozone)
+          } : null
+        };
+        
+        console.log(`Real weather data successfully fetched for ${weatherCity}`);
+      } catch (error) {
+        console.error('Weather data fetch error:', error);
+        // Keep the existing mock weather data if real data fails
       }
       
       console.log('Transformed result:', result);
       return NextResponse.json({
         ...result,
         comparisonData,
-        chatgptSummary
+        chatgptSummary,
+        realWeatherData
       });
     }
 
