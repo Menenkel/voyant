@@ -19,7 +19,9 @@ export async function generateSummary(
   secondSupabaseData?: any,
   secondWikipediaData?: string | null,
   secondDestination?: string,
-  isCityQuery: boolean = false
+  isCityQuery: boolean = false,
+  weatherData?: any,
+  secondWeatherData?: any
 ): Promise<string> {
   const apiKey = process.env.OPENAI_API_KEY;
   
@@ -30,31 +32,29 @@ export async function generateSummary(
   // Prepare the system message
   const systemMessage: ChatGPTMessage = {
     role: 'system',
-    content: `You are Globaltrot-Bot, an AI travel companion that helps tourists explore destinations safely and enjoyably. Create a comprehensive travel guide based ONLY on the provided Supabase data and Wikipedia information. Do not use any external knowledge beyond these two sources.
+    content: `You are Globaltrot-Bot, an AI travel companion that helps tourists explore destinations safely and enjoyably. Create a comprehensive travel guide based ONLY on the provided Supabase data, Wikipedia information, and real-time weather data. Do not use any external knowledge beyond these three sources.
 
 MANDATORY STRUCTURE - Follow this exact format:
 1. Quick Intro - Brief overview of the destination (NO headline above this)
 2. Main Attractions - Key places to visit and things to do
-3. Weather and Climate - Climate information and best times to visit (MUST include best times to visit)
-4. Risks - Only mention HIGH risks (7+ on the risk scale) - ALWAYS LAST
+3. Weather and Climate - Use the provided real-time weather data and 16-day forecast to give current conditions, detailed temperature and rain forecasts, seasonal patterns, and best times to visit (MUST include best times to visit)
 
 Guidelines:
-- Follow the exact 4-section structure above
+- Follow the exact 3-section structure above
 - Start directly with "## Quick Intro" - NO main title/headline above it
-- End with "## Risks" - this must always be the last section
+- End with "## Weather and Climate" - this must always be the last section
 - ALWAYS include "best times to visit" in the Weather and Climate section
-- ALWAYS include a Risks section - even if no high risks exist, mention "No significant high risks identified"
-- Only mention HIGH risks (7+ on the risk scale) - ignore low/medium risks
+- Do NOT include any Risks section - end your summary after the Weather and Climate section
 - Never mention specific INFORM numbers (like "epidemic risk is 1.8")
-- Use only the data provided from Supabase and Wikipedia
+- Use the provided real-time weather data and 16-day forecast to enhance the Weather and Climate section with specific temperature and rain predictions
 - Be engaging and informative for travelers
 - Keep the summary concise and focused (maximum 300 words)
 - Structure with clear headlines (use ## for all sections)
 - NEVER use ** for bold formatting - this is strictly forbidden
 - Use simple bullet points (-) for lists without any bold formatting
 - Write in plain text with headlines only - no markdown bold formatting
-- Example format for country queries: "## Quick Intro\nBrief overview\n\n## Main Attractions\n- Attraction 1\n- Attraction 2\n\n## Weather and Climate\nClimate info and best times to visit\n\n## Risks\nHigh risk factors only or 'No significant high risks identified'"
-- Example format for city queries: "## Quick Intro\nBrief overview\n\n## Main Attractions\n- Attraction 1\n- Attraction 2\n\n## Weather and Climate\nClimate info and best times to visit"
+- Example format for country queries: "## Quick Intro\nBrief overview\n\n## Main Attractions\n- Attraction 1\n- Attraction 2\n\n## Weather and Climate\nCurrent weather info and best times to visit\n\n## Risks\nHigh risk factors only or 'No significant high risks identified'"
+- Example format for city queries: "## Quick Intro\nBrief overview\n\n## Main Attractions\n- Attraction 1\n- Attraction 2\n\n## Weather and Climate\nCurrent weather info and best times to visit"
 - If comparing two locations, highlight key differences for tourists
 - Focus on what makes each destination special and worth visiting
 - IMPORTANT: For city queries, focus on city-specific information and avoid mentioning national-level statistics (like population, GDP, life expectancy, HDI) or any natural disaster risks in your summary. For city queries, do NOT include a Risks section at all - end your summary after the Weather and Climate section`
@@ -71,24 +71,50 @@ DESTINATION DATA:
 - GDP per Capita: $${supabaseData.gdp_per_capita_usd}
 - Human Development Index: ${supabaseData.human_dev_index}`;
 
-  // Only include national-level risk factors for country queries, not city queries
-  if (!isCityQuery) {
-    userContent += `
-- High Risk Factors (only mention if 7+ on scale):
-  * Earthquake Risk: ${supabaseData.earthquake >= 7 ? supabaseData.earthquake : 'Low'}
-  * River Flood Risk: ${supabaseData.river_flood >= 7 ? supabaseData.river_flood : 'Low'}
-  * Tsunami Risk: ${supabaseData.tsunami >= 7 ? supabaseData.tsunami : 'Low'}
-  * Tropical Storm Risk: ${supabaseData.tropical_storm >= 7 ? supabaseData.tropical_storm : 'Low'}
-  * Coastal Flood Risk: ${supabaseData.coastal_flood >= 7 ? supabaseData.coastal_flood : 'Low'}
-  * Drought Risk: ${supabaseData.drought >= 7 ? supabaseData.drought : 'Low'}
-  * Epidemic Risk: ${supabaseData.epidemic >= 7 ? supabaseData.epidemic : 'Low'}
-  * Projected Conflict: ${supabaseData.projected_conflict >= 7 ? supabaseData.projected_conflict : 'Low'}
-  * Current Conflict: ${supabaseData.current_conflict >= 7 ? supabaseData.current_conflict : 'Low'}`;
-  }
-  // For city queries, don't include any risk factors in the prompt
+  // Risk factors are not included in AI summaries
 
   userContent += `
 - Fun Fact: ${supabaseData.fun_fact?.replace(/^"|"$/g, '') || 'No fun fact available'}`;
+
+  // Add weather data if available
+  if (weatherData) {
+    userContent += `
+
+REAL-TIME WEATHER DATA:
+- Current Temperature: ${weatherData.current.temperature}°C (feels like ${weatherData.current.apparent_temperature}°C)
+- Current Weather: ${weatherData.current.weather_description}
+- Wind: ${weatherData.current.wind_speed} km/h (${weatherData.current.wind_description})
+- Humidity: ${weatherData.current.humidity}%
+- Next 24 Hours: Max ${weatherData.forecast.next_24h.max_temp}°C, Min ${weatherData.forecast.next_24h.min_temp}°C
+- Next 24 Hours Precipitation: ${weatherData.forecast.next_24h.total_precipitation}mm
+
+16-DAY WEATHER FORECAST:
+${weatherData.forecast.next_16_days.slice(0, 7).map((day, index) => {
+  const date = new Date(day.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  return `- ${date}: ${day.min_temp}°C to ${day.max_temp}°C, ${day.precipitation}mm rain, ${day.weather_description}`;
+}).join('\n')}
+
+EXTENDED FORECAST (Days 8-16):
+${weatherData.forecast.next_16_days.slice(7, 16).map((day, index) => {
+  const date = new Date(day.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  return `- ${date}: ${day.min_temp}°C to ${day.max_temp}°C, ${day.precipitation}mm rain, ${day.weather_description}`;
+}).join('\n')}`;
+
+    // Add air quality data if available
+    if (weatherData.air_quality) {
+      userContent += `
+
+AIR QUALITY:
+- PM2.5: ${weatherData.air_quality.pm2_5} (${weatherData.air_quality.pm2_5_description})
+- PM10: ${weatherData.air_quality.pm10} (${weatherData.air_quality.pm10_description})
+- UV Index: ${weatherData.air_quality.uv_index} (${weatherData.air_quality.uv_index_description})
+- Ozone: ${weatherData.air_quality.ozone} (${weatherData.air_quality.ozone_description})`;
+    }
+  } else {
+    userContent += `
+
+WEATHER DATA: No real-time weather data available for this location.`;
+  }
 
   if (wikipediaData) {
     userContent += `\n\nWIKIPEDIA INFORMATION:\n${wikipediaData}`;
@@ -97,11 +123,7 @@ DESTINATION DATA:
   }
 
   // Add explicit instruction based on query type
-  if (isCityQuery) {
-    userContent += `\n\nIMPORTANT: This is a CITY query. Do NOT include a Risks section in your response. End your summary after the Weather and Climate section.`;
-  } else {
-    userContent += `\n\nIMPORTANT: This is a COUNTRY query. Include a Risks section in your response.`;
-  }
+  userContent += `\n\nIMPORTANT: Do NOT include a Risks section in your response. End your summary after the Weather and Climate section.`;
 
   // Add comparison data if provided
   if (isComparison && secondSupabaseData && secondDestination) {
@@ -114,24 +136,50 @@ DESTINATION DATA:
 - GDP per Capita: $${secondSupabaseData.gdp_per_capita_usd}
 - Human Development Index: ${secondSupabaseData.human_dev_index}`;
 
-    // Only include national-level risk factors for country queries, not city queries
-    if (!isCityQuery) {
-      userContent += `
-- High Risk Factors (only mention if 7+ on scale):
-  * Earthquake Risk: ${secondSupabaseData.earthquake >= 7 ? secondSupabaseData.earthquake : 'Low'}
-  * River Flood Risk: ${secondSupabaseData.river_flood >= 7 ? secondSupabaseData.river_flood : 'Low'}
-  * Tsunami Risk: ${secondSupabaseData.tsunami >= 7 ? secondSupabaseData.tsunami : 'Low'}
-  * Tropical Storm Risk: ${secondSupabaseData.tropical_storm >= 7 ? secondSupabaseData.tropical_storm : 'Low'}
-  * Coastal Flood Risk: ${secondSupabaseData.coastal_flood >= 7 ? secondSupabaseData.coastal_flood : 'Low'}
-  * Drought Risk: ${secondSupabaseData.drought >= 7 ? secondSupabaseData.drought : 'Low'}
-  * Epidemic Risk: ${secondSupabaseData.epidemic >= 7 ? secondSupabaseData.epidemic : 'Low'}
-  * Projected Conflict: ${secondSupabaseData.projected_conflict >= 7 ? secondSupabaseData.projected_conflict : 'Low'}
-  * Current Conflict: ${secondSupabaseData.current_conflict >= 7 ? secondSupabaseData.current_conflict : 'Low'}`;
-    }
-    // For city queries, don't include any risk factors in the prompt
+    // Risk factors are not included in AI summaries
 
     userContent += `
 - Fun Fact: ${secondSupabaseData.fun_fact?.replace(/^"|"$/g, '') || 'No fun fact available'}`;
+
+    // Add second location weather data if available
+    if (secondWeatherData) {
+      userContent += `
+
+SECOND LOCATION REAL-TIME WEATHER DATA:
+- Current Temperature: ${secondWeatherData.current.temperature}°C (feels like ${secondWeatherData.current.apparent_temperature}°C)
+- Current Weather: ${secondWeatherData.current.weather_description}
+- Wind: ${secondWeatherData.current.wind_speed} km/h (${secondWeatherData.current.wind_description})
+- Humidity: ${secondWeatherData.current.humidity}%
+- Next 24 Hours: Max ${secondWeatherData.forecast.next_24h.max_temp}°C, Min ${secondWeatherData.forecast.next_24h.min_temp}°C
+- Next 24 Hours Precipitation: ${secondWeatherData.forecast.next_24h.total_precipitation}mm
+
+SECOND LOCATION 16-DAY WEATHER FORECAST:
+${secondWeatherData.forecast.next_16_days.slice(0, 7).map((day, index) => {
+  const date = new Date(day.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  return `- ${date}: ${day.min_temp}°C to ${day.max_temp}°C, ${day.precipitation}mm rain, ${day.weather_description}`;
+}).join('\n')}
+
+SECOND LOCATION EXTENDED FORECAST (Days 8-16):
+${secondWeatherData.forecast.next_16_days.slice(7, 16).map((day, index) => {
+  const date = new Date(day.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  return `- ${date}: ${day.min_temp}°C to ${day.max_temp}°C, ${day.precipitation}mm rain, ${day.weather_description}`;
+}).join('\n')}`;
+
+      // Add second location air quality data if available
+      if (secondWeatherData.air_quality) {
+        userContent += `
+
+SECOND LOCATION AIR QUALITY:
+- PM2.5: ${secondWeatherData.air_quality.pm2_5} (${secondWeatherData.air_quality.pm2_5_description})
+- PM10: ${secondWeatherData.air_quality.pm10} (${secondWeatherData.air_quality.pm10_description})
+- UV Index: ${secondWeatherData.air_quality.uv_index} (${secondWeatherData.air_quality.uv_index_description})
+- Ozone: ${secondWeatherData.air_quality.ozone} (${secondWeatherData.air_quality.ozone_description})`;
+      }
+    } else {
+      userContent += `
+
+SECOND LOCATION WEATHER DATA: No real-time weather data available for this location.`;
+    }
 
     if (secondWikipediaData) {
       userContent += `\n\nSECOND LOCATION WIKIPEDIA INFORMATION:\n${secondWikipediaData}`;

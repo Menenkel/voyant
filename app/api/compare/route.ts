@@ -106,25 +106,7 @@ export async function POST(request: NextRequest) {
       console.error('Second Wikipedia data fetch error:', error);
     }
 
-    // Generate comparison summary
-    let comparisonSummary = null;
-    try {
-      comparisonSummary = await generateSummary(
-        firstCountryData,
-        firstWikipediaData,
-        firstResult.destination || firstDestination,
-        true, // isComparison = true
-        secondCountryData,
-        secondWikipediaData,
-        secondResult.destination || secondDestination,
-        !!(firstCityCoordinates || secondCityCoordinates) // isCityQuery: true if either destination has city coordinates
-      );
-    } catch (error) {
-      console.error('ChatGPT comparison summary generation error:', error);
-      comparisonSummary = 'Comparison summary generation temporarily unavailable.';
-    }
-
-    // Get real weather data for both destinations
+    // Get real weather data for both destinations FIRST
     let firstWeatherData = null;
     let secondWeatherData = null;
 
@@ -240,6 +222,26 @@ export async function POST(request: NextRequest) {
       console.log(`Weather data successfully fetched for second destination: ${secondWeatherCity}`);
     } catch (error) {
       console.error('Second destination weather data fetch error:', error);
+    }
+
+    // Generate comparison summary WITH weather data
+    let comparisonSummary = null;
+    try {
+      comparisonSummary = await generateSummary(
+        firstCountryData,
+        firstWikipediaData,
+        firstResult.destination || firstDestination,
+        true, // isComparison = true
+        secondCountryData,
+        secondWikipediaData,
+        secondResult.destination || secondDestination,
+        !!(firstCityCoordinates || secondCityCoordinates), // isCityQuery: true if either destination has city coordinates
+        firstWeatherData, // Pass first weather data to ChatGPT
+        secondWeatherData // Pass second weather data to ChatGPT
+      );
+    } catch (error) {
+      console.error('ChatGPT comparison summary generation error:', error);
+      comparisonSummary = 'Comparison summary generation temporarily unavailable.';
     }
 
     return NextResponse.json({

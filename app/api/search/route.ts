@@ -77,26 +77,8 @@ export async function GET(request: NextRequest) {
       } catch (error) {
         console.error('Wikipedia data fetch error:', error);
       }
-      
-      // Generate ChatGPT summary
-      let chatgptSummary = null;
-      try {
-        chatgptSummary = await generateSummary(
-          countryData,
-          wikipediaData,
-          result.destination || destination,
-          false,
-          undefined,
-          undefined,
-          undefined,
-          !!cityCoordinates // isCityQuery: true if city coordinates were found
-        );
-      } catch (error) {
-        console.error('ChatGPT summary generation error:', error);
-        chatgptSummary = 'Summary generation temporarily unavailable.';
-      }
 
-      // Get real weather data from Open-Meteo
+      // Get real weather data from Open-Meteo FIRST
       let realWeatherData = null;
       try {
         const weatherCity = result.destination || destination;
@@ -156,6 +138,25 @@ export async function GET(request: NextRequest) {
         // Keep the existing mock weather data if real data fails
       }
       
+      // Generate ChatGPT summary WITH weather data
+      let chatgptSummary = null;
+      try {
+        chatgptSummary = await generateSummary(
+          countryData,
+          wikipediaData,
+          result.destination || destination,
+          false,
+          undefined,
+          undefined,
+          undefined,
+          !!cityCoordinates, // isCityQuery: true if city coordinates were found
+          realWeatherData // Pass weather data to ChatGPT
+        );
+      } catch (error) {
+        console.error('ChatGPT summary generation error:', error);
+        chatgptSummary = 'Summary generation temporarily unavailable.';
+      }
+      
       console.log('Transformed result:', result);
       return NextResponse.json({
         ...result,
@@ -197,65 +198,28 @@ export async function GET(request: NextRequest) {
       },
       riskIndicators: {
         risk_class: { class: 'Medium', color: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/30' },
-        overall_risk: Math.floor(Math.random() * 10) + 1,
-        hazard_indicators: {
-          earthquake: Math.floor(Math.random() * 10) + 1,
-          river_flood: Math.floor(Math.random() * 10) + 1,
-          tsunami: Math.floor(Math.random() * 10) + 1,
-          tropical_cyclone: Math.floor(Math.random() * 10) + 1,
-          coastal_flood: Math.floor(Math.random() * 10) + 1,
-          drought: Math.floor(Math.random() * 10) + 1,
-          epidemic: Math.floor(Math.random() * 10) + 1,
-          projected_conflict_risk: Math.floor(Math.random() * 10) + 1
-        },
-        global_indices: {
-          global_peace_index: Math.floor(Math.random() * 163) + 1,
-          fragile_states_index: Math.floor(Math.random() * 179) + 1,
-          corruption_index: Math.floor(Math.random() * 180) + 1
-        }
-      },
-      newsData: [
-        {
-          title: `Tourism Boom: ${destination} Sees Record Visitor Numbers`,
-          summary: 'Tourist arrivals increase by 25% as travelers flock to experience local attractions and cultural sites.',
-          source: 'Global News Network',
-          publishedAt: '2025-08-15T10:30:00Z'
-        },
-        {
-          title: `Weather Alert: Severe Storm System Approaches ${destination}`,
-          summary: 'Heavy rainfall and strong winds expected to impact travel and outdoor activities in the region.',
-          source: 'International Herald',
-          publishedAt: '2025-08-14T14:20:00Z'
-        },
-        {
-          title: `Security Update: Increased Police Presence in ${destination} Tourist Areas`,
-          summary: 'Authorities enhance security measures following recent incidents in popular tourist districts.',
-          source: 'National Post',
-          publishedAt: '2025-08-13T09:15:00Z'
-        }
-      ],
-      weatherData: {
-        location: destination,
-        forecast_date: '2025-08-15',
-        temperature: Math.floor(Math.random() * 30) + 5,
-        precipitation: 'Low',
-        outlook: 'Sunny'
+        peace_index: { rank: Math.floor(Math.random() * 100) + 50, color: 'text-blue-400', bg: 'bg-blue-400/10', border: 'border-blue-400/30' },
+        corruption_index: { score: Math.floor(Math.random() * 50) + 30, color: 'text-red-400', bg: 'bg-red-400/10', border: 'border-red-400/30' },
+        fragile_states: { score: Math.floor(Math.random() * 50) + 30, color: 'text-orange-400', bg: 'bg-orange-400/10', border: 'border-orange-400/30' }
       },
       healthData: {
-        disease: 'COVID-19',
-        country: destination,
-        risk_level: 'Low',
-        date: '2025-08-15',
-        advice: 'Standard precautions recommended'
+        water_quality: { level: 'Medium', advice: 'Boil before drinking', color: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/30' },
+        health_risks: { level: 'Low', diseases: ['Common cold', 'Traveler\'s diarrhea'], color: 'text-green-400', bg: 'bg-green-400/10', border: 'border-green-400/30' }
       },
       securityData: {
-        event_type: 'Peaceful Protest',
-        country: destination,
-        actors: 'Local Government',
-        fatalities: 0,
-        date: '2025-08-15',
-        location: 'City Center'
-      }
+        status: 'Stable',
+        current_events: ['Normal operations', 'Tourist areas safe'],
+        advice: 'Exercise normal precautions'
+      },
+      newsUpdates: [
+        {
+          title: 'Travel Advisory Update',
+          summary: 'No significant changes to travel recommendations',
+          date: new Date().toISOString().split('T')[0],
+          source: 'Travel Advisory'
+        }
+      ],
+      chatgptSummary: 'This destination is not currently in our database. Please check back later for updated information.'
     };
 
     return NextResponse.json(result);

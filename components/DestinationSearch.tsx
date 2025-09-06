@@ -132,7 +132,6 @@ export default function DestinationSearch() {
   const [isSearching, setIsSearching] = useState(false);
   const [results, setResults] = useState<SearchResult | null>(null);
   const [secondResults, setSecondResults] = useState<SearchResult | null>(null);
-  const [comparisonSummary, setComparisonSummary] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [searchHistory, setSearchHistory] = useState<SearchHistory[]>([]);
   const [showHistory, setShowHistory] = useState(false);
@@ -372,7 +371,6 @@ export default function DestinationSearch() {
           
           if (comparisonResponse.ok) {
             const comparisonData = await comparisonResponse.json();
-            setComparisonSummary(comparisonData.comparisonSummary);
           }
         } catch (error) {
           console.error('Comparison summary error:', error);
@@ -1231,32 +1229,6 @@ export default function DestinationSearch() {
             </div>
           )}
 
-          {/* Comparison Summary */}
-          {compareMode && results && secondResults && comparisonSummary && (
-            <div className="bg-gray-800 rounded-lg p-6 border-2 border-yellow-500/30 shadow-lg">
-              <h4 className="text-lg font-semibold text-yellow-400 mb-4">⚖️ Globaltrot-Bot Comparison Guide</h4>
-              <div className="p-4 bg-gray-700 rounded-lg">
-                <div className="text-white leading-relaxed whitespace-pre-line">
-                  {comparisonSummary.split('\n').map((line, index) => {
-                    // Remove any markdown formatting that might slip through
-                    const cleanLine = line.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1');
-                    
-                    if (cleanLine.startsWith('# ')) {
-                      return <h1 key={index} className="text-xl font-bold text-yellow-300 mb-3 mt-4">{cleanLine.substring(2)}</h1>;
-                    } else if (cleanLine.startsWith('## ')) {
-                      return <h2 key={index} className="text-lg font-semibold text-yellow-200 mb-2 mt-3">{cleanLine.substring(3)}</h2>;
-                    } else if (cleanLine.startsWith('- ')) {
-                      return <div key={index} className="ml-4 mb-1">• {cleanLine.substring(2)}</div>;
-                    } else if (cleanLine.trim() === '') {
-                      return <br key={index} />;
-                    } else {
-                      return <p key={index} className="mb-2">{cleanLine}</p>;
-                    }
-                  })}
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       )}
     </div>
