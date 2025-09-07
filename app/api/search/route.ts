@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { searchDestinations, getCountryByName, transformCountryData, getComparisonData } from '@/lib/database';
 import { getWikipediaData, getWikipediaDataForCountry } from '@/lib/wikipedia';
-import { generateSummary } from '@/lib/chatgpt';
-import { getWeatherForCity, getWeatherDescription, getAirQualityDescription, getWindSpeedDescription, getPM10Description, getUVIndexDescription, getOzoneDescription } from '@/lib/weather';
+import { generateSummary, generateCityFunFact } from '@/lib/chatgpt';
+import { getWeatherForCity, getWeatherForCoordinates, getWeatherDescription, getAirQualityDescription, getWindSpeedDescription, getPM10Description, getUVIndexDescription, getOzoneDescription, generateWeatherAlerts } from '@/lib/weather';
 
 export async function GET(request: NextRequest) {
   try {
@@ -20,8 +20,19 @@ export async function GET(request: NextRequest) {
     await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
 
     // Try to find the destination in Supabase first
-    let countryData = await getCountryByName(destination);
-    console.log('getCountryByName result:', countryData);
+    let countryData = null;
+    
+    // If it's a city,country format, search for the country first
+    if (destination.includes(',')) {
+      const parts = destination.split(',').map(part => part.trim());
+      const countryName = parts[1];
+      countryData = await getCountryByName(countryName);
+      console.log('getCountryByName result for country:', countryName, countryData);
+    } else {
+      // For country-only searches, search directly
+      countryData = await getCountryByName(destination);
+      console.log('getCountryByName result:', countryData);
+    }
     
     // If not found, try searching for partial matches and cities
     if (!countryData) {
@@ -43,25 +54,20 @@ export async function GET(request: NextRequest) {
         const cityName = parts[0];
         const countryName = parts[1];
         
-        // Get city coordinates from the cities database
-        const { getCountryISO3ForCity } = await import('@/lib/cities');
-        const countryISO3 = await getCountryISO3ForCity(cityName);
-        if (countryISO3) {
-          // Get city coordinates from the cities CSV data
-          const { searchCities } = await import('@/lib/cities');
-          const cities = await searchCities(cityName, 1);
-          if (cities.length > 0) {
-            cityCoordinates = {
-              lat: cities[0].lat,
-              lng: cities[0].lng,
-              cityName: cities[0].city
-            };
-            console.log('Found city coordinates:', cityCoordinates);
-          }
+        // Get city coordinates from the cities database within the specific country
+        const { searchCityInCountry } = await import('@/lib/cities');
+        const cityData = await searchCityInCountry(cityName, countryData.ISO3);
+        if (cityData) {
+          cityCoordinates = {
+            lat: cityData.lat,
+            lng: cityData.lng,
+            cityName: cityData.city
+          };
+          console.log('Found city coordinates:', cityCoordinates);
         }
       }
       
-      const result = transformCountryData(countryData, cityCoordinates || undefined);
+      const result = transformCountryData(countryData, cityCoordinates || undefined, destination);
       const comparisonData = await getComparisonData(countryData);
       
       // Get Wikipedia data for summarization
@@ -80,10 +86,18 @@ export async function GET(request: NextRequest) {
 
       // Get real weather data from Open-Meteo FIRST
       let realWeatherData = null;
+      let weatherData: any = null;
       try {
         const weatherCity = result.destination || destination;
         console.log(`Fetching real weather data for: ${weatherCity}`);
-        const weatherData = await getWeatherForCity(weatherCity);
+        
+        // Use coordinates if available, otherwise geocode the city name
+        if (cityCoordinates) {
+          console.log(`Using coordinates: ${cityCoordinates.lat}, ${cityCoordinates.lng}`);
+          weatherData = await getWeatherForCoordinates(cityCoordinates.lat, cityCoordinates.lng, weatherCity);
+        } else {
+          weatherData = await getWeatherForCity(weatherCity);
+        }
         
         realWeatherData = {
           location: weatherData.city,
@@ -103,10 +117,10 @@ export async function GET(request: NextRequest) {
             next_24h: {
               max_temp: Math.round(Math.max(...weatherData.hourly.temperature_2m.slice(0, 24))),
               min_temp: Math.round(Math.min(...weatherData.hourly.temperature_2m.slice(0, 24))),
-              total_precipitation: Math.round(weatherData.hourly.precipitation.slice(0, 24).reduce((sum, val) => sum + val, 0) * 10) / 10,
-              avg_wind_speed: Math.round(weatherData.hourly.wind_speed_10m.slice(0, 24).reduce((sum, val) => sum + val, 0) / 24 * 10) / 10
+              total_precipitation: Math.round(weatherData.hourly.precipitation.slice(0, 24).reduce((sum: number, val: number) => sum + val, 0) * 10) / 10,
+              avg_wind_speed: Math.round(weatherData.hourly.wind_speed_10m.slice(0, 24).reduce((sum: number, val: number) => sum + val, 0) / 24 * 10) / 10
             },
-            next_16_days: weatherData.daily.time.slice(0, 16).map((date, index) => ({
+            next_16_days: weatherData.daily.time.slice(0, 16).map((date: string, index: number) => ({
               date,
               max_temp: Math.round(weatherData.daily.temperature_2m_max[index]),
               min_temp: Math.round(weatherData.daily.temperature_2m_min[index]),
@@ -138,6 +152,18 @@ export async function GET(request: NextRequest) {
         // Keep the existing mock weather data if real data fails
       }
       
+      // Generate weather alerts from the same weather data used for forecast
+      let weatherAlerts = null;
+      if (realWeatherData && weatherData) {
+        try {
+          // Reuse the same weatherData that was fetched for the forecast
+          weatherAlerts = generateWeatherAlerts(weatherData, 7); // 7-day alerts
+          console.log(`Weather alerts generated for ${result.destination || destination}`);
+        } catch (error) {
+          console.error('Weather alerts generation error:', error);
+        }
+      }
+      
       // Generate ChatGPT summary WITH weather data
       let chatgptSummary = null;
       try {
@@ -157,13 +183,32 @@ export async function GET(request: NextRequest) {
         chatgptSummary = 'Summary generation temporarily unavailable.';
       }
       
+      // Generate city-specific fun fact if this is a city query
+      let cityFunFact = null;
+      if (cityCoordinates) {
+        try {
+          const cityName = cityCoordinates.cityName || destination.split(',')[0].trim();
+          const countryName = countryData.country;
+          cityFunFact = await generateCityFunFact(cityName, countryName, wikipediaData);
+          console.log(`City fun fact generated for ${cityName}, ${countryName}`);
+        } catch (error) {
+          console.error('City fun fact generation error:', error);
+          cityFunFact = 'Fun fact generation temporarily unavailable.';
+        }
+      }
+      
       console.log('Transformed result:', result);
-      return NextResponse.json({
+      // Override fun_fact with city-specific fun fact if available
+      const finalResult = {
         ...result,
+        fun_fact: cityFunFact || result.fun_fact,
         comparisonData,
         chatgptSummary,
-        realWeatherData
-      });
+        realWeatherData,
+        weatherAlerts
+      };
+      
+      return NextResponse.json(finalResult);
     }
 
     console.log('No country data found, falling back to mock data');

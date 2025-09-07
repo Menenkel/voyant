@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import CountryMap from './CountryMap';
 import WeatherChart from './WeatherChart';
 import RiskRadarChart from './RiskRadarChart';
+import WeatherAlerts from './WeatherAlerts';
 
 interface SearchHistory {
   destination: string;
@@ -52,55 +53,6 @@ interface SearchResult {
     precipitation: string;
     outlook: string;
   };
-  realWeatherData?: {
-    location: string;
-    coordinates: {
-      latitude: number;
-      longitude: number;
-    };
-    current: {
-      temperature: number;
-      apparent_temperature: number;
-      precipitation: number;
-      wind_speed: number;
-      humidity: number;
-      weather_code: number;
-      weather_description: string;
-      wind_description: string;
-      time: string;
-    };
-    forecast: {
-      next_24h: {
-        max_temp: number;
-        min_temp: number;
-        total_precipitation: number;
-        avg_wind_speed: number;
-      };
-      next_16_days: Array<{
-        date: string;
-        max_temp: number;
-        min_temp: number;
-        precipitation: number;
-        wind_speed: number;
-        weather_code: number;
-        weather_description: string;
-      }>;
-    };
-    air_quality?: {
-      pm10: number;
-      pm2_5: number;
-      carbon_monoxide: number;
-      nitrogen_dioxide: number;
-      sulphur_dioxide: number;
-      ozone: number;
-      dust: number;
-      uv_index: number;
-      pm2_5_description: string;
-      pm10_description: string;
-      uv_index_description: string;
-      ozone_description: string;
-    };
-  };
   seasonalClimate?: {
     period: string;
     temperature: {
@@ -123,6 +75,8 @@ interface SearchResult {
     aqi: number;
     status: string;
   };
+  realWeatherData?: any;
+  weatherAlerts?: any;
 }
 
 export default function DestinationSearch() {
@@ -153,6 +107,10 @@ export default function DestinationSearch() {
     isCapital: boolean;
   }>>([]);
   const [showSecondSuggestions, setShowSecondSuggestions] = useState(false);
+  const [isGlobetrotBotExpanded, setIsGlobetrotBotExpanded] = useState(false);
+  const [isSecondGlobetrotBotExpanded, setIsSecondGlobetrotBotExpanded] = useState(false);
+  const [isCountryInfoExpanded, setIsCountryInfoExpanded] = useState(false);
+  const [isSecondCountryInfoExpanded, setIsSecondCountryInfoExpanded] = useState(false);
 
   // Load search history from localStorage on component mount
   useEffect(() => {
@@ -600,36 +558,50 @@ export default function DestinationSearch() {
             {/* Basic Country Information - Only for City Searches */}
             {!isCountrySearch(results) && (
               <div className="bg-gray-800 rounded-lg p-6 border-2 border-green-500/30 shadow-lg">
-                <h4 className="text-lg font-semibold text-green-400 mb-4">🏛️ Basic Country Information</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="p-4 bg-gray-700 rounded-lg">
-                    <span className="text-gray-300 text-sm">Country:</span>
-                    <p className="text-white font-semibold">{results.supabaseData?.country}</p>
-                  </div>
-                  <div className="p-4 bg-gray-700 rounded-lg">
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-lg font-semibold text-green-400">🏛️ Basic Country Information</h4>
+                  <button
+                    onClick={() => setIsCountryInfoExpanded(!isCountryInfoExpanded)}
+                    className="text-green-400 hover:text-green-300 transition-colors duration-200 flex items-center space-x-2"
+                  >
+                    <span className="text-sm">
+                      {isCountryInfoExpanded ? 'Show Less' : 'Show More'}
+                    </span>
+                    <span className={`transform transition-transform duration-200 ${isCountryInfoExpanded ? 'rotate-180' : ''}`}>
+                      ▼
+                    </span>
+                  </button>
+                </div>
+                {isCountryInfoExpanded && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 bg-gray-700 rounded-lg">
+                  <span className="text-gray-300 text-sm">Country:</span>
+                  <p className="text-white font-semibold">{results.supabaseData?.country}</p>
+                </div>
+                <div className="p-4 bg-gray-700 rounded-lg">
                     <span className="text-gray-300 text-sm">Population:</span>
                     <p className="text-white font-semibold">{results.supabaseData?.population_mio} million</p>
-                  </div>
-                  <div className="p-4 bg-gray-700 rounded-lg">
+                </div>
+                <div className="p-4 bg-gray-700 rounded-lg">
                     <span className="text-gray-300 text-sm">GDP Per Capita:</span>
                     <p className="text-white font-semibold">${results.supabaseData?.gdp_per_capita_usd?.toLocaleString()}</p>
                   </div>
                   <div className="p-4 bg-gray-700 rounded-lg">
                     <span className="text-gray-300 text-sm">Average Hotel Price:</span>
                     <p className="text-white font-semibold">${Math.round((results.supabaseData?.gdp_per_capita_usd || 0) * 0.02)}/night</p>
-                  </div>
-                  <div className="p-4 bg-gray-700 rounded-lg">
-                    <span className="text-gray-300 text-sm">Life Expectancy:</span>
+                </div>
+                <div className="p-4 bg-gray-700 rounded-lg">
+                  <span className="text-gray-300 text-sm">Life Expectancy:</span>
                     <p className="text-white font-semibold">{results.supabaseData?.life_expectancy} years</p>
-                  </div>
+                </div>
                   <div className="p-4 bg-gray-700 rounded-lg">
                     <span className="text-gray-300 text-sm">Electricity Access:</span>
                     <p className="text-white font-semibold">{results.supabaseData?.population_electricity}%</p>
-                  </div>
+              </div>
                   <div className="p-4 bg-gray-700 rounded-lg">
                     <span className="text-gray-300 text-sm">Risk Class:</span>
                     <p className="text-white font-semibold">{results.supabaseData?.risk_class}</p>
-                  </div>
+            </div>
                   <div className="p-4 bg-gray-700 rounded-lg">
                     <span className="text-gray-300 text-sm">INFORM Risk Index:</span>
                     <p className="text-white font-semibold">{results.supabaseData?.inform_index}</p>
@@ -656,33 +628,49 @@ export default function DestinationSearch() {
                     )}
                   </div>
                 </div>
+                )}
               </div>
             )}
 
             {/* Globaltrot-Bot Summary */}
             {results.chatgptSummary && (
               <div className="bg-gray-800 rounded-lg p-6 border-2 border-blue-500/30 shadow-lg">
-                <h4 className="text-lg font-semibold text-blue-400 mb-4">🤖 Globetrot-Bot Summary</h4>
-                <div className="p-4 bg-gray-700 rounded-lg">
-                  <div className="text-white leading-relaxed whitespace-pre-line">
-                    {results.chatgptSummary.split('\n').map((line, index) => {
-                      // Remove any markdown formatting that might slip through
-                      const cleanLine = line.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1');
-                      
-                      if (cleanLine.startsWith('# ')) {
-                        return <h1 key={index} className="text-xl font-bold text-blue-300 mb-3 mt-4">{cleanLine.substring(2)}</h1>;
-                      } else if (cleanLine.startsWith('## ')) {
-                        return <h2 key={index} className="text-lg font-semibold text-blue-200 mb-2 mt-3">{cleanLine.substring(3)}</h2>;
-                      } else if (cleanLine.startsWith('- ')) {
-                        return <div key={index} className="ml-4 mb-1">• {cleanLine.substring(2)}</div>;
-                      } else if (cleanLine.trim() === '') {
-                        return <br key={index} />;
-                      } else {
-                        return <p key={index} className="mb-2">{cleanLine}</p>;
-                      }
-                    })}
-                  </div>
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-lg font-semibold text-blue-400">🤖 Globetrot-Bot Summary</h4>
+                  <button
+                    onClick={() => setIsGlobetrotBotExpanded(!isGlobetrotBotExpanded)}
+                    className="text-blue-400 hover:text-blue-300 transition-colors duration-200 flex items-center space-x-2"
+                  >
+                    <span className="text-sm">
+                      {isGlobetrotBotExpanded ? 'Show Less' : 'Show More'}
+                    </span>
+                    <span className={`transform transition-transform duration-200 ${isGlobetrotBotExpanded ? 'rotate-180' : ''}`}>
+                      ▼
+                    </span>
+                  </button>
                 </div>
+                {isGlobetrotBotExpanded && (
+                  <div className="p-4 bg-gray-700 rounded-lg">
+                    <div className="text-white leading-relaxed whitespace-pre-line">
+                      {results.chatgptSummary.split('\n').map((line, index) => {
+                        // Remove any markdown formatting that might slip through
+                        const cleanLine = line.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1');
+                        
+                        if (cleanLine.startsWith('# ')) {
+                          return <h1 key={index} className="text-xl font-bold text-blue-300 mb-3 mt-4">{cleanLine.substring(2)}</h1>;
+                        } else if (cleanLine.startsWith('## ')) {
+                          return <h2 key={index} className="text-lg font-semibold text-blue-200 mb-2 mt-3">{cleanLine.substring(3)}</h2>;
+                        } else if (cleanLine.startsWith('- ')) {
+                          return <div key={index} className="ml-4 mb-1">• {cleanLine.substring(2)}</div>;
+                        } else if (cleanLine.trim() === '') {
+                          return <br key={index} />;
+                        } else {
+                          return <p key={index} className="mb-2">{cleanLine}</p>;
+                        }
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -698,32 +686,32 @@ export default function DestinationSearch() {
 
             {/* Economic Data - Only for Country Searches */}
             {isCountrySearch(results) && (
-              <div className="bg-gray-800 rounded-lg p-6 border-2 border-green-500/30 shadow-lg">
-                <h4 className="text-lg font-semibold text-green-400 mb-4">💰 Economic Data</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="p-4 bg-gray-700 rounded-lg">
-                    <span className="text-gray-300 text-sm">GDP Per Capita:</span>
-                    <p className="text-white font-semibold">${results.supabaseData?.gdp_per_capita_usd?.toLocaleString()}</p>
-                  </div>
-                  <div className="p-4 bg-gray-700 rounded-lg">
-                    <span className="text-gray-300 text-sm">Human Development Index:</span>
-                    <p className="text-white font-semibold">{results.supabaseData?.human_dev_index}</p>
-                  </div>
-                  <div className="p-4 bg-gray-700 rounded-lg">
-                    <span className="text-gray-300 text-sm">Electricity Access:</span>
-                    <p className="text-white font-semibold">{results.supabaseData?.population_electricity}%</p>
-                  </div>
-                  <div className="p-4 bg-gray-700 rounded-lg">
-                    <span className="text-gray-300 text-sm">Average Hotel Price:</span>
-                    <p className="text-white font-semibold">${Math.floor(Math.random() * 200 + 50)}/night</p>
-                  </div>
+            <div className="bg-gray-800 rounded-lg p-6 border-2 border-green-500/30 shadow-lg">
+              <h4 className="text-lg font-semibold text-green-400 mb-4">💰 Economic Data</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 bg-gray-700 rounded-lg">
+                  <span className="text-gray-300 text-sm">GDP Per Capita:</span>
+                  <p className="text-white font-semibold">${results.supabaseData?.gdp_per_capita_usd?.toLocaleString()}</p>
+                </div>
+                <div className="p-4 bg-gray-700 rounded-lg">
+                  <span className="text-gray-300 text-sm">Human Development Index:</span>
+                  <p className="text-white font-semibold">{results.supabaseData?.human_dev_index}</p>
+                </div>
+                <div className="p-4 bg-gray-700 rounded-lg">
+                  <span className="text-gray-300 text-sm">Electricity Access:</span>
+                  <p className="text-white font-semibold">{results.supabaseData?.population_electricity}%</p>
+                </div>
+                <div className="p-4 bg-gray-700 rounded-lg">
+                  <span className="text-gray-300 text-sm">Average Hotel Price:</span>
+                  <p className="text-white font-semibold">${Math.floor(Math.random() * 200 + 50)}/night</p>
                 </div>
               </div>
+            </div>
             )}
 
             {/* Risk Assessment with Comparisons - Only for Country Searches */}
             {isCountrySearch(results) && (
-              <div className="bg-gray-800 rounded-lg p-6 border-2 border-red-500/30 shadow-lg">
+            <div className="bg-gray-800 rounded-lg p-6 border-2 border-red-500/30 shadow-lg">
               <h4 className="text-lg font-semibold text-red-400 mb-4">⚠️ Risk Assessment</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="p-4 bg-gray-700 rounded-lg">
@@ -773,8 +761,8 @@ export default function DestinationSearch() {
 
             {/* Natural Hazards Spider Chart - For All Queries */}
             {results.supabaseData && (
-              <div className="bg-gray-800 rounded-lg p-6 border-2 border-orange-500/30 shadow-lg">
-                <h4 className="text-lg font-semibold text-orange-400 mb-4">🌪️ Natural Hazards (0-10 Scale)</h4>
+            <div className="bg-gray-800 rounded-lg p-6 border-2 border-orange-500/30 shadow-lg">
+              <h4 className="text-lg font-semibold text-orange-400 mb-4">🌪️ Natural Hazards (0-10 Scale)</h4>
                 <div className="mb-4">
                   <p className="text-gray-300 text-sm">
                     National-level natural hazard risks for {results.supabaseData.country}
@@ -794,7 +782,7 @@ export default function DestinationSearch() {
                   }}
                   firstDestination={results.supabaseData.country}
                 />
-              </div>
+                </div>
             )}
 
             {/* Weather & Climate Data */}
@@ -805,104 +793,110 @@ export default function DestinationSearch() {
                 <div className="space-y-6">
                   {/* Current Weather */}
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div className="p-4 bg-gray-700 rounded-lg">
-                      <span className="text-gray-300 text-sm">Current Temperature:</span>
+                <div className="p-4 bg-gray-700 rounded-lg">
+                  <span className="text-gray-300 text-sm">Current Temperature:</span>
                       <p className="text-white font-semibold text-xl">{results.realWeatherData.current.temperature}°C</p>
                       <p className="text-gray-400 text-xs">Feels like {results.realWeatherData.current.apparent_temperature}°C</p>
-                    </div>
-                    <div className="p-4 bg-gray-700 rounded-lg">
+                </div>
+                <div className="p-4 bg-gray-700 rounded-lg">
                       <span className="text-gray-300 text-sm">Weather:</span>
                       <p className="text-white font-semibold">{results.realWeatherData.current.weather_description}</p>
-                    </div>
-                    <div className="p-4 bg-gray-700 rounded-lg">
+                </div>
+                <div className="p-4 bg-gray-700 rounded-lg">
                       <span className="text-gray-300 text-sm">Wind:</span>
                       <p className="text-white font-semibold">{results.realWeatherData.current.wind_speed} km/h</p>
                       <p className="text-gray-400 text-xs">{results.realWeatherData.current.wind_description}</p>
-                    </div>
-                    <div className="p-4 bg-gray-700 rounded-lg">
+                </div>
+                <div className="p-4 bg-gray-700 rounded-lg">
                       <span className="text-gray-300 text-sm">Humidity:</span>
                       <p className="text-white font-semibold">{results.realWeatherData.current.humidity}%</p>
-                    </div>
-                  </div>
+              </div>
+            </div>
 
                   {/* 24h Forecast */}
-                  <div className="p-4 bg-gray-700 rounded-lg">
+                <div className="p-4 bg-gray-700 rounded-lg">
                     <h5 className="text-cyan-300 font-semibold mb-3">Next 24 Hours</h5>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <div>
                         <span className="text-gray-300 text-sm">Max Temp:</span>
                         <p className="text-white font-semibold">{results.realWeatherData.forecast.next_24h.max_temp}°C</p>
-                      </div>
+                </div>
                       <div>
                         <span className="text-gray-300 text-sm">Min Temp:</span>
                         <p className="text-white font-semibold">{results.realWeatherData.forecast.next_24h.min_temp}°C</p>
-                      </div>
+                </div>
                       <div>
                         <span className="text-gray-300 text-sm">Precipitation:</span>
                         <p className="text-white font-semibold">{results.realWeatherData.forecast.next_24h.total_precipitation}mm</p>
-                      </div>
+                </div>
                       <div>
                         <span className="text-gray-300 text-sm">Avg Wind:</span>
                         <p className="text-white font-semibold">{results.realWeatherData.forecast.next_24h.avg_wind_speed} km/h</p>
-                      </div>
-                    </div>
-                  </div>
+                </div>
+              </div>
+            </div>
 
                   {/* 16-Day Forecast Chart */}
-                  <div className="p-4 bg-gray-700 rounded-lg">
+                <div className="p-4 bg-gray-700 rounded-lg">
                     <WeatherChart 
                       forecast={results.realWeatherData.forecast.next_16_days} 
                       location={results.realWeatherData.location}
                     />
-                  </div>
+                </div>
+
+                  {/* Weather Alerts */}
+                  <WeatherAlerts 
+                    alerts={results.weatherAlerts} 
+                    title="⚠️ Weather Alerts"
+                  />
 
                   {/* Air Quality */}
                   {results.realWeatherData.air_quality && (
-                    <div className="p-4 bg-gray-700 rounded-lg">
+                <div className="p-4 bg-gray-700 rounded-lg">
                       <h5 className="text-cyan-300 font-semibold mb-3">Air Quality</h5>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div className="col-span-2">
                           <span className="text-gray-300 text-sm">PM2.5:</span>
                           <p className="text-white font-semibold">{results.realWeatherData.air_quality.pm2_5} μg/m³</p>
                           <p className="text-gray-400 text-sm leading-relaxed">{results.realWeatherData.air_quality.pm2_5_description}</p>
-                        </div>
+                </div>
                         <div className="col-span-2">
                           <span className="text-gray-300 text-sm">PM10:</span>
                           <p className="text-white font-semibold">{results.realWeatherData.air_quality.pm10} μg/m³</p>
                           <p className="text-gray-400 text-sm leading-relaxed">{results.realWeatherData.air_quality.pm10_description}</p>
-                        </div>
+                </div>
                         <div className="col-span-2">
                           <span className="text-gray-300 text-sm">UV Index:</span>
                           <p className="text-white font-semibold">{results.realWeatherData.air_quality.uv_index}</p>
                           <p className="text-gray-400 text-sm leading-relaxed">{results.realWeatherData.air_quality.uv_index_description}</p>
-                        </div>
+                </div>
                         <div className="col-span-2">
                           <span className="text-gray-300 text-sm">Ozone:</span>
                           <p className="text-white font-semibold">{results.realWeatherData.air_quality.ozone} μg/m³</p>
                           <p className="text-gray-400 text-sm leading-relaxed">{results.realWeatherData.air_quality.ozone_description}</p>
-                        </div>
-                      </div>
+              </div>
+            </div>
                     </div>
                   )}
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="p-4 bg-gray-700 rounded-lg">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 bg-gray-700 rounded-lg">
                     <span className="text-gray-300 text-sm">Current Temperature:</span>
                     <p className="text-white font-semibold">{results.weatherData?.temperature || 'N/A'}°C</p>
-                  </div>
-                  <div className="p-4 bg-gray-700 rounded-lg">
+                </div>
+                <div className="p-4 bg-gray-700 rounded-lg">
                     <span className="text-gray-300 text-sm">Precipitation:</span>
                     <p className="text-white font-semibold">{results.weatherData?.precipitation || 'N/A'}</p>
-                  </div>
+                </div>
                   <div className="p-4 bg-gray-700 rounded-lg">
                     <span className="text-gray-300 text-sm">Outlook:</span>
                     <p className="text-white font-semibold">{results.weatherData?.outlook || 'N/A'}</p>
-                  </div>
+              </div>
                   <div className="p-4 bg-gray-700 rounded-lg">
                     <span className="text-gray-300 text-sm">Forecast Date:</span>
                     <p className="text-white font-semibold">{results.weatherData?.forecast_date || 'N/A'}</p>
-                  </div>
+            </div>
                 </div>
               )}
             </div>
@@ -919,36 +913,50 @@ export default function DestinationSearch() {
               {/* Basic Country Information - Only for City Searches */}
               {!isCountrySearch(secondResults) && (
                 <div className="bg-gray-800 rounded-lg p-6 border-2 border-green-500/30 shadow-lg">
-                  <h4 className="text-lg font-semibold text-green-400 mb-4">🏛️ Basic Country Information</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="p-4 bg-gray-700 rounded-lg">
-                      <span className="text-gray-300 text-sm">Country:</span>
-                      <p className="text-white font-semibold">{secondResults.supabaseData?.country}</p>
-                    </div>
-                    <div className="p-4 bg-gray-700 rounded-lg">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-lg font-semibold text-green-400">🏛️ Basic Country Information</h4>
+                    <button
+                      onClick={() => setIsSecondCountryInfoExpanded(!isSecondCountryInfoExpanded)}
+                      className="text-green-400 hover:text-green-300 transition-colors duration-200 flex items-center space-x-2"
+                    >
+                      <span className="text-sm">
+                        {isSecondCountryInfoExpanded ? 'Show Less' : 'Show More'}
+                      </span>
+                      <span className={`transform transition-transform duration-200 ${isSecondCountryInfoExpanded ? 'rotate-180' : ''}`}>
+                        ▼
+                      </span>
+                    </button>
+                  </div>
+                  {isSecondCountryInfoExpanded && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-4 bg-gray-700 rounded-lg">
+                    <span className="text-gray-300 text-sm">Country:</span>
+                    <p className="text-white font-semibold">{secondResults.supabaseData?.country}</p>
+                  </div>
+                  <div className="p-4 bg-gray-700 rounded-lg">
                       <span className="text-gray-300 text-sm">Population:</span>
                       <p className="text-white font-semibold">{secondResults.supabaseData?.population_mio} million</p>
-                    </div>
-                    <div className="p-4 bg-gray-700 rounded-lg">
+                  </div>
+                  <div className="p-4 bg-gray-700 rounded-lg">
                       <span className="text-gray-300 text-sm">GDP Per Capita:</span>
                       <p className="text-white font-semibold">${secondResults.supabaseData?.gdp_per_capita_usd?.toLocaleString()}</p>
                     </div>
                     <div className="p-4 bg-gray-700 rounded-lg">
                       <span className="text-gray-300 text-sm">Average Hotel Price:</span>
                       <p className="text-white font-semibold">${Math.round((secondResults.supabaseData?.gdp_per_capita_usd || 0) * 0.02)}/night</p>
-                    </div>
-                    <div className="p-4 bg-gray-700 rounded-lg">
-                      <span className="text-gray-300 text-sm">Life Expectancy:</span>
+                  </div>
+                  <div className="p-4 bg-gray-700 rounded-lg">
+                    <span className="text-gray-300 text-sm">Life Expectancy:</span>
                       <p className="text-white font-semibold">{secondResults.supabaseData?.life_expectancy} years</p>
-                    </div>
+                  </div>
                     <div className="p-4 bg-gray-700 rounded-lg">
                       <span className="text-gray-300 text-sm">Electricity Access:</span>
                       <p className="text-white font-semibold">{secondResults.supabaseData?.population_electricity}%</p>
-                    </div>
+                </div>
                     <div className="p-4 bg-gray-700 rounded-lg">
                       <span className="text-gray-300 text-sm">Risk Class:</span>
                       <p className="text-white font-semibold">{secondResults.supabaseData?.risk_class}</p>
-                    </div>
+              </div>
                     <div className="p-4 bg-gray-700 rounded-lg">
                       <span className="text-gray-300 text-sm">INFORM Risk Index:</span>
                       <p className="text-white font-semibold">{secondResults.supabaseData?.inform_index}</p>
@@ -975,33 +983,49 @@ export default function DestinationSearch() {
                       )}
                     </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
+            )}
 
               {/* Globaltrot-Bot Summary */}
               {secondResults.chatgptSummary && (
                 <div className="bg-gray-800 rounded-lg p-6 border-2 border-blue-500/30 shadow-lg">
-                  <h4 className="text-lg font-semibold text-blue-400 mb-4">🤖 Globetrot-Bot Summary</h4>
-                  <div className="p-4 bg-gray-700 rounded-lg">
-                    <div className="text-white leading-relaxed whitespace-pre-line">
-                      {secondResults.chatgptSummary.split('\n').map((line, index) => {
-                        // Remove any markdown formatting that might slip through
-                        const cleanLine = line.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1');
-                        
-                        if (cleanLine.startsWith('# ')) {
-                          return <h1 key={index} className="text-xl font-bold text-blue-300 mb-3 mt-4">{cleanLine.substring(2)}</h1>;
-                        } else if (cleanLine.startsWith('## ')) {
-                          return <h2 key={index} className="text-lg font-semibold text-blue-200 mb-2 mt-3">{cleanLine.substring(3)}</h2>;
-                        } else if (cleanLine.startsWith('- ')) {
-                          return <div key={index} className="ml-4 mb-1">• {cleanLine.substring(2)}</div>;
-                        } else if (cleanLine.trim() === '') {
-                          return <br key={index} />;
-                        } else {
-                          return <p key={index} className="mb-2">{cleanLine}</p>;
-                        }
-                      })}
-                    </div>
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-lg font-semibold text-blue-400">🤖 Globetrot-Bot Summary</h4>
+                    <button
+                      onClick={() => setIsSecondGlobetrotBotExpanded(!isSecondGlobetrotBotExpanded)}
+                      className="text-blue-400 hover:text-blue-300 transition-colors duration-200 flex items-center space-x-2"
+                    >
+                      <span className="text-sm">
+                        {isSecondGlobetrotBotExpanded ? 'Show Less' : 'Show More'}
+                      </span>
+                      <span className={`transform transition-transform duration-200 ${isSecondGlobetrotBotExpanded ? 'rotate-180' : ''}`}>
+                        ▼
+                      </span>
+                    </button>
                   </div>
+                  {isSecondGlobetrotBotExpanded && (
+                    <div className="p-4 bg-gray-700 rounded-lg">
+                      <div className="text-white leading-relaxed whitespace-pre-line">
+                        {secondResults.chatgptSummary.split('\n').map((line, index) => {
+                          // Remove any markdown formatting that might slip through
+                          const cleanLine = line.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1');
+                          
+                          if (cleanLine.startsWith('# ')) {
+                            return <h1 key={index} className="text-xl font-bold text-blue-300 mb-3 mt-4">{cleanLine.substring(2)}</h1>;
+                          } else if (cleanLine.startsWith('## ')) {
+                            return <h2 key={index} className="text-lg font-semibold text-blue-200 mb-2 mt-3">{cleanLine.substring(3)}</h2>;
+                          } else if (cleanLine.startsWith('- ')) {
+                            return <div key={index} className="ml-4 mb-1">• {cleanLine.substring(2)}</div>;
+                          } else if (cleanLine.trim() === '') {
+                            return <br key={index} />;
+                          } else {
+                            return <p key={index} className="mb-2">{cleanLine}</p>;
+                          }
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -1017,32 +1041,32 @@ export default function DestinationSearch() {
 
               {/* Economic Data - Only for Country Searches */}
               {isCountrySearch(secondResults) && (
-                <div className="bg-gray-800 rounded-lg p-6 border-2 border-green-500/30 shadow-lg">
-                  <h4 className="text-lg font-semibold text-green-400 mb-4">💰 Economic Data</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="p-4 bg-gray-700 rounded-lg">
-                      <span className="text-gray-300 text-sm">GDP Per Capita:</span>
-                      <p className="text-white font-semibold">${secondResults.supabaseData?.gdp_per_capita_usd?.toLocaleString()}</p>
-                    </div>
-                    <div className="p-4 bg-gray-700 rounded-lg">
-                      <span className="text-gray-300 text-sm">Human Development Index:</span>
-                      <p className="text-white font-semibold">{secondResults.supabaseData?.human_dev_index}</p>
-                    </div>
-                    <div className="p-4 bg-gray-700 rounded-lg">
-                      <span className="text-gray-300 text-sm">Electricity Access:</span>
-                      <p className="text-white font-semibold">{secondResults.supabaseData?.population_electricity}%</p>
-                    </div>
-                    <div className="p-4 bg-gray-700 rounded-lg">
-                      <span className="text-gray-300 text-sm">Average Hotel Price:</span>
-                      <p className="text-white font-semibold">${Math.floor(Math.random() * 200 + 50)}/night</p>
-                    </div>
+              <div className="bg-gray-800 rounded-lg p-6 border-2 border-green-500/30 shadow-lg">
+                <h4 className="text-lg font-semibold text-green-400 mb-4">💰 Economic Data</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-4 bg-gray-700 rounded-lg">
+                    <span className="text-gray-300 text-sm">GDP Per Capita:</span>
+                    <p className="text-white font-semibold">${secondResults.supabaseData?.gdp_per_capita_usd?.toLocaleString()}</p>
+                  </div>
+                  <div className="p-4 bg-gray-700 rounded-lg">
+                    <span className="text-gray-300 text-sm">Human Development Index:</span>
+                    <p className="text-white font-semibold">{secondResults.supabaseData?.human_dev_index}</p>
+                  </div>
+                  <div className="p-4 bg-gray-700 rounded-lg">
+                    <span className="text-gray-300 text-sm">Electricity Access:</span>
+                    <p className="text-white font-semibold">{secondResults.supabaseData?.population_electricity}%</p>
+                  </div>
+                  <div className="p-4 bg-gray-700 rounded-lg">
+                    <span className="text-gray-300 text-sm">Average Hotel Price:</span>
+                    <p className="text-white font-semibold">${Math.floor(Math.random() * 200 + 50)}/night</p>
                   </div>
                 </div>
+              </div>
               )}
 
               {/* Risk Assessment with Comparisons - Only for Country Searches */}
               {isCountrySearch(secondResults) && (
-                <div className="bg-gray-800 rounded-lg p-6 border-2 border-red-500/30 shadow-lg">
+              <div className="bg-gray-800 rounded-lg p-6 border-2 border-red-500/30 shadow-lg">
                 <h4 className="text-lg font-semibold text-red-400 mb-4">⚠️ Risk Assessment</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="p-4 bg-gray-700 rounded-lg">
@@ -1092,8 +1116,8 @@ export default function DestinationSearch() {
 
               {/* Natural Hazards Spider Chart - For All Queries */}
               {secondResults.supabaseData && (
-                <div className="bg-gray-800 rounded-lg p-6 border-2 border-orange-500/30 shadow-lg">
-                  <h4 className="text-lg font-semibold text-orange-400 mb-4">🌪️ Natural Hazards (0-10 Scale)</h4>
+              <div className="bg-gray-800 rounded-lg p-6 border-2 border-orange-500/30 shadow-lg">
+                <h4 className="text-lg font-semibold text-orange-400 mb-4">🌪️ Natural Hazards (0-10 Scale)</h4>
                   <div className="mb-4">
                     <p className="text-gray-300 text-sm">
                       National-level natural hazard risks for {secondResults.supabaseData.country}
@@ -1113,7 +1137,7 @@ export default function DestinationSearch() {
                     }}
                     firstDestination={secondResults.supabaseData.country}
                   />
-                </div>
+                  </div>
               )}
 
               {/* Weather & Climate Data */}
@@ -1124,106 +1148,112 @@ export default function DestinationSearch() {
                   <div className="space-y-6">
                     {/* Current Weather */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                      <div className="p-4 bg-gray-700 rounded-lg">
-                        <span className="text-gray-300 text-sm">Current Temperature:</span>
+                  <div className="p-4 bg-gray-700 rounded-lg">
+                    <span className="text-gray-300 text-sm">Current Temperature:</span>
                         <p className="text-white font-semibold text-xl">{secondResults.realWeatherData.current.temperature}°C</p>
                         <p className="text-gray-400 text-xs">Feels like {secondResults.realWeatherData.current.apparent_temperature}°C</p>
-                      </div>
-                      <div className="p-4 bg-gray-700 rounded-lg">
+                  </div>
+                  <div className="p-4 bg-gray-700 rounded-lg">
                         <span className="text-gray-300 text-sm">Weather:</span>
                         <p className="text-white font-semibold">{secondResults.realWeatherData.current.weather_description}</p>
-                      </div>
-                      <div className="p-4 bg-gray-700 rounded-lg">
+                  </div>
+                  <div className="p-4 bg-gray-700 rounded-lg">
                         <span className="text-gray-300 text-sm">Wind:</span>
                         <p className="text-white font-semibold">{secondResults.realWeatherData.current.wind_speed} km/h</p>
                         <p className="text-gray-400 text-xs">{secondResults.realWeatherData.current.wind_description}</p>
-                      </div>
-                      <div className="p-4 bg-gray-700 rounded-lg">
+                  </div>
+                  <div className="p-4 bg-gray-700 rounded-lg">
                         <span className="text-gray-300 text-sm">Humidity:</span>
                         <p className="text-white font-semibold">{secondResults.realWeatherData.current.humidity}%</p>
-                      </div>
-                    </div>
+                </div>
+              </div>
 
                     {/* 24h Forecast */}
-                    <div className="p-4 bg-gray-700 rounded-lg">
+                  <div className="p-4 bg-gray-700 rounded-lg">
                       <h5 className="text-cyan-300 font-semibold mb-3">Next 24 Hours</h5>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div>
                           <span className="text-gray-300 text-sm">Max Temp:</span>
                           <p className="text-white font-semibold">{secondResults.realWeatherData.forecast.next_24h.max_temp}°C</p>
-                        </div>
+                  </div>
                         <div>
                           <span className="text-gray-300 text-sm">Min Temp:</span>
                           <p className="text-white font-semibold">{secondResults.realWeatherData.forecast.next_24h.min_temp}°C</p>
-                        </div>
+                  </div>
                         <div>
                           <span className="text-gray-300 text-sm">Precipitation:</span>
                           <p className="text-white font-semibold">{secondResults.realWeatherData.forecast.next_24h.total_precipitation}mm</p>
-                        </div>
+                  </div>
                         <div>
                           <span className="text-gray-300 text-sm">Avg Wind:</span>
                           <p className="text-white font-semibold">{secondResults.realWeatherData.forecast.next_24h.avg_wind_speed} km/h</p>
-                        </div>
-                      </div>
-                    </div>
+                  </div>
+                </div>
+              </div>
 
                     {/* 16-Day Forecast Chart */}
-                    <div className="p-4 bg-gray-700 rounded-lg">
+                  <div className="p-4 bg-gray-700 rounded-lg">
                       <WeatherChart 
                         forecast={secondResults.realWeatherData.forecast.next_16_days} 
                         location={secondResults.realWeatherData.location}
                       />
-                    </div>
+                  </div>
+
+                    {/* Weather Alerts */}
+                    <WeatherAlerts 
+                      alerts={secondResults.weatherAlerts} 
+                      title="⚠️ Weather Alerts"
+                    />
 
                     {/* Air Quality */}
                     {secondResults.realWeatherData.air_quality && (
-                      <div className="p-4 bg-gray-700 rounded-lg">
+                  <div className="p-4 bg-gray-700 rounded-lg">
                         <h5 className="text-cyan-300 font-semibold mb-3">Air Quality</h5>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                           <div className="col-span-2">
                             <span className="text-gray-300 text-sm">PM2.5:</span>
                             <p className="text-white font-semibold">{secondResults.realWeatherData.air_quality.pm2_5} μg/m³</p>
                             <p className="text-gray-400 text-sm leading-relaxed">{secondResults.realWeatherData.air_quality.pm2_5_description}</p>
-                          </div>
+                  </div>
                           <div className="col-span-2">
                             <span className="text-gray-300 text-sm">PM10:</span>
                             <p className="text-white font-semibold">{secondResults.realWeatherData.air_quality.pm10} μg/m³</p>
                             <p className="text-gray-400 text-sm leading-relaxed">{secondResults.realWeatherData.air_quality.pm10_description}</p>
-                          </div>
+                  </div>
                           <div className="col-span-2">
                             <span className="text-gray-300 text-sm">UV Index:</span>
                             <p className="text-white font-semibold">{secondResults.realWeatherData.air_quality.uv_index}</p>
                             <p className="text-gray-400 text-sm leading-relaxed">{secondResults.realWeatherData.air_quality.uv_index_description}</p>
-                          </div>
+                  </div>
                           <div className="col-span-2">
                             <span className="text-gray-300 text-sm">Ozone:</span>
                             <p className="text-white font-semibold">{secondResults.realWeatherData.air_quality.ozone} μg/m³</p>
                             <p className="text-gray-400 text-sm leading-relaxed">{secondResults.realWeatherData.air_quality.ozone_description}</p>
-                          </div>
-                        </div>
+                </div>
+              </div>
                       </div>
                     )}
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="p-4 bg-gray-700 rounded-lg">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-4 bg-gray-700 rounded-lg">
                       <span className="text-gray-300 text-sm">Current Temperature:</span>
                       <p className="text-white font-semibold">{secondResults.weatherData?.temperature || 'N/A'}°C</p>
-                    </div>
-                    <div className="p-4 bg-gray-700 rounded-lg">
+                  </div>
+                  <div className="p-4 bg-gray-700 rounded-lg">
                       <span className="text-gray-300 text-sm">Precipitation:</span>
                       <p className="text-white font-semibold">{secondResults.weatherData?.precipitation || 'N/A'}</p>
-                    </div>
+                  </div>
                     <div className="p-4 bg-gray-700 rounded-lg">
                       <span className="text-gray-300 text-sm">Outlook:</span>
                       <p className="text-white font-semibold">{secondResults.weatherData?.outlook || 'N/A'}</p>
-                    </div>
+                </div>
                     <div className="p-4 bg-gray-700 rounded-lg">
                       <span className="text-gray-300 text-sm">Forecast Date:</span>
                       <p className="text-white font-semibold">{secondResults.weatherData?.forecast_date || 'N/A'}</p>
-                    </div>
-                  </div>
-                )}
+              </div>
+            </div>
+          )}
               </div>
 
             </div>

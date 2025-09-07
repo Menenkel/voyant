@@ -128,3 +128,18 @@ export async function getCitiesForCountry(iso3: string): Promise<CityData[]> {
   const cities = await loadCitiesData();
   return cities.filter(city => city.iso3 === iso3);
 }
+
+// Search for a city within a specific country
+export async function searchCityInCountry(cityName: string, countryISO3: string): Promise<CityData | null> {
+  const cities = await loadCitiesData();
+  const searchTerm = cityName.toLowerCase().trim();
+  
+  const city = cities.find(city => 
+    city.iso3 === countryISO3 && (
+      city.city.toLowerCase() === searchTerm ||
+      city.city_ascii.toLowerCase() === searchTerm
+    )
+  );
+  
+  return city || null;
+}

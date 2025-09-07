@@ -48,13 +48,12 @@ VOYANT helps travelers make informed decisions by providing detailed risk assess
 
 ### 🤖 **Globaltrot-Bot AI Travel Guide**
 - AI-powered travel summaries using ChatGPT integration
-- Smart city vs country query differentiation
-- City queries: Quick Intro, Main Attractions, Weather & Climate (no national risks)
-- Country queries: Quick Intro, Main Attractions, Weather & Climate, Risks
+- Real-time weather data integration with detailed forecasts
+- 3-section structure: Quick Intro, Main Attractions, Weather & Climate
 - Wikipedia data integration for comprehensive destination information
-- Intelligent risk filtering (shows only high risks 7+ on scale for countries)
-- Enhanced 300-word summaries for detailed insights
-- Comparison mode for side-by-side destination analysis
+- Enhanced 300-word summaries with temperature and rain predictions
+- No risk-related content in AI summaries (focuses on positive travel information)
+- Streamlined comparison mode without comparison guide section
 
 ## 🚀 Getting Started
 
@@ -246,11 +245,12 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🆕 Recent Updates
 
-### Enhanced AI Summaries & Risk Visualization
-- **Smart City vs Country Queries:** AI summaries now differentiate between city and country searches
-- **Removed National Risks from City Queries:** City summaries focus on local attractions and weather
-- **Interactive Natural Hazards Spider Chart:** Replaced grid-based display with interactive radar charts
-- **Explanatory Risk Text:** Added clear explanations for INFORM Index, Global Risk Rank, and Peace Index
+### Enhanced AI Summaries & User Experience
+- **Streamlined AI Structure:** Reduced from 4 to 3 sections (Quick Intro, Main Attractions, Weather & Climate)
+- **Removed All Risk Content:** AI summaries now focus purely on positive travel information
+- **Enhanced Weather Integration:** Real-time weather data with detailed 16-day forecasts and temperature/rain predictions
+- **Cleaner Comparison Mode:** Removed comparison guide section for streamlined side-by-side destination viewing
+- **Simplified Map Interface:** Removed search functionality from Leaflet map for cleaner user experience
 
 ### Advanced Weather Integration
 - **Open-Meteo API Integration:** Real-time weather data with 16-day forecasts

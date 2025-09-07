@@ -28,6 +28,7 @@ interface WeatherData {
     precipitation_sum: number[];
     wind_speed_10m_max: number[];
     weather_code: number[];
+    snowfall_sum: number[];
   };
   air_quality?: {
     pm10: number;
@@ -46,6 +47,19 @@ interface GeocodeResult {
   longitude: number;
   name: string;
   country: string;
+}
+
+interface WeatherAlert {
+  type: string;
+  description: string;
+  forecastPeriod: string;
+  severity: 'moderate' | 'high' | 'extreme';
+}
+
+interface WeatherAlerts {
+  location: string;
+  forecastDate: string;
+  alerts: WeatherAlert[];
 }
 
 // Cache for weather data (in-memory cache)
@@ -122,7 +136,112 @@ export async function getWeatherForCity(cityName: string): Promise<WeatherData> 
         'temperature_2m_min',
         'precipitation_sum',
         'wind_speed_10m_max',
+        'weather_code',
+        'snowfall_sum'
+      ].join(','),
+      timezone: 'auto'
+    });
+
+    const url = `https://api.open-meteo.com/v1/forecast?${params.toString()}`;
+    console.log(`Fetching weather data from: ${url}`);
+
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Weather API error: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    console.log('Weather API response received');
+
+    // Transform the data to our format
+    const weatherData: WeatherData = {
+      city: cityName,
+      coordinates: {
+        latitude: data.latitude,
+        longitude: data.longitude
+      },
+      current: {
+        temperature: data.current.temperature_2m,
+        apparent_temperature: data.current.apparent_temperature,
+        precipitation: data.current.precipitation,
+        wind_speed: data.current.wind_speed_10m,
+        humidity: data.current.relative_humidity_2m,
+        weather_code: data.current.weather_code,
+        time: data.current.time
+      },
+      hourly: {
+        time: data.hourly.time,
+        temperature_2m: data.hourly.temperature_2m,
+        apparent_temperature: data.hourly.apparent_temperature,
+        precipitation: data.hourly.precipitation,
+        wind_speed_10m: data.hourly.wind_speed_10m,
+        weather_code: data.hourly.weather_code
+      },
+      daily: {
+        time: data.daily.time,
+        temperature_2m_max: data.daily.temperature_2m_max,
+        temperature_2m_min: data.daily.temperature_2m_min,
+        precipitation_sum: data.daily.precipitation_sum,
+        wind_speed_10m_max: data.daily.wind_speed_10m_max,
+        weather_code: data.daily.weather_code,
+        snowfall_sum: data.daily.snowfall_sum
+      }
+    };
+
+    // Cache the result
+    weatherCache.set(cacheKey, {
+      data: weatherData,
+      timestamp: Date.now()
+    });
+
+    console.log(`Weather data cached for ${cityName}`);
+    return weatherData;
+
+  } catch (error) {
+    console.error(`Weather API error for ${cityName}:`, error);
+    throw error;
+  }
+}
+
+export async function getWeatherForCoordinates(latitude: number, longitude: number, cityName: string): Promise<WeatherData> {
+  // Check cache first
+  const cacheKey = `${cityName.toLowerCase().trim()}_${latitude}_${longitude}`;
+  const cached = weatherCache.get(cacheKey);
+  
+  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+    console.log(`Using cached weather data for ${cityName}`);
+    return cached.data;
+  }
+
+  try {
+    // Use provided coordinates directly
+
+    // Build the API URL with all required parameters
+    const params = new URLSearchParams({
+      latitude: latitude.toString(),
+      longitude: longitude.toString(),
+      current: [
+        'temperature_2m',
+        'apparent_temperature',
+        'precipitation',
+        'wind_speed_10m',
+        'relative_humidity_2m',
         'weather_code'
+      ].join(','),
+      hourly: [
+        'temperature_2m',
+        'apparent_temperature',
+        'precipitation',
+        'wind_speed_10m',
+        'weather_code'
+      ].join(','),
+      daily: [
+        'temperature_2m_max',
+        'temperature_2m_min',
+        'precipitation_sum',
+        'wind_speed_10m_max',
+        'weather_code',
+        'snowfall_sum'
       ].join(','),
       air_quality: 'true',
       timezone: 'auto',
@@ -147,10 +266,10 @@ export async function getWeatherForCity(cityName: string): Promise<WeatherData> 
     const daily = data.daily;
     
     const weatherData: WeatherData = {
-      city: geocodeResult.name,
+      city: cityName,
       coordinates: {
-        latitude: geocodeResult.latitude,
-        longitude: geocodeResult.longitude
+        latitude: latitude,
+        longitude: longitude
       },
       current: {
         temperature: current.temperature_2m,
@@ -175,7 +294,8 @@ export async function getWeatherForCity(cityName: string): Promise<WeatherData> 
         temperature_2m_min: daily.temperature_2m_min,
         precipitation_sum: daily.precipitation_sum,
         wind_speed_10m_max: daily.wind_speed_10m_max,
-        weather_code: daily.weather_code
+        weather_code: daily.weather_code,
+        snowfall_sum: daily.snowfall_sum
       }
     };
 
@@ -330,6 +450,133 @@ export function getWindSpeedDescription(windSpeed: number): string {
   if (windSpeed < 89) return 'Storm';
   if (windSpeed < 103) return 'Violent storm';
   return 'Hurricane';
+}
+
+// Map weather codes to user-friendly descriptions
+export function getWeatherCodeDescription(weatherCode: number): string {
+  const weatherCodes: { [key: number]: string } = {
+    0: 'Clear sky',
+    1: 'Mainly clear',
+    2: 'Partly cloudy',
+    3: 'Overcast',
+    45: 'Fog',
+    48: 'Depositing rime fog',
+    51: 'Light drizzle',
+    53: 'Moderate drizzle',
+    55: 'Dense drizzle',
+    56: 'Light freezing drizzle',
+    57: 'Dense freezing drizzle',
+    61: 'Slight rain',
+    63: 'Moderate rain',
+    65: 'Heavy rain',
+    66: 'Light freezing rain',
+    67: 'Heavy freezing rain',
+    71: 'Slight snow fall',
+    73: 'Moderate snow fall',
+    75: 'Heavy snow fall',
+    77: 'Snow grains',
+    80: 'Slight rain showers',
+    81: 'Moderate rain showers',
+    82: 'Violent rain showers',
+    85: 'Slight snow showers',
+    86: 'Heavy snow showers',
+    95: 'Thunderstorm',
+    96: 'Thunderstorm with slight hail',
+    99: 'Thunderstorm with heavy hail'
+  };
+  
+  return weatherCodes[weatherCode] || 'Unknown weather condition';
+}
+
+// Check if weather code indicates extreme conditions
+export function isExtremeWeatherCode(weatherCode: number): boolean {
+  const extremeCodes = [65, 66, 67, 75, 77, 82, 85, 86, 95, 96, 99];
+  return extremeCodes.includes(weatherCode);
+}
+
+// Generate extreme weather alerts from daily forecast data
+export function generateWeatherAlerts(weatherData: WeatherData, forecastDays: number = 7): WeatherAlerts[] {
+  const alerts: WeatherAlerts[] = [];
+  const { city, daily } = weatherData;
+  
+  // Define extreme thresholds
+  const thresholds = {
+    heavyRainfall: 20, // mm
+    highTemperature: 35, // °C
+    highWind: 50, // km/h
+    heavySnowfall: 5 // cm
+  };
+  
+  // Process each day in the forecast
+  for (let i = 0; i < Math.min(forecastDays, daily.time.length); i++) {
+    // Parse the date string directly to avoid timezone issues
+    const dateStr = daily.time[i];
+    const [year, month, day] = dateStr.split('-');
+    const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    const dayAlerts: WeatherAlert[] = [];
+    
+    // Check for heavy rainfall
+    if (daily.precipitation_sum[i] > thresholds.heavyRainfall) {
+      dayAlerts.push({
+        type: 'Heavy Rain',
+        description: `${daily.precipitation_sum[i].toFixed(1)} mm of rain expected`,
+        forecastPeriod: `${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}, all day`,
+        severity: daily.precipitation_sum[i] > 50 ? 'extreme' : daily.precipitation_sum[i] > 30 ? 'high' : 'moderate'
+      });
+    }
+    
+    // Check for high temperature
+    if (daily.temperature_2m_max[i] > thresholds.highTemperature) {
+      dayAlerts.push({
+        type: 'High Temperature',
+        description: `Temperature up to ${daily.temperature_2m_max[i].toFixed(1)}°C expected`,
+        forecastPeriod: `${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}, daytime`,
+        severity: daily.temperature_2m_max[i] > 40 ? 'extreme' : daily.temperature_2m_max[i] > 38 ? 'high' : 'moderate'
+      });
+    }
+    
+    // Check for high wind
+    if (daily.wind_speed_10m_max[i] > thresholds.highWind) {
+      dayAlerts.push({
+        type: 'High Wind',
+        description: `Wind gusts up to ${daily.wind_speed_10m_max[i].toFixed(1)} km/h expected`,
+        forecastPeriod: `${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}, all day`,
+        severity: daily.wind_speed_10m_max[i] > 80 ? 'extreme' : daily.wind_speed_10m_max[i] > 65 ? 'high' : 'moderate'
+      });
+    }
+    
+    // Check for heavy snowfall
+    if (daily.snowfall_sum[i] > thresholds.heavySnowfall) {
+      dayAlerts.push({
+        type: 'Heavy Snow',
+        description: `${daily.snowfall_sum[i].toFixed(1)} cm of snow expected`,
+        forecastPeriod: `${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}, all day`,
+        severity: daily.snowfall_sum[i] > 15 ? 'extreme' : daily.snowfall_sum[i] > 10 ? 'high' : 'moderate'
+      });
+    }
+    
+    // Check for extreme weather conditions based on weather code
+    if (isExtremeWeatherCode(daily.weather_code[i])) {
+      const weatherDescription = getWeatherCodeDescription(daily.weather_code[i]);
+      dayAlerts.push({
+        type: 'Extreme Weather',
+        description: `${weatherDescription} expected`,
+        forecastPeriod: `${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}, all day`,
+        severity: 'high'
+      });
+    }
+    
+    // Only add to alerts if there are any alerts for this day
+    if (dayAlerts.length > 0) {
+      alerts.push({
+        location: city,
+        forecastDate: daily.time[i],
+        alerts: dayAlerts
+      });
+    }
+  }
+  
+  return alerts;
 }
 
 export type { WeatherData, GeocodeResult };

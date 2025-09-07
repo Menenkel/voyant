@@ -12,12 +12,152 @@ interface WikipediaResponse {
   };
 }
 
+// Get country code for Wikipedia disambiguation
+function getCountryCode(countryName: string): string {
+  const countryCodes: { [key: string]: string } = {
+    'united states': 'US',
+    'united states of america': 'US',
+    'usa': 'US',
+    'united kingdom': 'UK',
+    'uk': 'UK',
+    'great britain': 'UK',
+    'britain': 'UK',
+    'germany': 'DE',
+    'france': 'FR',
+    'italy': 'IT',
+    'spain': 'ES',
+    'canada': 'CA',
+    'australia': 'AU',
+    'japan': 'JP',
+    'china': 'CN',
+    'india': 'IN',
+    'brazil': 'BR',
+    'mexico': 'MX',
+    'russia': 'RU',
+    'south korea': 'KR',
+    'north korea': 'KP',
+    'iran': 'IR',
+    'iraq': 'IQ',
+    'afghanistan': 'AF',
+    'pakistan': 'PK',
+    'bangladesh': 'BD',
+    'indonesia': 'ID',
+    'thailand': 'TH',
+    'vietnam': 'VN',
+    'philippines': 'PH',
+    'malaysia': 'MY',
+    'singapore': 'SG',
+    'south africa': 'ZA',
+    'egypt': 'EG',
+    'nigeria': 'NG',
+    'kenya': 'KE',
+    'morocco': 'MA',
+    'algeria': 'DZ',
+    'tunisia': 'TN',
+    'libya': 'LY',
+    'sudan': 'SD',
+    'ethiopia': 'ET',
+    'uganda': 'UG',
+    'tanzania': 'TZ',
+    'ghana': 'GH',
+    'ivory coast': 'CI',
+    'senegal': 'SN',
+    'mali': 'ML',
+    'burkina faso': 'BF',
+    'niger': 'NE',
+    'chad': 'TD',
+    'cameroon': 'CM',
+    'central african republic': 'CF',
+    'democratic republic of the congo': 'CD',
+    'republic of the congo': 'CG',
+    'gabon': 'GA',
+    'equatorial guinea': 'GQ',
+    'sao tome and principe': 'ST',
+    'angola': 'AO',
+    'zambia': 'ZM',
+    'zimbabwe': 'ZW',
+    'botswana': 'BW',
+    'namibia': 'NA',
+    'lesotho': 'LS',
+    'swaziland': 'SZ',
+    'madagascar': 'MG',
+    'mauritius': 'MU',
+    'seychelles': 'SC',
+    'comoros': 'KM',
+    'djibouti': 'DJ',
+    'somalia': 'SO',
+    'eritrea': 'ER',
+    'rwanda': 'RW',
+    'burundi': 'BI',
+    'malawi': 'MW',
+    'mozambique': 'MZ',
+    'swaziland': 'SZ',
+    'lesotho': 'LS',
+    'botswana': 'BW',
+    'namibia': 'NA',
+    'south africa': 'ZA',
+    'zimbabwe': 'ZW',
+    'zambia': 'ZM',
+    'malawi': 'MW',
+    'mozambique': 'MZ',
+    'madagascar': 'MG',
+    'mauritius': 'MU',
+    'seychelles': 'SC',
+    'comoros': 'KM',
+    'djibouti': 'DJ',
+    'somalia': 'SO',
+    'eritrea': 'ER',
+    'rwanda': 'RW',
+    'burundi': 'BI',
+    'malawi': 'MW',
+    'mozambique': 'MZ'
+  };
+  
+  return countryCodes[countryName.toLowerCase()] || countryName;
+}
+
 export async function getWikipediaData(searchTerm: string): Promise<string | null> {
   try {
-    // Clean the search term - remove country suffix if it's a city
     let cleanTerm = searchTerm;
+    let searchUrl = '';
+    
+    // Handle city,country format with disambiguation
     if (searchTerm.includes(',')) {
-      cleanTerm = searchTerm.split(',')[0].trim();
+      const parts = searchTerm.split(',').map(part => part.trim());
+      const cityName = parts[0];
+      const countryName = parts[1];
+      
+      // Try different search strategies for disambiguation
+      const searchTerms = [
+        `${cityName}, ${countryName}`,  // "Vienna, United States"
+        `${cityName} (${countryName})`, // "Vienna (United States)"
+        `${cityName}, ${getCountryCode(countryName)}`, // "Vienna, US"
+        cityName // Fallback to just city name
+      ];
+      
+      for (const term of searchTerms) {
+        try {
+          const url = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(term)}`;
+          const response = await fetch(url, {
+            headers: {
+              'User-Agent': 'VoyantTravelApp/1.0 (https://voyant-travel-app.vercel.app)'
+            }
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            if (data.extract && !data.extract.includes('disambiguation')) {
+              return data.extract;
+            }
+          }
+        } catch (error) {
+          console.log(`Wikipedia search failed for term: ${term}`);
+          continue;
+        }
+      }
+      
+      // If all specific searches fail, fall back to just city name
+      cleanTerm = cityName;
     }
 
     const url = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(cleanTerm)}`;

@@ -94,6 +94,34 @@ export async function getCountryByName(countryName: string): Promise<CountryData
 }
 
 // Enhanced search function that handles both countries and cities
+// Normalize country names to handle common variations
+function normalizeCountryName(countryName: string): string[] {
+  const variations = [countryName.toLowerCase()];
+  
+  // Common country name variations
+  const countryMappings: { [key: string]: string[] } = {
+    'united states': ['united states of america', 'usa', 'us'],
+    'united kingdom': ['uk', 'great britain', 'britain'],
+    'south korea': ['korea, republic of', 'republic of korea'],
+    'north korea': ['korea, democratic people\'s republic of'],
+    'russia': ['russian federation'],
+    'iran': ['islamic republic of iran'],
+    'china': ['people\'s republic of china'],
+    'taiwan': ['republic of china'],
+    'vietnam': ['viet nam', 'socialist republic of vietnam'],
+    'czech republic': ['czechia'],
+    'slovakia': ['slovak republic'],
+    'macedonia': ['north macedonia', 'former yugoslav republic of macedonia']
+  };
+  
+  const normalizedName = countryName.toLowerCase().trim();
+  if (countryMappings[normalizedName]) {
+    variations.push(...countryMappings[normalizedName]);
+  }
+  
+  return variations;
+}
+
 export async function searchDestinations(query: string): Promise<CountryData[]> {
   try {
     console.log('searchDestinations called with:', query);
@@ -106,16 +134,22 @@ export async function searchDestinations(query: string): Promise<CountryData[]> 
       
       console.log('Detected city,country format:', { cityName, countryName });
       
-      // First try to find the country by name
-      const { data: countryData, error: countryError } = await supabase
-        .from('Voyant2')
-        .select('*')
-        .ilike('country', countryName.toLowerCase())
-        .limit(1);
+      // Get country name variations
+      const countryVariations = normalizeCountryName(countryName);
+      console.log('Country variations to try:', countryVariations);
+      
+      // Try each variation
+      for (const variation of countryVariations) {
+        const { data: countryData, error: countryError } = await supabase
+          .from('Voyant2')
+          .select('*')
+          .ilike('country', variation)
+          .limit(1);
 
-      if (!countryError && countryData && countryData.length > 0) {
-        console.log('Found country by name:', countryData[0].country);
-        return countryData;
+        if (!countryError && countryData && countryData.length > 0) {
+          console.log('Found country by name variation:', variation, '->', countryData[0].country);
+          return countryData;
+        }
       }
       
       // If country not found by name, try city search
@@ -228,7 +262,7 @@ export async function getCountryForCity(cityName: string): Promise<CountryData |
 }
 
 // Convert Supabase data to the format expected by your app
-export function transformCountryData(countryData: CountryData, cityCoordinates?: { lat: number; lng: number; cityName?: string }) {
+export function transformCountryData(countryData: CountryData, cityCoordinates?: { lat: number; lng: number; cityName?: string }, originalDestination?: string) {
   // Generate realistic fake weather data
   const weatherConditions = ['Sunny', 'Partly Cloudy', 'Cloudy', 'Rainy', 'Stormy'];
   const precipitationLevels = ['Low', 'Moderate', 'High'];
@@ -263,7 +297,7 @@ export function transformCountryData(countryData: CountryData, cityCoordinates?:
   const drinkingAdviceText = drinkingAdvice[Math.floor(Math.random() * drinkingAdvice.length)];
 
   return {
-    destination: cityCoordinates?.cityName || countryData.country,
+    destination: originalDestination?.replace(/,/g, ', ') || cityCoordinates?.cityName || countryData.country,
     fun_fact: countryData.fun_fact?.replace(/^"|"$/g, '') || 'No fun fact available',
     coordinates: cityCoordinates,
     // Supabase data

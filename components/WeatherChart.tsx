@@ -46,9 +46,11 @@ const WeatherChart: React.FC<WeatherChartProps> = ({ forecast, location }) => {
   const [isChartExpanded, setIsChartExpanded] = useState(false);
   const [isDailyExpanded, setIsDailyExpanded] = useState(false);
   
-  // Format dates for display
+  // Format dates for display (timezone-safe)
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
+    // Parse the date string directly to avoid timezone issues
+    const [year, month, day] = dateString.split('-');
+    const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
     return date.toLocaleDateString('en-US', { 
       weekday: 'short',
       month: 'short',
@@ -309,8 +311,9 @@ const WeatherChart: React.FC<WeatherChartProps> = ({ forecast, location }) => {
                 {day.weather_description === 'Slight rain' && '🌦️'}
                 {day.weather_description === 'Moderate rain' && '🌧️'}
                 {day.weather_description === 'Heavy rain' && '⛈️'}
+                {day.weather_description === 'Thunderstorm' && '⛈️'}
                 {day.weather_description === 'Snow' && '❄️'}
-                {!['Clear sky', 'Partly cloudy', 'Overcast', 'Slight rain', 'Moderate rain', 'Heavy rain', 'Snow'].includes(day.weather_description) && '🌤️'}
+                {!['Clear sky', 'Partly cloudy', 'Overcast', 'Slight rain', 'Moderate rain', 'Heavy rain', 'Thunderstorm', 'Snow'].includes(day.weather_description) && '🌤️'}
               </div>
               <p className="text-white font-semibold text-sm mb-1">
                 {day.weather_description}

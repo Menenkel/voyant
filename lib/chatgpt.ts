@@ -32,18 +32,24 @@ export async function generateSummary(
   // Prepare the system message
   const systemMessage: ChatGPTMessage = {
     role: 'system',
-    content: `You are Globaltrot-Bot, an AI travel companion that helps tourists explore destinations safely and enjoyably. Create a comprehensive travel guide based ONLY on the provided Supabase data, Wikipedia information, and real-time weather data. Do not use any external knowledge beyond these three sources.
+    content: `You are Globaltrot-Bot, an AI travel companion that helps tourists explore destinations safely and enjoyably. Create a comprehensive travel guide based ONLY on the provided Supabase data, Wikipedia information, and real-time weather data. 
+
+CRITICAL: You MUST NOT use any external knowledge beyond the three provided sources. If the provided data does not contain sufficient information about the specific city, you must clearly state this limitation and only provide information that is directly supported by the provided data.
 
 MANDATORY STRUCTURE - Follow this exact format:
 1. Quick Intro - Brief overview of the destination (NO headline above this)
 2. Main Attractions - Key places to visit and things to do
-3. Weather and Climate - Use the provided real-time weather data and 16-day forecast to give current conditions, detailed temperature and rain forecasts, seasonal patterns, and best times to visit (MUST include best times to visit)
+3. Airport Access - Include travel distances from the closest national and international airports to the city center (provide distances in both km and miles)
+4. Accommodation - Provide estimated hotel prices for entry-level, medium, and high-level accommodations (include currency and price ranges)
+5. Weather and Climate - Use the provided real-time weather data and 16-day forecast to give current conditions, detailed temperature and rain forecasts, seasonal patterns, and best times to visit (MUST include best times to visit)
 
 Guidelines:
-- Follow the exact 3-section structure above
+- Follow the exact 5-section structure above
 - Start directly with "## Quick Intro" - NO main title/headline above it
 - End with "## Weather and Climate" - this must always be the last section
 - ALWAYS include "best times to visit" in the Weather and Climate section
+- ALWAYS include airport distance information in the Airport Access section
+- ALWAYS include hotel price estimates in the Accommodation section
 - Do NOT include any Risks section - end your summary after the Weather and Climate section
 - Never mention specific INFORM numbers (like "epidemic risk is 1.8")
 - Use the provided real-time weather data and 16-day forecast to enhance the Weather and Climate section with specific temperature and rain predictions
@@ -62,6 +68,8 @@ Guidelines:
 
   // Prepare the user message with data
   let userContent = `Please create a comprehensive travel guide for ${destination} based on the following data. IMPORTANT: Do not use ** for bold formatting anywhere in your response. Use only headlines (# and ##) and simple bullet points (-). CRITICAL: You MUST include all required sections: Quick Intro, Main Attractions, and Weather and Climate (with best times to visit). For country queries, also include a Risks section. For city queries, do NOT include a Risks section - end your summary after the Weather and Climate section.
+
+DATA LIMITATION WARNING: If the provided data does not contain sufficient information about the specific city (e.g., if Wikipedia data is missing or refers to a different city), you must clearly state this limitation and only provide information that is directly supported by the provided data. Do not use external knowledge to fill in missing information.
 
 DESTINATION DATA:
 - Country: ${supabaseData.country}
@@ -122,8 +130,32 @@ WEATHER DATA: No real-time weather data available for this location.`;
     userContent += `\n\nWIKIPEDIA INFORMATION: No Wikipedia data available for this location.`;
   }
 
+  userContent += `\n\nCRITICAL INSTRUCTION: If Wikipedia data is not available or refers to a different city, you must clearly state this limitation and only provide information that is directly supported by the Supabase data above. Do not use your training data to fill in missing information about specific cities. If the provided data does not contain sufficient information about the specific city, you must acknowledge this limitation.`;
+
   // Add explicit instruction based on query type
-  userContent += `\n\nIMPORTANT: Do NOT include a Risks section in your response. End your summary after the Weather and Climate section.`;
+  userContent += `\n\nIMPORTANT: Do NOT include a Risks section in your response. End your summary after the Weather and Climate section.
+
+AIRPORT ACCESS REQUIREMENT: In the Airport Access section, provide travel distances from the closest national and international airports to the city center. Include:
+- Airport names and types (national/international)
+- Distance in kilometers and miles
+- Approximate travel time by car/public transport
+- Brief description of transportation options
+
+Example format:
+- Vienna International Airport (VIE): 18 km (11 miles) from city center, 20-30 minutes by car or train
+- Bratislava Airport (BTS): 60 km (37 miles) from city center, 1 hour by car or bus
+
+ACCOMMODATION REQUIREMENT: In the Accommodation section, provide estimated hotel prices for different budget levels. Include:
+- Entry-level hotels: Budget accommodations (hostels, basic hotels)
+- Medium-level hotels: Mid-range accommodations (3-star hotels, boutique hotels)
+- High-level hotels: Luxury accommodations (4-5 star hotels, resorts)
+- Include currency and price ranges per night
+- Base estimates on the destination's cost of living and tourism market
+
+Example format:
+- Entry-level: $30-60 USD per night (hostels, budget hotels)
+- Medium-level: $80-150 USD per night (3-star hotels, boutique accommodations)
+- High-level: $200-400 USD per night (4-5 star hotels, luxury resorts)`;
 
   // Add comparison data if provided
   if (isComparison && secondSupabaseData && secondDestination) {
@@ -218,5 +250,94 @@ SECOND LOCATION WEATHER DATA: No real-time weather data available for this locat
   } catch (error) {
     console.error('ChatGPT API error:', error);
     throw error;
+  }
+}
+
+// Generate city-specific fun fact using ChatGPT
+export async function generateCityFunFact(
+  cityName: string,
+  countryName: string,
+  wikipediaData: string | null
+): Promise<string> {
+  const apiKey = process.env.OPENAI_API_KEY;
+  
+  if (!apiKey) {
+    throw new Error('OpenAI API key not found');
+  }
+
+  const systemMessage: ChatGPTMessage = {
+    role: 'system',
+    content: `You are a travel expert who provides ONLY factual, verifiable information about cities. Your goal is to share one interesting, lesser-known but TRUE fact about the city.
+
+CRITICAL REQUIREMENTS - FACTUAL ACCURACY IS MANDATORY:
+- Create ONE fun fact only (1-2 sentences maximum)
+- MUST be 100% factual and verifiable - NO FABRICATION OR CREATIVE INTERPRETATION
+- MUST be based ONLY on the provided Wikipedia data or well-established historical/geographical facts
+- Should be lesser-known but TRUE information that most tourists don't know
+- Focus on something unique to this specific city, not the country
+- Avoid well-known tourist attractions, famous landmarks, or common knowledge
+- Use ONLY the provided Wikipedia data as your source - do not invent or embellish
+- If Wikipedia data doesn't contain interesting lesser-known facts, provide a simple, factual statement
+- Do not include quotation marks around the fun fact
+- Keep it concise and factual
+- NEVER create fictional traditions, customs, or stories
+
+EXAMPLES OF GOOD FACTUAL FUN FACTS:
+- "Vienna has more than 1,700 acres of vineyards within city limits, making it the world's largest wine-growing region inside a city."
+- "Tokyo's Shibuya Crossing sees up to 2,500 people cross at once during peak hours."
+- "Paris has a hidden vineyard in Montmartre that produces wine from 2,000 vines."
+
+STRICTLY AVOID:
+- Fictional traditions or customs
+- Made-up stories or legends
+- Creative interpretations of facts
+- Famous landmarks (Eiffel Tower, Big Ben, etc.)
+- Well-known historical events
+- Common tourist information
+- Generic city statistics
+- Information that applies to the whole country
+- ANY information not directly supported by the provided Wikipedia data`
+  };
+
+  let userContent = `Generate a FACTUAL, lesser-known fun fact about ${cityName}, ${countryName}. This must be 100% true and verifiable information that most tourists wouldn't know. Base your response ONLY on the provided Wikipedia data.`;
+
+  if (wikipediaData) {
+    userContent += `\n\nWikipedia information about ${cityName}:\n${wikipediaData}`;
+  } else {
+    userContent += `\n\nNo Wikipedia data available for this city.`;
+  }
+
+  userContent += `\n\nIMPORTANT: Only provide information that is directly supported by the Wikipedia data above. Do not invent, embellish, or create fictional traditions. If the Wikipedia data doesn't contain interesting lesser-known facts, provide a simple, factual statement about the city.`;
+
+  const userMessage: ChatGPTMessage = {
+    role: 'user',
+    content: userContent
+  };
+
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [systemMessage, userMessage],
+        max_tokens: 120,
+        temperature: 0.9
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`OpenAI API error: ${response.status} - ${errorData.error?.message || 'Unknown error'}`);
+    }
+
+    const data: ChatGPTResponse = await response.json();
+    return data.choices[0]?.message?.content?.trim() || 'No fun fact available for this city.';
+  } catch (error) {
+    console.error('ChatGPT fun fact generation error:', error);
+    return 'Fun fact generation temporarily unavailable.';
   }
 }
