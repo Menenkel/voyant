@@ -585,10 +585,6 @@ export default function DestinationSearch() {
                 <div className="p-4 bg-gray-700 rounded-lg">
                     <span className="text-gray-300 text-sm">GDP Per Capita:</span>
                     <p className="text-white font-semibold">${results.supabaseData?.gdp_per_capita_usd?.toLocaleString()}</p>
-                  </div>
-                  <div className="p-4 bg-gray-700 rounded-lg">
-                    <span className="text-gray-300 text-sm">Average Hotel Price:</span>
-                    <p className="text-white font-semibold">${Math.round((results.supabaseData?.gdp_per_capita_usd || 0) * 0.02)}/night</p>
                 </div>
                 <div className="p-4 bg-gray-700 rounded-lg">
                   <span className="text-gray-300 text-sm">Life Expectancy:</span>
@@ -602,11 +598,6 @@ export default function DestinationSearch() {
                     <span className="text-gray-300 text-sm">Risk Class:</span>
                     <p className="text-white font-semibold">{results.supabaseData?.risk_class}</p>
             </div>
-                  <div className="p-4 bg-gray-700 rounded-lg">
-                    <span className="text-gray-300 text-sm">INFORM Risk Index:</span>
-                    <p className="text-white font-semibold">{results.supabaseData?.inform_index}</p>
-                    <p className="text-gray-400 text-xs mt-1">Scale: 1-10 (lower = less risk)</p>
-                  </div>
                   <div className="p-4 bg-gray-700 rounded-lg">
                     <span className="text-gray-300 text-sm">Global Risk Rank:</span>
                     <p className="text-white font-semibold">#{results.supabaseData?.global_rank}</p>
@@ -940,10 +931,6 @@ export default function DestinationSearch() {
                   <div className="p-4 bg-gray-700 rounded-lg">
                       <span className="text-gray-300 text-sm">GDP Per Capita:</span>
                       <p className="text-white font-semibold">${secondResults.supabaseData?.gdp_per_capita_usd?.toLocaleString()}</p>
-                    </div>
-                    <div className="p-4 bg-gray-700 rounded-lg">
-                      <span className="text-gray-300 text-sm">Average Hotel Price:</span>
-                      <p className="text-white font-semibold">${Math.round((secondResults.supabaseData?.gdp_per_capita_usd || 0) * 0.02)}/night</p>
                   </div>
                   <div className="p-4 bg-gray-700 rounded-lg">
                     <span className="text-gray-300 text-sm">Life Expectancy:</span>
@@ -957,11 +944,6 @@ export default function DestinationSearch() {
                       <span className="text-gray-300 text-sm">Risk Class:</span>
                       <p className="text-white font-semibold">{secondResults.supabaseData?.risk_class}</p>
               </div>
-                    <div className="p-4 bg-gray-700 rounded-lg">
-                      <span className="text-gray-300 text-sm">INFORM Risk Index:</span>
-                      <p className="text-white font-semibold">{secondResults.supabaseData?.inform_index}</p>
-                      <p className="text-gray-400 text-xs mt-1">Scale: 1-10 (lower = less risk)</p>
-                    </div>
                     <div className="p-4 bg-gray-700 rounded-lg">
                       <span className="text-gray-300 text-sm">Global Risk Rank:</span>
                       <p className="text-white font-semibold">#{secondResults.supabaseData?.global_rank}</p>
