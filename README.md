@@ -41,10 +41,11 @@ VOYANT helps travelers make informed decisions by providing detailed risk assess
 - **Stamen Toner Lite basemap**: Clean, minimalist black and white design for professional appearance
 - **Smart zoom logic**: Single cities zoom to detailed level 12, two-city comparisons adapt based on distance
 - **Intelligent centering**: Single cities center exactly on location, comparisons center between cities
-- **Smooth transitions**: Dynamic map updates with smooth transitions between views
-- Bright location pins for easy identification (yellow for primary, blue for secondary)
-- Support for comparing two destinations with automatic zoom adjustment
-- Satellite and Toner Lite view options
+- **Smooth transitions**: Dynamic map updates with smooth flyTo animations between views
+- **Consistent teardrop markers**: Professional pin design with yellow (primary) and blue (secondary) colors
+- **Distance-based zoom**: Automatic zoom adjustment using Haversine formula for accurate spacing
+- **Robust error handling**: Multiple safety checks prevent crashes and ensure stable rendering
+- **Satellite and Toner Lite view options**: Toggle between different map styles
 
 ### ⚖️ **Destination Comparison**
 - Compare risk profiles between two locations
@@ -293,6 +294,20 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Smooth Map Transitions:** Dynamic updates with smooth transitions between single and comparison views
 - **Collapsible Weather Alerts:** Shows first alert by default, expand to view all alerts with smooth animations
 - **Distance-Based Zoom:** Automatic zoom adjustment for two-city comparisons (continent to city level)
+
+### 🎭 Enhanced User Experience & Entertainment
+- **Redesigned Fun Facts:** Renamed to "Not really important, but still good to know" with theater mask icon
+- **Artist-Focused Content:** ChatGPT now prioritizes famous artists, musicians, and cultural figures
+- **Entertaining Facts:** Enhanced prompts focus on quirky details, surprising statistics, and hidden gems
+- **Expandable AI Summaries:** Globetrot-Bot summaries now show by default (no longer cut off)
+- **Improved Loading States:** Better progress indicators and error handling throughout the app
+
+### 🛡️ Robust Error Handling & Stability
+- **Comprehensive Map Error Handling:** Multiple safety checks prevent crashes and DOM manipulation errors
+- **Leaflet Loading Detection:** Advanced retry logic with timeout protection (5 seconds max)
+- **Graceful Degradation:** App continues to work even if map fails, with clear error messages
+- **Enhanced Debugging:** Extensive console logging for development and troubleshooting
+- **Professional Error States:** User-friendly error messages instead of technical crashes
 
 ## 🙏 Acknowledgments
 
