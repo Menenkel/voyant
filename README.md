@@ -21,13 +21,14 @@ VOYANT helps travelers make informed decisions by providing detailed risk assess
 - Expandable sections for detailed insights
 
 ### 🌤️ **Advanced Weather & Climate Intelligence**
-- Real-time weather data from Open-Meteo API
-- 16-day weather forecasts with expandable daily views
-- Current conditions: temperature, precipitation, wind speed, humidity
-- Interactive weather charts with temperature and precipitation trends
-- Comprehensive air quality data (PM2.5, PM10, UV Index, Ozone)
-- Detailed air quality descriptions with health context
-- Seasonal climate forecasts with contextual advice
+- Real-time weather data from Open-Meteo API with intelligent caching
+- 16-day weather forecasts with expandable daily views and interactive charts
+- Current conditions: temperature, precipitation, wind speed, humidity, weather outlook
+- Interactive weather charts with temperature and precipitation trends using Chart.js
+- Comprehensive air quality data (PM2.5, PM10, UV Index, Ozone) with health guidance
+- Detailed air quality descriptions with health context and safety recommendations
+- Extreme weather alerts: Automated warnings for heavy rain, high winds, temperature extremes, and snow/hail
+- Seasonal climate forecasts with contextual advice and best times to visit
 
 ### 💧 **Health & Safety Insights**
 - Drinking water quality assessment (Low/Medium/High)
@@ -47,13 +48,15 @@ VOYANT helps travelers make informed decisions by providing detailed risk assess
 - Comprehensive comparison of all risk factors
 
 ### 🤖 **Globaltrot-Bot AI Travel Guide**
-- AI-powered travel summaries using ChatGPT integration
-- Real-time weather data integration with detailed forecasts
-- 3-section structure: Quick Intro, Main Attractions, Weather & Climate
+- AI-powered travel summaries using ChatGPT integration with strict factual accuracy
+- Real-time weather data integration with detailed forecasts and temperature/rain predictions
+- 5-section structure: Quick Intro, Main Attractions, Weather & Climate, Accommodation, Airport Access
 - Wikipedia data integration for comprehensive destination information
-- Enhanced 300-word summaries with temperature and rain predictions
+- Enhanced 300-word summaries with hotel price estimates and airport accessibility
+- City-specific fun facts: ChatGPT-generated entertaining and factual information
 - No risk-related content in AI summaries (focuses on positive travel information)
 - Streamlined comparison mode without comparison guide section
+- Expandable sections with collapsible design for better user experience
 
 ## 🚀 Getting Started
 
@@ -129,6 +132,7 @@ voyant/
 │   ├── Navbar.tsx         # Navigation
 │   ├── RiskRadarChart.tsx # Risk visualization
 │   ├── WeatherChart.tsx   # Weather data visualization
+│   ├── WeatherAlerts.tsx  # Extreme weather alerts component
 │   └── ScrollProgressBar.tsx # Scroll indicator
 ├── lib/                   # Utility libraries
 │   ├── chatgpt.ts         # ChatGPT API integration
@@ -210,14 +214,17 @@ voyant/
 - **Security Updates:** Current events and safety recommendations
 
 ### AI-Powered Travel Intelligence
-- **Globaltrot-Bot Integration:** ChatGPT-powered travel summaries
-- **Smart Query Differentiation:** City vs country optimized summaries
-- **City Queries:** Quick Intro, Main Attractions, Weather & Climate (no national risks)
-- **Country Queries:** Quick Intro, Main Attractions, Weather & Climate, Risks
-- **Wikipedia Data:** Comprehensive destination information from Wikipedia
-- **Risk Filtering:** Shows only high risks (7+ on scale) for country queries
-- **Enhanced Summaries:** 300-word maximum for detailed, focused insights
+- **Globaltrot-Bot Integration:** ChatGPT-powered travel summaries with strict factual accuracy
+- **Smart Query Differentiation:** City vs country optimized summaries with location-specific content
+- **City Queries:** Quick Intro, Main Attractions, Weather & Climate, Accommodation, Airport Access (no national risks)
+- **Country Queries:** Quick Intro, Main Attractions, Weather & Climate, Accommodation, Airport Access, Risks
+- **Wikipedia Data:** Comprehensive destination information from Wikipedia with intelligent disambiguation
+- **Hotel Price Estimates:** AI-generated entry-level, medium, and high-level accommodation pricing
+- **Airport Access Information:** AI-generated distances, travel times, and transportation options
+- **City-Specific Fun Facts:** ChatGPT-generated entertaining and factual information for cities
+- **Enhanced Summaries:** 300-word maximum for detailed, focused insights with weather integration
 - **Comparison Mode:** AI-generated side-by-side destination analysis
+- **Expandable Design:** Collapsible sections for better user experience
 
 ## 🚀 Deployment
 
@@ -245,24 +252,35 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🆕 Recent Updates
 
-### Enhanced AI Summaries & User Experience
-- **Streamlined AI Structure:** Reduced from 4 to 3 sections (Quick Intro, Main Attractions, Weather & Climate)
-- **Removed All Risk Content:** AI summaries now focus purely on positive travel information
-- **Enhanced Weather Integration:** Real-time weather data with detailed 16-day forecasts and temperature/rain predictions
-- **Cleaner Comparison Mode:** Removed comparison guide section for streamlined side-by-side destination viewing
-- **Simplified Map Interface:** Removed search functionality from Leaflet map for cleaner user experience
+### 🤖 Enhanced AI-Powered Travel Intelligence
+- **Comprehensive AI Structure:** 5-section summaries (Quick Intro, Main Attractions, Weather & Climate, Accommodation, Airport Access)
+- **Hotel Price Estimates:** AI-generated entry-level, medium, and high-level accommodation pricing with currency
+- **Airport Access Information:** AI-generated distances in km/miles, travel times, and transportation options
+- **City-Specific Fun Facts:** ChatGPT-generated entertaining and factual information for cities (not countries)
+- **Strict Factual Accuracy:** Enhanced prompts to prevent fabrication and ensure credibility
+- **Location Disambiguation:** Proper handling of cities with same names in different countries (e.g., Vienna, Austria vs Vienna, United States)
+- **Expandable Design:** Collapsible Globetrot-Bot Summary and Basic Country Information sections
 
-### Advanced Weather Integration
-- **Open-Meteo API Integration:** Real-time weather data with 16-day forecasts
-- **Expandable Weather Views:** Interactive charts with expandable daily summaries
-- **Comprehensive Air Quality:** PM2.5, PM10, UV Index, Ozone with detailed health descriptions
-- **Weather Charts:** Temperature and precipitation trends with Chart.js visualization
+### 🌤️ Advanced Weather & Climate Integration
+- **Open-Meteo API Integration:** Real-time weather data with intelligent caching and 16-day forecasts
+- **Extreme Weather Alerts:** Automated warnings for heavy rain, high winds, temperature extremes, and snow/hail
+- **Interactive Weather Charts:** Temperature and precipitation trends with Chart.js visualization
+- **Comprehensive Air Quality:** PM2.5, PM10, UV Index, Ozone with detailed health descriptions and guidance
+- **Weather-Aware AI:** ChatGPT incorporates current and forecasted weather conditions into summaries
+- **Expandable Daily Views:** Interactive charts with expandable daily summaries for better user experience
 
-### Improved User Experience
-- **Enhanced AI Summaries:** Increased from 150 to 300 words for more detailed insights
-- **Better Risk Understanding:** Clear explanations of what risk indicators mean
-- **Visual Weather Data:** Interactive charts and expandable daily forecasts
-- **Optimized Performance:** Caching and retry mechanisms for reliable data fetching
+### 🗺️ Enhanced Location Intelligence
+- **Country-Specific City Search:** Accurate location matching using ISO3 country codes
+- **Wikipedia Disambiguation:** Intelligent handling of city/country combinations for accurate data
+- **Coordinate-Based Weather:** Direct lat/lng weather fetching for precise location data
+- **Destination Name Preservation:** Maintains original search queries for consistent user experience
+
+### 🎨 Improved User Experience
+- **Expandable Sections:** Collapsible design for Globetrot-Bot Summary and Basic Country Information
+- **Enhanced Weather Visualization:** Modern charts and daily forecast cards with intuitive icons
+- **Air Quality Indicators:** Color-coded health guidance for all air quality metrics
+- **Responsive Design:** Optimized for all device sizes with smooth animations
+- **Performance Optimization:** Reduced API calls and improved loading times with caching
 
 ## 🙏 Acknowledgments
 
