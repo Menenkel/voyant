@@ -27,7 +27,8 @@ VOYANT helps travelers make informed decisions by providing detailed risk assess
 - Interactive weather charts with temperature and precipitation trends using Chart.js
 - Comprehensive air quality data (PM2.5, PM10, UV Index, Ozone) with health guidance
 - Detailed air quality descriptions with health context and safety recommendations
-- Extreme weather alerts: Automated warnings for heavy rain, high winds, temperature extremes, and snow/hail
+- **Extreme weather alerts**: Automated warnings for heavy rain, high winds, temperature extremes, and snow/hail
+- **Collapsible alert interface**: Shows first alert by default, expand to view all alerts with smooth animations
 - Seasonal climate forecasts with contextual advice and best times to visit
 
 ### 💧 **Health & Safety Insights**
@@ -37,10 +38,13 @@ VOYANT helps travelers make informed decisions by providing detailed risk assess
 - Security status and current events
 
 ### 🗺️ **Interactive Map Experience**
-- Dark mode map with white borders and labels
-- Bright location pins for easy identification
-- Support for comparing two destinations
-- Satellite and street view options
+- **Stamen Toner Lite basemap**: Clean, minimalist black and white design for professional appearance
+- **Smart zoom logic**: Single cities zoom to detailed level 12, two-city comparisons adapt based on distance
+- **Intelligent centering**: Single cities center exactly on location, comparisons center between cities
+- **Smooth transitions**: Dynamic map updates with smooth transitions between views
+- Bright location pins for easy identification (yellow for primary, blue for secondary)
+- Support for comparing two destinations with automatic zoom adjustment
+- Satellite and Toner Lite view options
 
 ### ⚖️ **Destination Comparison**
 - Compare risk profiles between two locations
@@ -281,6 +285,14 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Air Quality Indicators:** Color-coded health guidance for all air quality metrics
 - **Responsive Design:** Optimized for all device sizes with smooth animations
 - **Performance Optimization:** Reduced API calls and improved loading times with caching
+
+### 🗺️ Enhanced Map Visualization & Weather Alerts
+- **Stamen Toner Lite Basemap:** Professional black and white design for clean, minimalist appearance
+- **Smart Zoom Logic:** Single cities zoom to detailed level 12, two-city comparisons adapt based on distance
+- **Intelligent Map Centering:** Single cities center exactly on location, comparisons center between cities
+- **Smooth Map Transitions:** Dynamic updates with smooth transitions between single and comparison views
+- **Collapsible Weather Alerts:** Shows first alert by default, expand to view all alerts with smooth animations
+- **Distance-Based Zoom:** Automatic zoom adjustment for two-city comparisons (continent to city level)
 
 ## 🙏 Acknowledgments
 
