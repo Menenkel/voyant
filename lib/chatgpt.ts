@@ -36,38 +36,42 @@ export async function generateSummary(
 
 CRITICAL: You MUST NOT use any external knowledge beyond the three provided sources. If the provided data does not contain sufficient information about the specific city, you must clearly state this limitation and only provide information that is directly supported by the provided data.
 
-MANDATORY STRUCTURE - Follow this exact format:
-1. Quick Intro - Brief overview of the destination (NO headline above this)
-2. Main Attractions - Key places to visit and things to do
-3. Airport Access - Include travel distances from the closest national and international airports to the city center (provide distances in both km and miles)
-4. Accommodation - Provide estimated hotel prices for entry-level, medium, and high-level accommodations (include currency and price ranges)
-5. Weather and Climate - Use the provided real-time weather data and 16-day forecast to give current conditions, detailed temperature and rain forecasts, seasonal patterns, and best times to visit (MUST include best times to visit)
+MANDATORY STRUCTURE - Follow this exact format, but ONLY include sections when data is available:
+1. Quick Intro - Brief overview of the destination (ALWAYS include - NO headline above this)
+2. Main Attractions - Key places to visit and things to do (ALWAYS include)
+3. Airport Access - Include travel distances from the closest national and international airports to the city center (ALWAYS include - AI generated)
+4. Accommodation - Provide estimated hotel prices for entry-level, medium, and high-level accommodations (ALWAYS include - AI generated)
+5. Drinking Water Quality - Information about tap water safety, drinking recommendations, and water quality status (ALWAYS include - AI generated)
+6. Weather and Climate - Use the provided real-time weather data and 16-day forecast to give current conditions, detailed temperature and rain forecasts, seasonal patterns, and best times to visit (ONLY include if weather data is available)
 
 Guidelines:
-- Follow the exact 5-section structure above
+- CONDITIONAL SECTIONS: Only include Weather and Climate section when weather data is available
 - Start directly with "## Quick Intro" - NO main title/headline above it
-- End with "## Weather and Climate" - this must always be the last section
-- ALWAYS include "best times to visit" in the Weather and Climate section
-- ALWAYS include airport distance information in the Airport Access section
-- ALWAYS include hotel price estimates in the Accommodation section
-- Do NOT include any Risks section - end your summary after the Weather and Climate section
+- End with the last available section (Weather and Climate if available, otherwise Drinking Water Quality)
+- ALWAYS include "best times to visit" in the Weather and Climate section (if weather data is available)
+- ALWAYS include airport distance information in the Airport Access section (AI generated)
+- ALWAYS include hotel price estimates in the Accommodation section (AI generated)
+- ALWAYS include drinking water quality information in the Drinking Water Quality section (AI generated)
+- Do NOT include any Risks section - end your summary after the last available section
 - Never mention specific INFORM numbers (like "epidemic risk is 1.8")
-- Use the provided real-time weather data and 16-day forecast to enhance the Weather and Climate section with specific temperature and rain predictions
+- Use the provided real-time weather data and 16-day forecast to enhance the Weather and Climate section with specific temperature and rain predictions (if available)
 - Be engaging and informative for travelers
-- Keep the summary concise and focused (maximum 300 words)
+- Keep the summary concise and focused (maximum 350 words)
 - Structure with clear headlines (use ## for all sections)
 - NEVER use ** for bold formatting - this is strictly forbidden
 - Use simple bullet points (-) for lists without any bold formatting
 - Write in plain text with headlines only - no markdown bold formatting
-- Example format for country queries: "## Quick Intro\nBrief overview\n\n## Main Attractions\n- Attraction 1\n- Attraction 2\n\n## Weather and Climate\nCurrent weather info and best times to visit\n\n## Risks\nHigh risk factors only or 'No significant high risks identified'"
-- Example format for city queries: "## Quick Intro\nBrief overview\n\n## Main Attractions\n- Attraction 1\n- Attraction 2\n\n## Weather and Climate\nCurrent weather info and best times to visit"
+- CONFIDENCE LEVELS: For each section, add a confidence level at the end in parentheses: (confidence: low/medium/high)
+- AI GENERATION: Generate airport access, accommodation, and drinking water quality information based on your knowledge of the destination
+- Example format for country queries: "## Quick Intro\nBrief overview (confidence: high)\n\n## Main Attractions\n- Attraction 1\n- Attraction 2 (confidence: medium)\n\n## Airport Access\nAirport information (confidence: high)\n\n## Accommodation\nHotel prices (confidence: medium)\n\n## Drinking Water Quality\nWater safety info (confidence: high)\n\n## Weather and Climate\nCurrent weather info and best times to visit (confidence: high)"
+- Example format for city queries: "## Quick Intro\nBrief overview (confidence: high)\n\n## Main Attractions\n- Attraction 1\n- Attraction 2 (confidence: medium)\n\n## Airport Access\nAirport information (confidence: high)\n\n## Accommodation\nHotel prices (confidence: medium)\n\n## Drinking Water Quality\nWater safety info (confidence: high)\n\n## Weather and Climate\nCurrent weather info and best times to visit (confidence: high)"
 - If comparing two locations, highlight key differences for tourists
 - Focus on what makes each destination special and worth visiting
 - IMPORTANT: For city queries, focus on city-specific information and avoid mentioning national-level statistics (like population, GDP, life expectancy, HDI) or any natural disaster risks in your summary. For city queries, do NOT include a Risks section at all - end your summary after the Weather and Climate section`
   };
 
   // Prepare the user message with data
-  let userContent = `Please create a comprehensive travel guide for ${destination} based on the following data. IMPORTANT: Do not use ** for bold formatting anywhere in your response. Use only headlines (# and ##) and simple bullet points (-). CRITICAL: You MUST include all required sections: Quick Intro, Main Attractions, and Weather and Climate (with best times to visit). For country queries, also include a Risks section. For city queries, do NOT include a Risks section - end your summary after the Weather and Climate section.
+  let userContent = `Please create a comprehensive travel guide for ${destination} based on the following data. IMPORTANT: Do not use ** for bold formatting anywhere in your response. Use only headlines (# and ##) and simple bullet points (-). CRITICAL: ALWAYS include: Quick Intro, Main Attractions, Airport Access, Accommodation, and Drinking Water Quality (all AI generated). CONDITIONALLY include: Weather and Climate (only if weather data available). Do NOT include a Risks section. CONFIDENCE LEVELS: Add confidence levels (low/medium/high) at the end of each section in parentheses.
 
 DATA LIMITATION WARNING: If the provided data does not contain sufficient information about the specific city (e.g., if Wikipedia data is missing or refers to a different city), you must clearly state this limitation and only provide information that is directly supported by the provided data. Do not use external knowledge to fill in missing information.
 
@@ -77,12 +81,16 @@ DESTINATION DATA:
 - Population: ${supabaseData.population_mio} million
 - Life Expectancy: ${supabaseData.life_expectancy} years
 - GDP per Capita: $${supabaseData.gdp_per_capita_usd}
-- Human Development Index: ${supabaseData.human_dev_index}`;
+- Human Development Index: ${supabaseData.human_dev_index}
+- Fun Fact: ${supabaseData.fun_fact?.replace(/^"|"$/g, '') || 'No fun fact available'}
+
+DATA AVAILABILITY INDICATORS:
+- Airport Access Data: AI GENERATED (based on destination knowledge)
+- Accommodation Data: AI GENERATED (based on destination knowledge)
+- Drinking Water Quality Data: AI GENERATED (based on destination knowledge)
+- Weather Data: ${weatherData ? 'AVAILABLE' : 'NOT AVAILABLE'}`;
 
   // Risk factors are not included in AI summaries
-
-  userContent += `
-- Fun Fact: ${supabaseData.fun_fact?.replace(/^"|"$/g, '') || 'No fun fact available'}`;
 
   // Add weather data if available
   if (weatherData) {
@@ -133,9 +141,15 @@ WEATHER DATA: No real-time weather data available for this location.`;
   userContent += `\n\nCRITICAL INSTRUCTION: If Wikipedia data is not available or refers to a different city, you must clearly state this limitation and only provide information that is directly supported by the Supabase data above. Do not use your training data to fill in missing information about specific cities. If the provided data does not contain sufficient information about the specific city, you must acknowledge this limitation.`;
 
   // Add explicit instruction based on query type
-  userContent += `\n\nIMPORTANT: Do NOT include a Risks section in your response. End your summary after the Weather and Climate section.
+  userContent += `\n\nIMPORTANT: Do NOT include a Risks section in your response. End your summary after the last available section.
 
-AIRPORT ACCESS REQUIREMENT: In the Airport Access section, provide travel distances from the closest national and international airports to the city center. Include:
+CONDITIONAL SECTION REQUIREMENTS:
+- ALWAYS include Airport Access section (AI will generate based on destination knowledge)
+- ALWAYS include Accommodation section (AI will generate based on destination knowledge)
+- ALWAYS include Drinking Water Quality section (AI will generate based on destination knowledge)
+- Only include Weather and Climate section if "Weather Data: AVAILABLE" is shown above
+
+AIRPORT ACCESS REQUIREMENT (always include): In the Airport Access section, provide travel distances from the closest national and international airports to the city center. Include:
 - Airport names and types (national/international)
 - Distance in kilometers and miles
 - Approximate travel time by car/public transport
@@ -145,7 +159,7 @@ Example format:
 - Vienna International Airport (VIE): 18 km (11 miles) from city center, 20-30 minutes by car or train
 - Bratislava Airport (BTS): 60 km (37 miles) from city center, 1 hour by car or bus
 
-ACCOMMODATION REQUIREMENT: In the Accommodation section, provide estimated hotel prices for different budget levels. Include:
+ACCOMMODATION REQUIREMENT (always include): In the Accommodation section, provide estimated hotel prices for different budget levels. Include:
 - Entry-level hotels: Budget accommodations (hostels, basic hotels)
 - Medium-level hotels: Mid-range accommodations (3-star hotels, boutique hotels)
 - High-level hotels: Luxury accommodations (4-5 star hotels, resorts)
@@ -155,7 +169,19 @@ ACCOMMODATION REQUIREMENT: In the Accommodation section, provide estimated hotel
 Example format:
 - Entry-level: $30-60 USD per night (hostels, budget hotels)
 - Medium-level: $80-150 USD per night (3-star hotels, boutique accommodations)
-- High-level: $200-400 USD per night (4-5 star hotels, luxury resorts)`;
+- High-level: $200-400 USD per night (4-5 star hotels, luxury resorts)
+
+DRINKING WATER QUALITY REQUIREMENT (always include): In the Drinking Water Quality section, provide information about tap water safety and drinking recommendations. Include:
+- Tap water safety level (Low/Medium/High)
+- Specific drinking advice (e.g., "Safe to drink from tap", "Filter before drinking", "Use bottled water only")
+- Brief explanation of water quality standards
+- Recommendations for travelers
+
+Example format:
+- Tap water is generally safe to drink in most areas
+- Water quality meets international standards
+- Travelers can drink from tap in hotels and restaurants
+- Consider bottled water in rural areas`;
 
   // Add comparison data if provided
   if (isComparison && secondSupabaseData && secondDestination) {
@@ -166,12 +192,16 @@ Example format:
 - Population: ${secondSupabaseData.population_mio} million
 - Life Expectancy: ${secondSupabaseData.life_expectancy} years
 - GDP per Capita: $${secondSupabaseData.gdp_per_capita_usd}
-- Human Development Index: ${secondSupabaseData.human_dev_index}`;
+- Human Development Index: ${secondSupabaseData.human_dev_index}
+- Fun Fact: ${secondSupabaseData.fun_fact?.replace(/^"|"$/g, '') || 'No fun fact available'}
+
+SECOND LOCATION DATA AVAILABILITY INDICATORS:
+- Airport Access Data: AI GENERATED (based on destination knowledge)
+- Accommodation Data: AI GENERATED (based on destination knowledge)
+- Drinking Water Quality Data: AI GENERATED (based on destination knowledge)
+- Weather Data: ${secondWeatherData ? 'AVAILABLE' : 'NOT AVAILABLE'}`;
 
     // Risk factors are not included in AI summaries
-
-    userContent += `
-- Fun Fact: ${secondSupabaseData.fun_fact?.replace(/^"|"$/g, '') || 'No fun fact available'}`;
 
     // Add second location weather data if available
     if (secondWeatherData) {
