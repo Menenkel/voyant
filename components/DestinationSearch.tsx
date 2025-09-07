@@ -107,8 +107,8 @@ export default function DestinationSearch() {
     isCapital: boolean;
   }>>([]);
   const [showSecondSuggestions, setShowSecondSuggestions] = useState(false);
-  const [isGlobetrotBotExpanded, setIsGlobetrotBotExpanded] = useState(false);
-  const [isSecondGlobetrotBotExpanded, setIsSecondGlobetrotBotExpanded] = useState(false);
+  const [isGlobetrotBotExpanded, setIsGlobetrotBotExpanded] = useState(true);
+  const [isSecondGlobetrotBotExpanded, setIsSecondGlobetrotBotExpanded] = useState(true);
   const [isCountryInfoExpanded, setIsCountryInfoExpanded] = useState(false);
   const [isSecondCountryInfoExpanded, setIsSecondCountryInfoExpanded] = useState(false);
 
@@ -573,7 +573,7 @@ export default function DestinationSearch() {
                   </button>
                 </div>
                 {isCountryInfoExpanded && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="p-4 bg-gray-700 rounded-lg">
                   <span className="text-gray-300 text-sm">Country:</span>
                   <p className="text-white font-semibold">{results.supabaseData?.country}</p>
@@ -674,10 +674,10 @@ export default function DestinationSearch() {
               </div>
             )}
 
-            {/* Fun Fact */}
+            {/* Not really important, but still good to know */}
             {results.fun_fact && (
               <div className="bg-gray-800 rounded-lg p-6 border-2 border-purple-500/30 shadow-lg">
-                <h4 className="text-lg font-semibold text-purple-400 mb-4">💡 Fun Fact</h4>
+                <h4 className="text-lg font-semibold text-purple-400 mb-4">🎭 Not really important, but still good to know</h4>
                 <div className="p-4 bg-gray-700 rounded-lg">
                   <p className="text-white font-medium italic">"{results.fun_fact?.replace(/^"|"$/g, '') || 'No fun fact available'}"</p>
                 </div>
@@ -928,7 +928,7 @@ export default function DestinationSearch() {
                     </button>
                   </div>
                   {isSecondCountryInfoExpanded && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="p-4 bg-gray-700 rounded-lg">
                     <span className="text-gray-300 text-sm">Country:</span>
                     <p className="text-white font-semibold">{secondResults.supabaseData?.country}</p>
@@ -1029,10 +1029,10 @@ export default function DestinationSearch() {
                 </div>
               )}
 
-              {/* Fun Fact */}
+              {/* Not really important, but still good to know */}
               {secondResults.fun_fact && (
                 <div className="bg-gray-800 rounded-lg p-6 border-2 border-purple-500/30 shadow-lg">
-                  <h4 className="text-lg font-semibold text-purple-400 mb-4">💡 Fun Fact</h4>
+                  <h4 className="text-lg font-semibold text-purple-400 mb-4">🎭 Not really important, but still good to know</h4>
                   <div className="p-4 bg-gray-700 rounded-lg">
                     <p className="text-white font-medium italic">"{secondResults.fun_fact?.replace(/^"|"$/g, '') || 'No fun fact available'}"</p>
                   </div>

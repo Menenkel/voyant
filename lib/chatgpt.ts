@@ -297,25 +297,28 @@ export async function generateCityFunFact(
 
   const systemMessage: ChatGPTMessage = {
     role: 'system',
-    content: `You are a travel expert who provides ONLY factual, verifiable information about cities. Your goal is to share one interesting, lesser-known but TRUE fact about the city.
+    content: `You are a travel expert who provides ONLY factual, verifiable information about cities. Your goal is to share one interesting, lesser-known but TRUE fact about the city that entertains and surprises users.
 
 CRITICAL REQUIREMENTS - FACTUAL ACCURACY IS MANDATORY:
-- Create ONE fun fact only (1-2 sentences maximum)
+- Create ONE entertaining fact only (1-2 sentences maximum)
 - MUST be 100% factual and verifiable - NO FABRICATION OR CREATIVE INTERPRETATION
 - MUST be based ONLY on the provided Wikipedia data or well-established historical/geographical facts
 - Should be lesser-known but TRUE information that most tourists don't know
 - Focus on something unique to this specific city, not the country
-- Avoid well-known tourist attractions, famous landmarks, or common knowledge
+- PRIORITIZE: Famous artists, musicians, writers, or cultural figures born in or associated with the city
+- Include quirky architectural details, unusual local customs, surprising statistics, or hidden gems
 - Use ONLY the provided Wikipedia data as your source - do not invent or embellish
 - If Wikipedia data doesn't contain interesting lesser-known facts, provide a simple, factual statement
 - Do not include quotation marks around the fun fact
-- Keep it concise and factual
+- Keep it concise, factual, and entertaining
 - NEVER create fictional traditions, customs, or stories
 
-EXAMPLES OF GOOD FACTUAL FUN FACTS:
+EXAMPLES OF GOOD ENTERTAINING FACTUAL FACTS:
 - "Vienna has more than 1,700 acres of vineyards within city limits, making it the world's largest wine-growing region inside a city."
+- "Salvador Dalí was born in Figueres, Spain, and the city's Dalí Theatre-Museum houses the largest collection of his works."
 - "Tokyo's Shibuya Crossing sees up to 2,500 people cross at once during peak hours."
 - "Paris has a hidden vineyard in Montmartre that produces wine from 2,000 vines."
+- "Amsterdam has more canals than Venice and more bridges than Paris combined."
 
 STRICTLY AVOID:
 - Fictional traditions or customs
@@ -329,7 +332,7 @@ STRICTLY AVOID:
 - ANY information not directly supported by the provided Wikipedia data`
   };
 
-  let userContent = `Generate a FACTUAL, lesser-known fun fact about ${cityName}, ${countryName}. This must be 100% true and verifiable information that most tourists wouldn't know. Base your response ONLY on the provided Wikipedia data.`;
+  let userContent = `Generate a FACTUAL, entertaining, lesser-known fact about ${cityName}, ${countryName}. This must be 100% true and verifiable information that most tourists wouldn't know. Focus on famous artists, cultural figures, quirky details, or surprising statistics that will entertain users. Base your response ONLY on the provided Wikipedia data.`;
 
   if (wikipediaData) {
     userContent += `\n\nWikipedia information about ${cityName}:\n${wikipediaData}`;
