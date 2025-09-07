@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 
 interface WeatherAlert {
   type: string;
@@ -21,6 +21,8 @@ interface WeatherAlertsProps {
 }
 
 export default function WeatherAlerts({ alerts, title = "⚠️ Weather Alerts" }: WeatherAlertsProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
   // Calculate the 16th day from today
   const get16thDayDate = () => {
     const today = new Date();
@@ -33,6 +35,9 @@ export default function WeatherAlerts({ alerts, title = "⚠️ Weather Alerts" 
       year: 'numeric'
     });
   };
+
+  // Calculate total number of alerts across all days
+  const totalAlerts = alerts ? alerts.reduce((total, dayAlert) => total + dayAlert.alerts.length, 0) : 0;
 
   if (!alerts || alerts.length === 0) {
     return (
@@ -98,7 +103,22 @@ export default function WeatherAlerts({ alerts, title = "⚠️ Weather Alerts" 
 
   return (
     <div className="bg-gray-800 rounded-lg p-6 border-2 border-yellow-500/30 shadow-lg">
-      <h4 className="text-lg font-semibold text-yellow-400 mb-4">{title}</h4>
+      <div className="flex items-center justify-between mb-4">
+        <h4 className="text-lg font-semibold text-yellow-400">{title}</h4>
+        {totalAlerts > 1 && (
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="flex items-center space-x-2 text-yellow-400 hover:text-yellow-300 transition-colors"
+          >
+            <span className="text-sm">
+              {isExpanded ? 'Show Less' : `Show All (${totalAlerts})`}
+            </span>
+            <span className={`transform transition-transform ${isExpanded ? 'rotate-180' : ''}`}>
+              ▼
+            </span>
+          </button>
+        )}
+      </div>
       
       <div className="space-y-4">
         {alerts.map((dayAlert, dayIndex) => (
@@ -117,32 +137,39 @@ export default function WeatherAlerts({ alerts, title = "⚠️ Weather Alerts" 
             </div>
             
             <div className="space-y-2">
-              {dayAlert.alerts.map((alert, alertIndex) => (
-                <div 
-                  key={alertIndex}
-                  className={`p-3 rounded-lg border-2 ${getSeverityColor(alert.severity)}`}
-                >
-                  <div className="flex items-start space-x-3">
-                    <span className="text-xl">
-                      {getAlertIcon(alert.type)}
-                    </span>
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2 mb-1">
-                        <span className="font-semibold">{alert.type}</span>
-                        <span className="text-sm">
-                          {getSeverityIcon(alert.severity)} {alert.severity.toUpperCase()}
-                        </span>
+              {dayAlert.alerts.map((alert, alertIndex) => {
+                // Show first alert always, others only when expanded
+                const shouldShow = isExpanded || (dayIndex === 0 && alertIndex === 0);
+                
+                if (!shouldShow) return null;
+                
+                return (
+                  <div 
+                    key={alertIndex}
+                    className={`p-3 rounded-lg border-2 ${getSeverityColor(alert.severity)}`}
+                  >
+                    <div className="flex items-start space-x-3">
+                      <span className="text-xl">
+                        {getAlertIcon(alert.type)}
+                      </span>
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-1">
+                          <span className="font-semibold">{alert.type}</span>
+                          <span className="text-sm">
+                            {getSeverityIcon(alert.severity)} {alert.severity.toUpperCase()}
+                          </span>
+                        </div>
+                        <p className="text-sm opacity-90 mb-1">
+                          {alert.description}
+                        </p>
+                        <p className="text-xs opacity-75">
+                          📍 {alert.forecastPeriod}
+                        </p>
                       </div>
-                      <p className="text-sm opacity-90 mb-1">
-                        {alert.description}
-                      </p>
-                      <p className="text-xs opacity-75">
-                        📍 {alert.forecastPeriod}
-                      </p>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         ))}

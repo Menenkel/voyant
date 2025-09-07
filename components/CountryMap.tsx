@@ -103,28 +103,47 @@ export default function CountryMap({ searchQuery, secondDestination, coordinates
     updateSecondCoords();
   }, [secondDestination]);
 
-  // Calculate map center and zoom for two locations
+  // Calculate map center and zoom for locations
   const getMapCenter = () => {
     if (coords && secondCoords) {
+      // Center between two locations
       return [
         (coords[0] + secondCoords[0]) / 2,
         (coords[1] + secondCoords[1]) / 2
       ] as [number, number];
     }
-    return coords || [20, 0];
+    
+    // Single location - center on that location
+    if (coords) {
+      return coords;
+    }
+    
+    // Default world center
+    return [20, 0] as [number, number];
   };
 
   const getMapZoom = () => {
     if (coords && secondCoords) {
+      // Calculate distance between two points
       const latDiff = Math.abs(coords[0] - secondCoords[0]);
       const lonDiff = Math.abs(coords[1] - secondCoords[1]);
       const maxDiff = Math.max(latDiff, lonDiff);
-      if (maxDiff > 50) return 3;
-      if (maxDiff > 20) return 4;
-      if (maxDiff > 10) return 5;
-      return 6;
+      
+      // More granular zoom levels for two-city comparison
+      if (maxDiff > 100) return 2;      // Very far apart (different continents)
+      if (maxDiff > 50) return 3;       // Far apart (different countries/regions)
+      if (maxDiff > 20) return 4;       // Medium distance (different states/provinces)
+      if (maxDiff > 10) return 5;       // Close distance (same region)
+      if (maxDiff > 5) return 6;        // Very close (same metropolitan area)
+      return 7;                         // Same city area
     }
-    return coords ? 8 : 2;
+    
+    // Single city zoom - zoom in closer to show city details
+    if (coords) {
+      return 12; // Good zoom level for city view
+    }
+    
+    return 2; // Default world view
   };
 
   if (!isClient) {
@@ -152,7 +171,7 @@ export default function CountryMap({ searchQuery, secondDestination, coordinates
                   : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
               }`}
             >
-              Street
+              Toner Lite
             </button>
             <button
               onClick={() => setMapLayer('satellite')}
@@ -183,12 +202,14 @@ export default function CountryMap({ searchQuery, secondDestination, coordinates
           style={{ height: '100%', width: '100%' }}
           ref={mapRef}
           className="z-10"
+          key={`${coords?.[0]}-${coords?.[1]}-${secondCoords?.[0]}-${secondCoords?.[1]}`}
         >
-          {/* Street Map Layer */}
+          {/* Street Map Layer - Stamen Toner Lite */}
           {mapLayer === 'street' && (
             <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+              url="https://tiles.stadiamaps.com/tiles/stamen_toner_lite/{z}/{x}/{y}{r}.png"
+              attribution='&copy; <a href="https://stadiamaps.com/" target="_blank">Stadia Maps</a> &copy; <a href="https://stamen.com/" target="_blank">Stamen Design</a> &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>'
+              maxZoom={20}
             />
           )}
           
