@@ -18,12 +18,15 @@ VOYANT helps travelers make informed decisions by providing detailed risk assess
 - Interactive natural hazards spider chart for all destinations
 - Global rankings with explanatory text (Peace Index, Global Risk Rank, INFORM Index)
 - Clear risk indicator explanations (higher ranks = less risky/more peaceful)
+- **Country size data**: Area in km² and square miles with similar country comparisons
 - Expandable sections for detailed insights
 
 ### 🌤️ **Advanced Weather & Climate Intelligence**
 - Real-time weather data from Open-Meteo API with intelligent caching
 - 16-day weather forecasts with expandable daily views and interactive charts
 - Current conditions: temperature, precipitation, wind speed, humidity, weather outlook
+- **Temperature stream graph**: Beautiful gradient visualization from red (max) to grey (min) temperatures
+- **Units toggle**: Switch between Celsius/Fahrenheit and km/h/mph with instant conversion
 - Interactive weather charts with temperature and precipitation trends using Chart.js
 - Comprehensive air quality data (PM2.5, PM10, UV Index, Ozone) with health guidance
 - Detailed air quality descriptions with health context and safety recommendations
@@ -144,7 +147,8 @@ voyant/
 │   ├── database.ts        # Supabase database functions
 │   ├── wikipedia.ts       # Wikipedia API integration
 │   ├── weather.ts         # Weather data integration
-│   └── cities.ts          # City data utilities
+│   ├── cities.ts          # City data utilities
+│   └── countryArea.ts     # Country area data and size comparisons
 ├── public/                # Static assets
 └── README.md             # This file
 ```
@@ -209,8 +213,10 @@ voyant/
 ### Weather Intelligence
 - **Real-time Data:** Open-Meteo API integration for accurate weather information
 - **16-Day Forecasts:** Expandable daily views with temperature and precipitation charts
+- **Temperature Stream Graph:** Beautiful gradient visualization from red (max) to grey (min) temperatures
+- **Units Toggle:** Switch between Celsius/Fahrenheit and km/h/mph with instant conversion
 - **Air Quality Monitoring:** PM2.5, PM10, UV Index, Ozone with detailed health descriptions
-- **Interactive Charts:** Temperature trends and precipitation patterns
+- **Interactive Charts:** Temperature trends and precipitation patterns with hover interactions
 - **Current Conditions:** Temperature, precipitation, wind speed, humidity, and weather outlook
 
 ### Health & Safety
@@ -308,6 +314,20 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Graceful Degradation:** App continues to work even if map fails, with clear error messages
 - **Enhanced Debugging:** Extensive console logging for development and troubleshooting
 - **Professional Error States:** User-friendly error messages instead of technical crashes
+
+### 🌡️ Enhanced Weather Visualization & Units
+- **Temperature Stream Graph:** Beautiful gradient visualization from red (max) to grey (min) temperatures
+- **Units Toggle:** Switch between Celsius/Fahrenheit and km/h/mph with instant conversion
+- **Interactive Hover Points:** Both max and min temperature points with detailed tooltips
+- **Petrol Blue Rainfall:** Updated precipitation bars with proper blue color scheme
+- **Weather Section Integration:** Units switch conveniently located in weather section
+
+### 📏 Country Size & Geographic Data
+- **Comprehensive Area Database:** 195+ countries with accurate area measurements in km² and square miles
+- **Similar Size Comparisons:** Intelligent matching to find countries with similar land area
+- **Smart Country Matching:** Handles country name variations (USA, UK, DRC, etc.)
+- **Basic Country Information:** Enhanced with size data and geographic context
+- **Dual Unit Display:** Both metric and imperial measurements for global accessibility
 
 ## 🙏 Acknowledgments
 
