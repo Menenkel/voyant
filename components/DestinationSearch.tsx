@@ -45,6 +45,9 @@ interface SearchResult {
     gdp_per_capita_usd: number;
     human_dev_index: number;
     fun_fact: string;
+    area_km2?: number;
+    area_sq_miles?: number;
+    similar_size_country?: string;
   };
   weatherData?: {
     location: string;
@@ -111,6 +114,24 @@ export default function DestinationSearch() {
   const [isSecondGlobetrotBotExpanded, setIsSecondGlobetrotBotExpanded] = useState(true);
   const [isCountryInfoExpanded, setIsCountryInfoExpanded] = useState(false);
   const [isSecondCountryInfoExpanded, setIsSecondCountryInfoExpanded] = useState(false);
+  const [useImperialUnits, setUseImperialUnits] = useState(false);
+
+  // Unit conversion functions
+  const convertTemperature = (celsius: number): number => {
+    return useImperialUnits ? Math.round((celsius * 9/5 + 32) * 10) / 10 : Math.round(celsius * 10) / 10;
+  };
+
+  const convertWindSpeed = (kmh: number): number => {
+    return useImperialUnits ? Math.round((kmh * 0.621371) * 10) / 10 : Math.round(kmh * 10) / 10;
+  };
+
+  const getTemperatureUnit = (): string => {
+    return useImperialUnits ? '°F' : '°C';
+  };
+
+  const getWindSpeedUnit = (): string => {
+    return useImperialUnits ? 'mph' : 'km/h';
+  };
 
   // Load search history from localStorage on component mount
   useEffect(() => {
@@ -546,6 +567,134 @@ export default function DestinationSearch() {
         onCountrySelect={handleCountrySelect}
       />
 
+      {/* Basic Country Information - Right after map, collapsed by default */}
+      {results && !isCountrySearch(results) && (
+        <div className="bg-white rounded-lg p-6 border-2 border-black shadow-lg">
+          <div className="flex items-center justify-between mb-4">
+            <h4 className="text-lg font-semibold text-black">🏛️ Basic Country Information</h4>
+            <button
+              onClick={() => setIsCountryInfoExpanded(!isCountryInfoExpanded)}
+              className="text-black hover:text-gray-600 transition-colors duration-200 flex items-center space-x-2"
+            >
+              <span className="text-sm">
+                {isCountryInfoExpanded ? 'Show Less' : 'Show More'}
+              </span>
+              <span className={`transform transition-transform duration-200 ${isCountryInfoExpanded ? 'rotate-180' : ''}`}>
+                ▼
+              </span>
+            </button>
+          </div>
+          {isCountryInfoExpanded && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-4 bg-gray-100 rounded-lg border-2 border-black">
+                <span className="text-gray-600 text-sm">Country:</span>
+                <p className="text-black font-semibold">{results.supabaseData?.country}</p>
+              </div>
+              <div className="p-4 bg-gray-100 rounded-lg border-2 border-black">
+                <span className="text-gray-600 text-sm">Population:</span>
+                <p className="text-black font-semibold">{results.supabaseData?.population_mio} million</p>
+              </div>
+              <div className="p-4 bg-gray-100 rounded-lg border-2 border-black">
+                <span className="text-gray-600 text-sm">GDP Per Capita:</span>
+                <p className="text-black font-semibold">${results.supabaseData?.gdp_per_capita_usd?.toLocaleString()}</p>
+              </div>
+              <div className="p-4 bg-gray-100 rounded-lg border-2 border-black">
+                <span className="text-gray-600 text-sm">Life Expectancy:</span>
+                <p className="text-black font-semibold">{results.supabaseData?.life_expectancy} years</p>
+              </div>
+              <div className="p-4 bg-gray-100 rounded-lg border-2 border-black">
+                <span className="text-gray-600 text-sm">Global Risk Rank:</span>
+                <p className="text-black font-semibold">#{results.supabaseData?.global_rank}</p>
+              </div>
+              <div className="p-4 bg-gray-100 rounded-lg border-2 border-black">
+                <span className="text-gray-600 text-sm">Peace Index Rank:</span>
+                <p className="text-black font-semibold">#{results.supabaseData?.global_peace_rank}</p>
+              </div>
+              <div className="p-4 bg-gray-100 rounded-lg border-2 border-black">
+                <span className="text-gray-600 text-sm">Electricity Access:</span>
+                <p className="text-black font-semibold">{results.supabaseData?.population_electricity}%</p>
+              </div>
+              {results.supabaseData?.area_km2 && (
+                <div className="p-4 bg-gray-100 rounded-lg border-2 border-black">
+                  <span className="text-gray-600 text-sm">Country Size:</span>
+                  <p className="text-black font-semibold">{results.supabaseData.area_km2.toLocaleString()} km²</p>
+                  <p className="text-black font-semibold">{results.supabaseData.area_sq_miles?.toLocaleString()} sq miles</p>
+                  {results.supabaseData.similar_size_country && (
+                    <p className="text-gray-500 text-xs mt-1">
+                      Similar size: {results.supabaseData.similar_size_country}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Basic Country Information for Second Destination - Right after map, collapsed by default */}
+      {secondResults && !isCountrySearch(secondResults) && (
+        <div className="bg-white rounded-lg p-6 border-2 border-black shadow-lg">
+          <div className="flex items-center justify-between mb-4">
+            <h4 className="text-lg font-semibold text-black">🏛️ Basic Country Information</h4>
+            <button
+              onClick={() => setIsSecondCountryInfoExpanded(!isSecondCountryInfoExpanded)}
+              className="text-black hover:text-gray-600 transition-colors duration-200 flex items-center space-x-2"
+            >
+              <span className="text-sm">
+                {isSecondCountryInfoExpanded ? 'Show Less' : 'Show More'}
+              </span>
+              <span className={`transform transition-transform duration-200 ${isSecondCountryInfoExpanded ? 'rotate-180' : ''}`}>
+                ▼
+              </span>
+            </button>
+          </div>
+          {isSecondCountryInfoExpanded && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-4 bg-gray-100 rounded-lg border-2 border-black">
+                <span className="text-gray-600 text-sm">Country:</span>
+                <p className="text-black font-semibold">{secondResults.supabaseData?.country}</p>
+              </div>
+              <div className="p-4 bg-gray-100 rounded-lg border-2 border-black">
+                <span className="text-gray-600 text-sm">Population:</span>
+                <p className="text-black font-semibold">{secondResults.supabaseData?.population_mio} million</p>
+              </div>
+              <div className="p-4 bg-gray-100 rounded-lg border-2 border-black">
+                <span className="text-gray-600 text-sm">GDP Per Capita:</span>
+                <p className="text-black font-semibold">${secondResults.supabaseData?.gdp_per_capita_usd?.toLocaleString()}</p>
+              </div>
+              <div className="p-4 bg-gray-100 rounded-lg border-2 border-black">
+                <span className="text-gray-600 text-sm">Life Expectancy:</span>
+                <p className="text-black font-semibold">{secondResults.supabaseData?.life_expectancy} years</p>
+              </div>
+              <div className="p-4 bg-gray-100 rounded-lg border-2 border-black">
+                <span className="text-gray-600 text-sm">Global Risk Rank:</span>
+                <p className="text-black font-semibold">#{secondResults.supabaseData?.global_rank}</p>
+              </div>
+              <div className="p-4 bg-gray-100 rounded-lg border-2 border-black">
+                <span className="text-gray-600 text-sm">Peace Index Rank:</span>
+                <p className="text-black font-semibold">#{secondResults.supabaseData?.global_peace_rank}</p>
+              </div>
+              <div className="p-4 bg-gray-100 rounded-lg border-2 border-black">
+                <span className="text-gray-600 text-sm">Electricity Access:</span>
+                <p className="text-black font-semibold">{secondResults.supabaseData?.population_electricity}%</p>
+              </div>
+              {secondResults.supabaseData?.area_km2 && (
+                <div className="p-4 bg-gray-100 rounded-lg border-2 border-black">
+                  <span className="text-gray-600 text-sm">Country Size:</span>
+                  <p className="text-black font-semibold">{secondResults.supabaseData.area_km2.toLocaleString()} km²</p>
+                  <p className="text-black font-semibold">{secondResults.supabaseData.area_sq_miles?.toLocaleString()} sq miles</p>
+                  {secondResults.supabaseData.similar_size_country && (
+                    <p className="text-gray-500 text-xs mt-1">
+                      Similar size: {secondResults.supabaseData.similar_size_country}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Results Display */}
       {results && (
         <div className={`space-y-6 ${compareMode && secondResults ? 'grid grid-cols-1 lg:grid-cols-2 gap-8' : ''}`}>
@@ -555,73 +704,6 @@ export default function DestinationSearch() {
               {compareMode ? `${results.destination} - Country Data` : 'Country Data'}
             </h3>
             
-            {/* Basic Country Information - Only for City Searches */}
-            {!isCountrySearch(results) && (
-              <div className="bg-white rounded-lg p-6 border-2 border-green-500 shadow-lg">
-                <div className="flex items-center justify-between mb-4">
-                  <h4 className="text-lg font-semibold text-green-600">🏛️ Basic Country Information</h4>
-                  <button
-                    onClick={() => setIsCountryInfoExpanded(!isCountryInfoExpanded)}
-                    className="text-green-600 hover:text-green-500 transition-colors duration-200 flex items-center space-x-2"
-                  >
-                    <span className="text-sm">
-                      {isCountryInfoExpanded ? 'Show Less' : 'Show More'}
-                    </span>
-                    <span className={`transform transition-transform duration-200 ${isCountryInfoExpanded ? 'rotate-180' : ''}`}>
-                      ▼
-                    </span>
-                  </button>
-                </div>
-                {isCountryInfoExpanded && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-4 bg-gray-700 rounded-lg">
-                  <span className="text-gray-300 text-sm">Country:</span>
-                  <p className="text-white font-semibold">{results.supabaseData?.country}</p>
-                </div>
-                <div className="p-4 bg-gray-700 rounded-lg">
-                    <span className="text-gray-300 text-sm">Population:</span>
-                    <p className="text-white font-semibold">{results.supabaseData?.population_mio} million</p>
-                </div>
-                <div className="p-4 bg-gray-700 rounded-lg">
-                    <span className="text-gray-300 text-sm">GDP Per Capita:</span>
-                    <p className="text-white font-semibold">${results.supabaseData?.gdp_per_capita_usd?.toLocaleString()}</p>
-                </div>
-                <div className="p-4 bg-gray-700 rounded-lg">
-                  <span className="text-gray-300 text-sm">Life Expectancy:</span>
-                    <p className="text-white font-semibold">{results.supabaseData?.life_expectancy} years</p>
-                </div>
-                  <div className="p-4 bg-gray-700 rounded-lg">
-                    <span className="text-gray-300 text-sm">Electricity Access:</span>
-                    <p className="text-white font-semibold">{results.supabaseData?.population_electricity}%</p>
-              </div>
-                  <div className="p-4 bg-gray-700 rounded-lg">
-                    <span className="text-gray-300 text-sm">Risk Class:</span>
-                    <p className="text-white font-semibold">{results.supabaseData?.risk_class}</p>
-            </div>
-                  <div className="p-4 bg-gray-700 rounded-lg">
-                    <span className="text-gray-300 text-sm">Global Risk Rank:</span>
-                    <p className="text-white font-semibold">#{results.supabaseData?.global_rank}</p>
-                    <p className="text-gray-400 text-xs mt-1">Higher rank = less risky</p>
-                    {results.comparisonData?.globalRankAbove && results.comparisonData.globalRankAbove.length > 0 && (
-                      <div className="mt-2 text-xs text-gray-400">
-                        Similar: {results.comparisonData.globalRankAbove.slice(0, 1).map(c => `${c.country} (#${c.rank})`).join(', ')}
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-4 bg-gray-700 rounded-lg">
-                    <span className="text-gray-300 text-sm">Peace Index Rank:</span>
-                    <p className="text-white font-semibold">#{results.supabaseData?.global_peace_rank}</p>
-                    <p className="text-gray-400 text-xs mt-1">Higher rank = more peaceful</p>
-                    {results.comparisonData?.peaceRankAbove && results.comparisonData.peaceRankAbove.length > 0 && (
-                      <div className="mt-2 text-xs text-gray-400">
-                        Similar: {results.comparisonData.peaceRankAbove.slice(0, 1).map(c => `${c.country} (#${c.rank})`).join(', ')}
-                      </div>
-                    )}
-                  </div>
-                </div>
-                )}
-              </div>
-            )}
 
             {/* Globaltrot-Bot Summary */}
             {results.chatgptSummary && (
@@ -793,7 +875,24 @@ export default function DestinationSearch() {
 
             {/* Weather & Climate Data */}
             <div className="bg-white rounded-lg p-6 border-2 border-blue-500 shadow-lg">
-              <h4 className="text-lg font-semibold text-blue-600 mb-4">🌤️ Weather & Climate</h4>
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="text-lg font-semibold text-blue-600">🌤️ Weather & Climate</h4>
+                
+                {/* Units Switch */}
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-gray-600">Units:</span>
+                  <button
+                    onClick={() => setUseImperialUnits(!useImperialUnits)}
+                    className={`px-3 py-1 rounded-lg text-sm font-medium transition-all duration-200 border-2 ${
+                      useImperialUnits 
+                        ? 'bg-black text-white border-black' 
+                        : 'bg-white text-black border-gray-300 hover:bg-gray-100'
+                    }`}
+                  >
+                    {useImperialUnits ? '°F / mph' : '°C / km/h'}
+                  </button>
+                </div>
+              </div>
               
               {results.realWeatherData ? (
                 <div className="space-y-6">
@@ -801,8 +900,8 @@ export default function DestinationSearch() {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="p-4 bg-gray-100 rounded-lg">
                   <span className="text-gray-600 text-sm">Current Temperature:</span>
-                      <p className="text-black font-semibold text-xl">{results.realWeatherData.current.temperature}°C</p>
-                      <p className="text-gray-500 text-xs">Feels like {results.realWeatherData.current.apparent_temperature}°C</p>
+                      <p className="text-black font-semibold text-xl">{convertTemperature(results.realWeatherData.current.temperature)}{getTemperatureUnit()}</p>
+                      <p className="text-gray-500 text-xs">Feels like {convertTemperature(results.realWeatherData.current.apparent_temperature)}{getTemperatureUnit()}</p>
                 </div>
                 <div className="p-4 bg-gray-100 rounded-lg">
                       <span className="text-gray-600 text-sm">Weather:</span>
@@ -810,7 +909,7 @@ export default function DestinationSearch() {
                 </div>
                 <div className="p-4 bg-gray-100 rounded-lg">
                       <span className="text-gray-600 text-sm">Wind:</span>
-                      <p className="text-black font-semibold">{results.realWeatherData.current.wind_speed} km/h</p>
+                      <p className="text-black font-semibold">{convertWindSpeed(results.realWeatherData.current.wind_speed)} {getWindSpeedUnit()}</p>
                       <p className="text-gray-500 text-xs">{results.realWeatherData.current.wind_description}</p>
                 </div>
                 <div className="p-4 bg-gray-100 rounded-lg">
@@ -837,7 +936,7 @@ export default function DestinationSearch() {
                 </div>
                       <div>
                         <span className="text-gray-600 text-sm">Avg Wind:</span>
-                        <p className="text-black font-semibold">{results.realWeatherData.forecast.next_24h.avg_wind_speed} km/h</p>
+                        <p className="text-black font-semibold">{convertWindSpeed(results.realWeatherData.forecast.next_24h.avg_wind_speed)} {getWindSpeedUnit()}</p>
                 </div>
               </div>
             </div>
@@ -847,6 +946,7 @@ export default function DestinationSearch() {
                     <WeatherChart 
                       forecast={results.realWeatherData.forecast.next_16_days} 
                       location={results.realWeatherData.location}
+                      useImperialUnits={useImperialUnits}
                     />
                 </div>
 
@@ -889,7 +989,7 @@ export default function DestinationSearch() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="p-4 bg-gray-100 rounded-lg">
                   <span className="text-gray-600 text-sm">Current Temperature:</span>
-                  <p className="text-black font-semibold">{results.weatherData?.temperature || 'N/A'}°C</p>
+                  <p className="text-black font-semibold">{results.weatherData?.temperature ? convertTemperature(results.weatherData.temperature) + getTemperatureUnit() : 'N/A'}</p>
                 </div>
                 <div className="p-4 bg-gray-100 rounded-lg">
                   <span className="text-gray-600 text-sm">Precipitation:</span>
@@ -916,73 +1016,6 @@ export default function DestinationSearch() {
                 {secondResults.destination} - Country Data
               </h3>
               
-              {/* Basic Country Information - Only for City Searches */}
-              {!isCountrySearch(secondResults) && (
-                <div className="bg-white rounded-lg p-6 border-2 border-green-500 shadow-lg">
-                  <div className="flex items-center justify-between mb-4">
-                    <h4 className="text-lg font-semibold text-green-600">🏛️ Basic Country Information</h4>
-                    <button
-                      onClick={() => setIsSecondCountryInfoExpanded(!isSecondCountryInfoExpanded)}
-                      className="text-green-600 hover:text-green-500 transition-colors duration-200 flex items-center space-x-2"
-                    >
-                      <span className="text-sm">
-                        {isSecondCountryInfoExpanded ? 'Show Less' : 'Show More'}
-                      </span>
-                      <span className={`transform transition-transform duration-200 ${isSecondCountryInfoExpanded ? 'rotate-180' : ''}`}>
-                        ▼
-                      </span>
-                    </button>
-                  </div>
-                  {isSecondCountryInfoExpanded && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="p-4 bg-gray-700 rounded-lg">
-                    <span className="text-gray-300 text-sm">Country:</span>
-                    <p className="text-white font-semibold">{secondResults.supabaseData?.country}</p>
-                  </div>
-                  <div className="p-4 bg-gray-700 rounded-lg">
-                      <span className="text-gray-300 text-sm">Population:</span>
-                      <p className="text-white font-semibold">{secondResults.supabaseData?.population_mio} million</p>
-                  </div>
-                  <div className="p-4 bg-gray-700 rounded-lg">
-                      <span className="text-gray-300 text-sm">GDP Per Capita:</span>
-                      <p className="text-white font-semibold">${secondResults.supabaseData?.gdp_per_capita_usd?.toLocaleString()}</p>
-                  </div>
-                  <div className="p-4 bg-gray-700 rounded-lg">
-                    <span className="text-gray-300 text-sm">Life Expectancy:</span>
-                      <p className="text-white font-semibold">{secondResults.supabaseData?.life_expectancy} years</p>
-                  </div>
-                <div className="p-4 bg-gray-700 rounded-lg">
-                      <span className="text-gray-300 text-sm">Electricity Access:</span>
-                      <p className="text-white font-semibold">{secondResults.supabaseData?.population_electricity}%</p>
-                </div>
-                <div className="p-4 bg-gray-700 rounded-lg">
-                      <span className="text-gray-300 text-sm">Risk Class:</span>
-                      <p className="text-white font-semibold">{secondResults.supabaseData?.risk_class}</p>
-              </div>
-                <div className="p-4 bg-gray-700 rounded-lg">
-                      <span className="text-gray-300 text-sm">Global Risk Rank:</span>
-                      <p className="text-white font-semibold">#{secondResults.supabaseData?.global_rank}</p>
-                      <p className="text-gray-400 text-xs mt-1">Higher rank = less risky</p>
-                      {secondResults.comparisonData?.globalRankAbove && secondResults.comparisonData.globalRankAbove.length > 0 && (
-                        <div className="mt-2 text-xs text-gray-400">
-                          Similar: {secondResults.comparisonData.globalRankAbove.slice(0, 1).map(c => `${c.country} (#${c.rank})`).join(', ')}
-                </div>
-                      )}
-                </div>
-                <div className="p-4 bg-gray-700 rounded-lg">
-                      <span className="text-gray-300 text-sm">Peace Index Rank:</span>
-                      <p className="text-white font-semibold">#{secondResults.supabaseData?.global_peace_rank}</p>
-                      <p className="text-gray-400 text-xs mt-1">Higher rank = more peaceful</p>
-                      {secondResults.comparisonData?.peaceRankAbove && secondResults.comparisonData.peaceRankAbove.length > 0 && (
-                        <div className="mt-2 text-xs text-gray-400">
-                          Similar: {secondResults.comparisonData.peaceRankAbove.slice(0, 1).map(c => `${c.country} (#${c.rank})`).join(', ')}
-                </div>
-                      )}
-              </div>
-            </div>
-                )}
-          </div>
-            )}
 
               {/* Globaltrot-Bot Summary */}
               {secondResults.chatgptSummary && (
@@ -1114,7 +1147,24 @@ export default function DestinationSearch() {
 
               {/* Weather & Climate Data */}
               <div className="bg-white rounded-lg p-6 border-2 border-blue-500 shadow-lg">
-                <h4 className="text-lg font-semibold text-blue-600 mb-4">🌤️ Weather & Climate</h4>
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-lg font-semibold text-blue-600">🌤️ Weather & Climate</h4>
+                  
+                  {/* Units Switch */}
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-gray-600">Units:</span>
+                    <button
+                      onClick={() => setUseImperialUnits(!useImperialUnits)}
+                      className={`px-3 py-1 rounded-lg text-sm font-medium transition-all duration-200 border-2 ${
+                        useImperialUnits 
+                          ? 'bg-black text-white border-black' 
+                          : 'bg-white text-black border-gray-300 hover:bg-gray-100'
+                      }`}
+                    >
+                      {useImperialUnits ? '°F / mph' : '°C / km/h'}
+                    </button>
+                  </div>
+                </div>
                 
                 {secondResults.realWeatherData ? (
                   <div className="space-y-6">
@@ -1122,8 +1172,8 @@ export default function DestinationSearch() {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div className="p-4 bg-gray-100 rounded-lg">
                     <span className="text-gray-600 text-sm">Current Temperature:</span>
-                        <p className="text-black font-semibold text-xl">{secondResults.realWeatherData.current.temperature}°C</p>
-                        <p className="text-gray-500 text-xs">Feels like {secondResults.realWeatherData.current.apparent_temperature}°C</p>
+                        <p className="text-black font-semibold text-xl">{convertTemperature(secondResults.realWeatherData.current.temperature)}{getTemperatureUnit()}</p>
+                        <p className="text-gray-500 text-xs">Feels like {convertTemperature(secondResults.realWeatherData.current.apparent_temperature)}{getTemperatureUnit()}</p>
                   </div>
                   <div className="p-4 bg-gray-100 rounded-lg">
                         <span className="text-gray-600 text-sm">Weather:</span>
@@ -1131,7 +1181,7 @@ export default function DestinationSearch() {
                   </div>
                   <div className="p-4 bg-gray-100 rounded-lg">
                         <span className="text-gray-600 text-sm">Wind:</span>
-                        <p className="text-black font-semibold">{secondResults.realWeatherData.current.wind_speed} km/h</p>
+                        <p className="text-black font-semibold">{convertWindSpeed(secondResults.realWeatherData.current.wind_speed)} {getWindSpeedUnit()}</p>
                         <p className="text-gray-500 text-xs">{secondResults.realWeatherData.current.wind_description}</p>
                   </div>
                   <div className="p-4 bg-gray-100 rounded-lg">
@@ -1158,7 +1208,7 @@ export default function DestinationSearch() {
                   </div>
                         <div>
                           <span className="text-gray-600 text-sm">Avg Wind:</span>
-                          <p className="text-black font-semibold">{secondResults.realWeatherData.forecast.next_24h.avg_wind_speed} km/h</p>
+                          <p className="text-black font-semibold">{convertWindSpeed(secondResults.realWeatherData.forecast.next_24h.avg_wind_speed)} {getWindSpeedUnit()}</p>
                   </div>
                 </div>
               </div>
@@ -1168,6 +1218,7 @@ export default function DestinationSearch() {
                       <WeatherChart 
                         forecast={secondResults.realWeatherData.forecast.next_16_days} 
                         location={secondResults.realWeatherData.location}
+                        useImperialUnits={useImperialUnits}
                       />
                   </div>
 
@@ -1210,7 +1261,7 @@ export default function DestinationSearch() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="p-4 bg-gray-100 rounded-lg">
                     <span className="text-gray-600 text-sm">Current Temperature:</span>
-                    <p className="text-black font-semibold">{secondResults.weatherData?.temperature || 'N/A'}°C</p>
+                    <p className="text-black font-semibold">{secondResults.weatherData?.temperature ? convertTemperature(secondResults.weatherData.temperature) + getTemperatureUnit() : 'N/A'}</p>
                   </div>
                   <div className="p-4 bg-gray-100 rounded-lg">
                     <span className="text-gray-600 text-sm">Precipitation:</span>

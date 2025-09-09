@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { searchCities, getCountryISO3ForCity } from './cities';
+import { getCountryArea, findSimilarSizeCountry } from './countryArea';
 
 export interface CountryData {
   country: string;
@@ -296,6 +297,10 @@ export function transformCountryData(countryData: CountryData, cityCoordinates?:
                    airQualityIndex < 150 ? 'Poor' : 'Very Poor';
   const drinkingAdviceText = drinkingAdvice[Math.floor(Math.random() * drinkingAdvice.length)];
 
+  // Get country area data
+  const areaData = getCountryArea(countryData.country);
+  const similarSizeCountry = findSimilarSizeCountry(countryData.country);
+
   return {
     destination: originalDestination?.replace(/,/g, ', ') || cityCoordinates?.cityName || countryData.country,
     fun_fact: countryData.fun_fact?.replace(/^"|"$/g, '') || 'No fun fact available',
@@ -322,7 +327,10 @@ export function transformCountryData(countryData: CountryData, cityCoordinates?:
       life_expectancy: countryData.life_expectancy,
       gdp_per_capita_usd: countryData.gdp_per_capita_usd,
       human_dev_index: countryData.human_dev_index,
-      fun_fact: countryData.fun_fact?.replace(/^"|"$/g, '') || 'No fun fact available'
+      fun_fact: countryData.fun_fact?.replace(/^"|"$/g, '') || 'No fun fact available',
+      area_km2: areaData?.area_km2,
+      area_sq_miles: areaData?.area_sq_miles,
+      similar_size_country: similarSizeCountry
     },
     // Weather data
     weatherData: {

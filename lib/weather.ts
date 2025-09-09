@@ -66,7 +66,7 @@ interface WeatherAlerts {
 const weatherCache = new Map<string, { data: WeatherData; timestamp: number }>();
 const CACHE_DURATION = 3600000; // 1 hour in milliseconds
 
-// Geocode city name to coordinates using Open-Meteo's geocoding API
+// Geocode city name to coordinates using Open-Meteo's geocoding API with fallback
 export async function geocodeCity(cityName: string): Promise<GeocodeResult> {
   try {
     const response = await fetch(
@@ -92,7 +92,40 @@ export async function geocodeCity(cityName: string): Promise<GeocodeResult> {
     };
   } catch (error) {
     console.error('Geocoding error:', error);
-    throw new Error(`Failed to geocode city: ${cityName}`);
+    
+    // Fallback: Try to get coordinates from our internal cities database
+    try {
+      const { searchCityInCountry } = await import('@/lib/cities');
+      
+      // If it's a city,country format, try to find it in our database
+      if (cityName.includes(',')) {
+        const parts = cityName.split(',').map(part => part.trim());
+        const cityNameOnly = parts[0];
+        const countryName = parts[1];
+        
+        // Try to find the country first
+        const { getCountryByName } = await import('@/lib/database');
+        const countryData = await getCountryByName(countryName);
+        
+        if (countryData) {
+          const cityData = await searchCityInCountry(cityNameOnly, countryData.ISO3);
+          if (cityData) {
+            console.log(`Using fallback coordinates for ${cityName}:`, cityData);
+            return {
+              latitude: cityData.lat,
+              longitude: cityData.lng,
+              name: cityData.city,
+              country: countryData.country
+            };
+          }
+        }
+      }
+      
+      throw new Error(`No fallback coordinates available for: ${cityName}`);
+    } catch (fallbackError) {
+      console.error('Fallback geocoding error:', fallbackError);
+      throw new Error(`Failed to geocode city: ${cityName}`);
+    }
   }
 }
 

@@ -40,11 +40,29 @@ interface WeatherDay {
 interface WeatherChartProps {
   forecast: WeatherDay[];
   location: string;
+  useImperialUnits?: boolean;
 }
 
-const WeatherChart: React.FC<WeatherChartProps> = ({ forecast, location }) => {
+const WeatherChart: React.FC<WeatherChartProps> = ({ forecast, location, useImperialUnits = false }) => {
   const [isChartExpanded, setIsChartExpanded] = useState(false);
   const [isDailyExpanded, setIsDailyExpanded] = useState(false);
+  
+  // Unit conversion functions
+  const convertTemperature = (celsius: number): number => {
+    return useImperialUnits ? Math.round((celsius * 9/5 + 32) * 10) / 10 : Math.round(celsius * 10) / 10;
+  };
+
+  const convertWindSpeed = (kmh: number): number => {
+    return useImperialUnits ? Math.round((kmh * 0.621371) * 10) / 10 : Math.round(kmh * 10) / 10;
+  };
+
+  const getTemperatureUnit = (): string => {
+    return useImperialUnits ? '°F' : '°C';
+  };
+
+  const getWindSpeedUnit = (): string => {
+    return useImperialUnits ? 'mph' : 'km/h';
+  };
   
   // Format dates for display (timezone-safe)
   const formatDate = (dateString: string) => {
@@ -61,44 +79,52 @@ const WeatherChart: React.FC<WeatherChartProps> = ({ forecast, location }) => {
   // Show first 7 days by default for charts, all 16 when expanded
   const chartForecast = isChartExpanded ? forecast : forecast.slice(0, 7);
   const dates = chartForecast.map(day => formatDate(day.date));
-  const maxTemps = chartForecast.map(day => day.max_temp);
-  const minTemps = chartForecast.map(day => day.min_temp);
+  const maxTemps = chartForecast.map(day => convertTemperature(day.max_temp));
+  const minTemps = chartForecast.map(day => convertTemperature(day.min_temp));
   const precipitation = chartForecast.map(day => day.precipitation);
 
   // Show first 4 days by default for daily cards, all 16 when expanded
   const dailyForecast = isDailyExpanded ? forecast : forecast.slice(0, 4);
 
-  // Temperature chart data
+  // Temperature stream graph data - single dataset showing range
   const temperatureData = {
     labels: dates,
     datasets: [
       {
-        label: 'Max Temperature',
+        label: `Temperature Range (${getTemperatureUnit()})`,
         data: maxTemps,
-        borderColor: '#f59e0b', // amber-500
-        backgroundColor: 'rgba(245, 158, 11, 0.1)',
-        borderWidth: 3,
-        fill: false,
+        borderColor: 'transparent',
+        backgroundColor: (context: any) => {
+          const ctx = context.chart.ctx;
+          const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+          gradient.addColorStop(0, 'rgba(220, 38, 38, 0.8)'); // red-600 at top
+          gradient.addColorStop(0.3, 'rgba(251, 146, 60, 0.7)'); // orange-400
+          gradient.addColorStop(0.6, 'rgba(156, 163, 175, 0.6)'); // gray-400
+          gradient.addColorStop(1, 'rgba(107, 114, 128, 0.5)'); // gray-500 at bottom
+          return gradient;
+        },
+        borderWidth: 0,
+        fill: '+1', // Fill to the next dataset (minTemps)
         tension: 0.4,
-        pointBackgroundColor: '#f59e0b',
+        pointRadius: 0,
+        pointHoverRadius: 6,
+        pointBackgroundColor: '#dc2626',
         pointBorderColor: '#ffffff',
         pointBorderWidth: 2,
-        pointRadius: 6,
-        pointHoverRadius: 8,
       },
       {
-        label: 'Min Temperature',
+        label: `Min Temperature (${getTemperatureUnit()})`,
         data: minTemps,
-        borderColor: '#000000', // black
-        backgroundColor: 'rgba(0, 0, 0, 0.1)',
-        borderWidth: 3,
+        borderColor: '#6b7280', // gray-500
+        backgroundColor: 'rgba(107, 114, 128, 0.1)',
+        borderWidth: 2,
         fill: false,
         tension: 0.4,
-        pointBackgroundColor: '#000000',
+        pointRadius: 0,
+        pointHoverRadius: 6,
+        pointBackgroundColor: '#6b7280',
         pointBorderColor: '#ffffff',
         pointBorderWidth: 2,
-        pointRadius: 6,
-        pointHoverRadius: 8,
       },
     ],
   };
@@ -110,8 +136,8 @@ const WeatherChart: React.FC<WeatherChartProps> = ({ forecast, location }) => {
       {
         label: 'Precipitation (mm)',
         data: precipitation,
-        backgroundColor: 'rgba(0, 0, 0, 0.6)',
-        borderColor: '#000000',
+        backgroundColor: 'rgba(30, 64, 175, 0.6)', // petrol blue (blue-800)
+        borderColor: '#1e40af', // petrol blue (blue-800)
         borderWidth: 1,
         borderRadius: 4,
         borderSkipped: false,
@@ -159,9 +185,18 @@ const WeatherChart: React.FC<WeatherChartProps> = ({ forecast, location }) => {
           label: function(context: any) {
             const datasetLabel = context.dataset.label;
             const value = context.parsed.y;
+            const dataIndex = context.dataIndex;
             
-            if (datasetLabel.includes('Temperature')) {
-              return `${datasetLabel}: ${value}°C`;
+            if (datasetLabel.includes('Temperature Range')) {
+              const maxTemp = maxTemps[dataIndex];
+              const minTemp = minTemps[dataIndex];
+              return `Max: ${maxTemp}${getTemperatureUnit()}, Min: ${minTemp}${getTemperatureUnit()}`;
+            } else if (datasetLabel.includes('Min Temperature')) {
+              const maxTemp = maxTemps[dataIndex];
+              const minTemp = minTemps[dataIndex];
+              return `Max: ${maxTemp}${getTemperatureUnit()}, Min: ${minTemp}${getTemperatureUnit()}`;
+            } else if (datasetLabel.includes('Temperature')) {
+              return `${datasetLabel}: ${value}${getTemperatureUnit()}`;
             } else if (datasetLabel.includes('Precipitation')) {
               return `${datasetLabel}: ${value}mm`;
             }
@@ -256,7 +291,7 @@ const WeatherChart: React.FC<WeatherChartProps> = ({ forecast, location }) => {
         </div>
       )}
 
-      {/* Temperature Chart */}
+      {/* Temperature Stream Graph */}
       <div className="bg-white rounded-lg p-4 border-2 border-black">
         <div className="h-64">
           <Line data={temperatureData} options={chartOptions} />
@@ -319,15 +354,15 @@ const WeatherChart: React.FC<WeatherChartProps> = ({ forecast, location }) => {
                 {day.weather_description}
               </p>
               <div className="flex justify-between text-sm">
-                <span className="text-black font-semibold">
-                  {day.max_temp}°
+                <span className="text-red-600 font-semibold">
+                  {convertTemperature(day.max_temp)}{getTemperatureUnit()}
                 </span>
-                <span className="text-gray-600 font-semibold">
-                  {day.min_temp}°
+                <span className="text-gray-500 font-semibold">
+                  {convertTemperature(day.min_temp)}{getTemperatureUnit()}
                 </span>
               </div>
               <p className="text-gray-600 text-xs mt-1">
-                {day.precipitation}mm • {day.wind_speed} km/h
+                {day.precipitation}mm • {convertWindSpeed(day.wind_speed)} {getWindSpeedUnit()}
               </p>
             </div>
           ))}
