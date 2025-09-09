@@ -214,10 +214,10 @@ export default function CountryMap({ searchQuery, secondDestination, coordinates
 
   if (!isClient || !isLeafletReady) {
     return (
-      <div className="bg-gray-800 rounded-lg p-6 border-2 border-blue-500/30 shadow-lg">
+      <div className="bg-white rounded-lg p-6 border-2 border-black shadow-lg">
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400"></div>
-          <span className="ml-2 text-gray-400">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
+          <span className="ml-2 text-gray-600">
             {!isClient ? 'Initializing...' : 'Loading map...'}
           </span>
         </div>
@@ -228,9 +228,9 @@ export default function CountryMap({ searchQuery, secondDestination, coordinates
   // Additional safety check - ensure Leaflet is actually available
   if (typeof window === 'undefined' || (!window.L && !L)) {
     return (
-      <div className="bg-gray-800 rounded-lg p-6 border-2 border-red-500/30 shadow-lg">
+      <div className="bg-white rounded-lg p-6 border-2 border-red-500 shadow-lg">
         <div className="flex items-center justify-center h-64">
-          <div className="text-red-400 text-center">
+          <div className="text-red-600 text-center">
             <p className="text-lg font-semibold mb-2">Map Error</p>
             <p className="text-sm">Leaflet not available</p>
           </div>
@@ -244,26 +244,26 @@ export default function CountryMap({ searchQuery, secondDestination, coordinates
   return (
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-yellow-400">Location Map</h3>
+          <h3 className="text-lg font-semibold text-black">Location Map</h3>
           <div className="flex items-center space-x-4">
             {/* Map Layer Toggle */}
             <div className="flex items-center space-x-2">
               <button
                 onClick={() => setMapLayer('street')}
-                className={`px-3 py-1 rounded-md text-sm font-medium transition-all duration-200 ${
+                className={`px-3 py-1 rounded-md text-sm font-medium transition-all duration-200 border ${
                   mapLayer === 'street'
-                    ? 'bg-yellow-500 text-black'
-                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                    ? 'bg-black text-white border-black'
+                    : 'bg-white text-black border-gray-300 hover:border-black'
                 }`}
               >
-                Toner Lite
+                Cool view
               </button>
               <button
                 onClick={() => setMapLayer('satellite')}
-                className={`px-3 py-1 rounded-md text-sm font-medium transition-all duration-200 ${
+                className={`px-3 py-1 rounded-md text-sm font-medium transition-all duration-200 border ${
                   mapLayer === 'satellite'
-                    ? 'bg-yellow-500 text-black'
-                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                    ? 'bg-black text-white border-black'
+                    : 'bg-white text-black border-gray-300 hover:border-black'
                 }`}
               >
                 Satellite
@@ -271,15 +271,15 @@ export default function CountryMap({ searchQuery, secondDestination, coordinates
             </div>
             
             {isLoading && (
-              <div className="flex items-center space-x-2 text-blue-400">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-400"></div>
+              <div className="flex items-center space-x-2 text-blue-600">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
                 <span className="text-sm">Loading...</span>
               </div>
             )}
           </div>
         </div>
         
-        <div className="relative h-64 w-full bg-gray-700 rounded-lg overflow-hidden border border-gray-600">
+        <div className="relative h-64 w-full bg-white rounded-lg overflow-hidden border-2 border-black">
           {(() => {
             try {
               return (
@@ -354,7 +354,7 @@ export default function CountryMap({ searchQuery, secondDestination, coordinates
               console.error('MapContainer error:', error);
               return (
                 <div className="flex items-center justify-center h-full">
-                  <div className="text-red-400 text-center">
+                  <div className="text-red-600 text-center">
                     <p className="text-lg font-semibold mb-2">Map Error</p>
                     <p className="text-sm">Failed to render map</p>
                   </div>
@@ -365,20 +365,20 @@ export default function CountryMap({ searchQuery, secondDestination, coordinates
         
         {/* Map Controls */}
         <div className="absolute top-4 right-4 z-20">
-          <div className="bg-black/80 text-white px-4 py-2 rounded-lg text-sm font-medium backdrop-blur-sm border border-white/30 shadow-lg">
+          <div className="bg-white/95 text-black px-4 py-2 rounded-lg text-sm font-medium backdrop-blur-sm border-2 border-black shadow-lg">
             {coords 
               ? `📍 ${locationName || searchQuery}` 
               : 'Search for a location'
             }
             {secondCoords && (
-              <div className="mt-1 text-blue-400">
+              <div className="mt-1 text-blue-600">
                 🔵 {secondLocationName || secondDestination}
               </div>
             )}
           </div>
         </div>
       </div>
-        <p className="text-sm text-gray-400 mt-4 text-center">
+        <p className="text-sm text-gray-600 mt-4 text-center">
           {coords 
             ? `Showing location for: ${searchQuery}`
             : 'Search for a city or country to see it highlighted on the map'

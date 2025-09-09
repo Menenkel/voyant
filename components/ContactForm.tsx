@@ -37,28 +37,28 @@ export default function ContactForm() {
   };
 
   return (
-    <div className="bg-gray-800 rounded-lg p-8 border-2 border-yellow-500/30 shadow-lg">
-      <h2 className="text-2xl font-bold text-yellow-400 mb-6 text-center">Contact Us</h2>
-      <p className="text-gray-300 text-center mb-8">
+    <div className="bg-white rounded-lg p-8 border-2 border-black shadow-lg">
+      <h2 className="text-2xl font-bold text-black mb-6 text-center">Contact Us</h2>
+      <p className="text-gray-600 text-center mb-8">
         Have questions about VOYANT? We&apos;d love to hear from you. Send us a message and we&apos;ll respond as soon as possible.
       </p>
 
       {submitStatus === 'success' && (
-        <div className="mb-6 p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
-          <p className="text-green-400 text-center">Thank you for your message! We&apos;ll get back to you soon.</p>
+        <div className="mb-6 p-4 bg-green-50 border-2 border-green-500 rounded-lg">
+          <p className="text-green-600 text-center">Thank you for your message! We&apos;ll get back to you soon.</p>
         </div>
       )}
 
       {submitStatus === 'error' && (
-        <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
-          <p className="text-red-400 text-center">Something went wrong. Please try again.</p>
+        <div className="mb-6 p-4 bg-red-50 border-2 border-red-500 rounded-lg">
+          <p className="text-red-600 text-center">Something went wrong. Please try again.</p>
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-2">
+            <label htmlFor="name" className="block text-sm font-medium text-gray-600 mb-2">
               Name *
             </label>
             <input
@@ -68,12 +68,12 @@ export default function ContactForm() {
               value={formData.name}
               onChange={handleChange}
               required
-              className="w-full px-4 py-3 bg-gray-700 border-2 border-yellow-500/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-200"
+              className="w-full px-4 py-3 bg-white border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:border-black focus:ring-2 focus:ring-black/20 transition-all duration-200"
               placeholder="Your name"
             />
           </div>
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
+            <label htmlFor="email" className="block text-sm font-medium text-gray-600 mb-2">
               Email *
             </label>
             <input
@@ -83,14 +83,14 @@ export default function ContactForm() {
               value={formData.email}
               onChange={handleChange}
               required
-              className="w-full px-4 py-3 bg-gray-700 border-2 border-yellow-500/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-200"
+              className="w-full px-4 py-3 bg-white border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:border-black focus:ring-2 focus:ring-black/20 transition-all duration-200"
               placeholder="your.email@example.com"
             />
           </div>
         </div>
 
         <div>
-          <label htmlFor="subject" className="block text-sm font-medium text-gray-300 mb-2">
+          <label htmlFor="subject" className="block text-sm font-medium text-gray-600 mb-2">
             Subject *
           </label>
           <select
@@ -99,7 +99,7 @@ export default function ContactForm() {
             value={formData.subject}
             onChange={handleChange}
             required
-            className="w-full px-4 py-3 bg-gray-700 border-2 border-yellow-500/30 rounded-lg text-white focus:outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-200"
+            className="w-full px-4 py-3 bg-white border-2 border-gray-300 rounded-lg text-black focus:outline-none focus:border-black focus:ring-2 focus:ring-black/20 transition-all duration-200"
           >
             <option value="">Select a subject</option>
             <option value="general">General Inquiry</option>
@@ -111,7 +111,7 @@ export default function ContactForm() {
         </div>
 
         <div>
-          <label htmlFor="message" className="block text-sm font-medium text-gray-300 mb-2">
+          <label htmlFor="message" className="block text-sm font-medium text-gray-600 mb-2">
             Message *
           </label>
           <textarea
@@ -121,7 +121,7 @@ export default function ContactForm() {
             onChange={handleChange}
             required
             rows={6}
-            className="w-full px-4 py-3 bg-gray-700 border-2 border-yellow-500/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-200 resize-none"
+            className="w-full px-4 py-3 bg-white border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:border-black focus:ring-2 focus:ring-black/20 transition-all duration-200 resize-none"
             placeholder="Tell us how we can help you..."
           />
         </div>
@@ -130,7 +130,7 @@ export default function ContactForm() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="bg-yellow-500 text-black px-8 py-3 rounded-lg font-medium hover:bg-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2 focus:ring-offset-gray-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover-lift"
+            className="bg-black text-white px-8 py-3 rounded-lg font-medium hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 focus:ring-offset-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover-lift border-2 border-black"
           >
             {isSubmitting ? (
               <span className="flex items-center justify-center space-x-2">

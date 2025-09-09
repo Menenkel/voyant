@@ -89,12 +89,12 @@ const WeatherChart: React.FC<WeatherChartProps> = ({ forecast, location }) => {
       {
         label: 'Min Temperature',
         data: minTemps,
-        borderColor: '#3b82f6', // blue-500
-        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        borderColor: '#000000', // black
+        backgroundColor: 'rgba(0, 0, 0, 0.1)',
         borderWidth: 3,
         fill: false,
         tension: 0.4,
-        pointBackgroundColor: '#3b82f6',
+        pointBackgroundColor: '#000000',
         pointBorderColor: '#ffffff',
         pointBorderWidth: 2,
         pointRadius: 6,
@@ -110,8 +110,8 @@ const WeatherChart: React.FC<WeatherChartProps> = ({ forecast, location }) => {
       {
         label: 'Precipitation (mm)',
         data: precipitation,
-        backgroundColor: 'rgba(59, 130, 246, 0.6)',
-        borderColor: '#3b82f6',
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        borderColor: '#000000',
         borderWidth: 1,
         borderRadius: 4,
         borderSkipped: false,
@@ -126,7 +126,7 @@ const WeatherChart: React.FC<WeatherChartProps> = ({ forecast, location }) => {
       legend: {
         position: 'top' as const,
         labels: {
-          color: '#d1d5db', // gray-300
+          color: '#000000', // black
           font: {
             size: 12,
             weight: '500' as const,
@@ -138,17 +138,17 @@ const WeatherChart: React.FC<WeatherChartProps> = ({ forecast, location }) => {
       title: {
         display: true,
         text: `${isChartExpanded ? '16' : '7'}-Day Weather Forecast - ${location}`,
-        color: '#f3f4f6', // gray-100
+        color: '#000000', // black
         font: {
           size: 16,
           weight: '600' as const,
         },
       },
       tooltip: {
-        backgroundColor: 'rgba(17, 24, 39, 0.95)', // gray-900 with opacity
-        titleColor: '#f3f4f6', // gray-100
-        bodyColor: '#d1d5db', // gray-300
-        borderColor: '#374151', // gray-700
+        backgroundColor: 'rgba(255, 255, 255, 0.95)', // white with opacity
+        titleColor: '#000000', // black
+        bodyColor: '#000000', // black
+        borderColor: '#000000', // black
         borderWidth: 1,
         cornerRadius: 8,
         displayColors: true,
@@ -173,11 +173,11 @@ const WeatherChart: React.FC<WeatherChartProps> = ({ forecast, location }) => {
     scales: {
       x: {
         grid: {
-          color: 'rgba(75, 85, 99, 0.3)', // gray-600 with opacity
+          color: 'rgba(0, 0, 0, 0.2)', // black with opacity
           drawBorder: false,
         },
         ticks: {
-          color: '#9ca3af', // gray-400
+          color: '#000000', // black
           font: {
             size: 11,
           },
@@ -185,11 +185,11 @@ const WeatherChart: React.FC<WeatherChartProps> = ({ forecast, location }) => {
       },
       y: {
         grid: {
-          color: 'rgba(75, 85, 99, 0.3)', // gray-600 with opacity
+          color: 'rgba(0, 0, 0, 0.2)', // black with opacity
           drawBorder: false,
         },
         ticks: {
-          color: '#9ca3af', // gray-400
+          color: '#000000', // black
           font: {
             size: 11,
           },
@@ -235,7 +235,7 @@ const WeatherChart: React.FC<WeatherChartProps> = ({ forecast, location }) => {
         <div className="flex justify-center">
           <button
             onClick={() => setIsChartExpanded(!isChartExpanded)}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
+            className="bg-black hover:bg-gray-800 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2 border-2 border-black"
           >
             {isChartExpanded ? (
               <>
@@ -257,14 +257,14 @@ const WeatherChart: React.FC<WeatherChartProps> = ({ forecast, location }) => {
       )}
 
       {/* Temperature Chart */}
-      <div className="bg-gray-700 rounded-lg p-4">
+      <div className="bg-white rounded-lg p-4 border-2 border-black">
         <div className="h-64">
           <Line data={temperatureData} options={chartOptions} />
         </div>
       </div>
 
       {/* Precipitation Chart */}
-      <div className="bg-gray-700 rounded-lg p-4">
+      <div className="bg-white rounded-lg p-4 border-2 border-black">
         <div className="h-48">
           <Bar data={precipitationData} options={precipitationOptions} />
         </div>
@@ -273,11 +273,11 @@ const WeatherChart: React.FC<WeatherChartProps> = ({ forecast, location }) => {
       {/* Daily Weather Summary Cards */}
       <div className="space-y-4">
         <div className="flex justify-between items-center">
-          <h3 className="text-lg font-semibold text-white">Daily Forecast</h3>
+          <h3 className="text-lg font-semibold text-black">Daily Forecast</h3>
           {forecast.length > 4 && (
             <button
               onClick={() => setIsDailyExpanded(!isDailyExpanded)}
-              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2 text-sm"
+              className="bg-black hover:bg-gray-800 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2 text-sm border-2 border-black"
             >
               {isDailyExpanded ? (
                 <>
@@ -300,8 +300,8 @@ const WeatherChart: React.FC<WeatherChartProps> = ({ forecast, location }) => {
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {dailyForecast.map((day, index) => (
-            <div key={index} className="bg-gray-600 rounded-lg p-4 text-center">
-              <p className="text-gray-300 text-sm font-medium mb-2">
+            <div key={index} className="bg-gray-100 rounded-lg p-4 text-center border-2 border-black">
+              <p className="text-black text-sm font-medium mb-2">
                 {formatDate(day.date)}
               </p>
               <div className="text-2xl mb-2">
@@ -315,18 +315,18 @@ const WeatherChart: React.FC<WeatherChartProps> = ({ forecast, location }) => {
                 {day.weather_description === 'Snow' && '❄️'}
                 {!['Clear sky', 'Partly cloudy', 'Overcast', 'Slight rain', 'Moderate rain', 'Heavy rain', 'Thunderstorm', 'Snow'].includes(day.weather_description) && '🌤️'}
               </div>
-              <p className="text-white font-semibold text-sm mb-1">
+              <p className="text-black font-semibold text-sm mb-1">
                 {day.weather_description}
               </p>
               <div className="flex justify-between text-sm">
-                <span className="text-amber-400 font-semibold">
+                <span className="text-black font-semibold">
                   {day.max_temp}°
                 </span>
-                <span className="text-blue-400 font-semibold">
+                <span className="text-gray-600 font-semibold">
                   {day.min_temp}°
                 </span>
               </div>
-              <p className="text-gray-400 text-xs mt-1">
+              <p className="text-gray-600 text-xs mt-1">
                 {day.precipitation}mm • {day.wind_speed} km/h
               </p>
             </div>

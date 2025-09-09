@@ -38,12 +38,28 @@ export async function GET(request: NextRequest) {
         ozone_description: getOzoneDescription(weatherData.air_quality.ozone)
       } : null,
       forecast: {
-        next_24h: {
-          max_temp: Math.max(...weatherData.hourly.temperature_2m.slice(0, 24)),
-          min_temp: Math.min(...weatherData.hourly.temperature_2m.slice(0, 24)),
-          total_precipitation: weatherData.hourly.precipitation.slice(0, 24).reduce((sum, val) => sum + val, 0),
-          avg_wind_speed: weatherData.hourly.wind_speed_10m.slice(0, 24).reduce((sum, val) => sum + val, 0) / 24
-        },
+        next_24h: (() => {
+          const hourlyTemps = weatherData.hourly.temperature_2m.slice(0, 24);
+          const maxTemp = Math.max(...hourlyTemps);
+          const minTemp = Math.min(...hourlyTemps);
+          
+          // If max and min are too close (within 1 degree), use daily data for better variation
+          if (Math.abs(maxTemp - minTemp) < 1 && weatherData.daily.temperature_2m_max.length > 0) {
+            return {
+              max_temp: Math.round(weatherData.daily.temperature_2m_max[0]),
+              min_temp: Math.round(weatherData.daily.temperature_2m_min[0]),
+              total_precipitation: weatherData.hourly.precipitation.slice(0, 24).reduce((sum, val) => sum + val, 0),
+              avg_wind_speed: weatherData.hourly.wind_speed_10m.slice(0, 24).reduce((sum, val) => sum + val, 0) / 24
+            };
+          }
+          
+          return {
+            max_temp: Math.round(maxTemp),
+            min_temp: Math.round(minTemp),
+            total_precipitation: weatherData.hourly.precipitation.slice(0, 24).reduce((sum, val) => sum + val, 0),
+            avg_wind_speed: weatherData.hourly.wind_speed_10m.slice(0, 24).reduce((sum, val) => sum + val, 0) / 24
+          };
+        })(),
         next_16_days: weatherData.daily.time.slice(0, 16).map((date, index) => ({
           date,
           max_temp: weatherData.daily.temperature_2m_max[index],

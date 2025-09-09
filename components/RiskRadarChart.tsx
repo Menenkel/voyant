@@ -26,11 +26,11 @@ export default function RiskRadarChart({
   const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: { color: string; name: string; value: number }[]; label?: string }) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-gray-800 border border-yellow-500/30 p-3 rounded-lg shadow-lg z-50">
-          <p className="text-white font-semibold">{label}</p>
+        <div className="bg-white border-2 border-black p-3 rounded-lg shadow-lg z-50">
+          <p className="text-black font-semibold">{label}</p>
           {payload.map((entry: { color: string; name: string; value: number }, index: number) => (
             <p key={index} style={{ color: entry.color }}>
-              {entry.name}: <span className="text-white font-bold">{entry.value}/10</span>
+              {entry.name}: <span className="text-black font-bold">{entry.value}/10</span>
             </p>
           ))}
         </div>
@@ -40,52 +40,59 @@ export default function RiskRadarChart({
   };
 
   return (
-    <div className="w-full h-64">
-      <ResponsiveContainer width="100%" height="100%">
-        <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data}>
-          <PolarGrid stroke="#374151" />
-          <PolarAngleAxis 
-            dataKey="indicator" 
-            tick={{ fill: '#9CA3AF', fontSize: 10 }}
-            tickLine={{ stroke: '#374151' }}
-          />
-          <PolarRadiusAxis 
-            angle={90} 
-            domain={[0, 10]} 
-            tick={{ fill: '#9CA3AF', fontSize: 10 }}
-            tickLine={{ stroke: '#374151' }}
-          />
-          <Radar
-            name={firstDestination}
-            dataKey={firstDestination}
-            stroke="#F59E0B"
-            fill="#F59E0B"
-            fillOpacity={0.3}
-            strokeWidth={2}
-          />
-          {secondHazardIndicators && (
+    <div className="w-full">
+      <div className="mb-2 text-center">
+        <p className="text-xs text-gray-600">
+          <strong>Higher values = Higher risk</strong> • Scale: 0 (no risk) to 10 (extreme risk)
+        </p>
+      </div>
+      <div className="h-64">
+        <ResponsiveContainer width="100%" height="100%">
+          <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data}>
+            <PolarGrid stroke="#000000" />
+            <PolarAngleAxis 
+              dataKey="indicator" 
+              tick={{ fill: '#000000', fontSize: 10 }}
+              tickLine={{ stroke: '#000000' }}
+            />
+            <PolarRadiusAxis 
+              angle={90} 
+              domain={[0, 10]} 
+              tick={{ fill: '#000000', fontSize: 10 }}
+              tickLine={{ stroke: '#000000' }}
+            />
             <Radar
-              name={secondDestination}
-              dataKey={secondDestination}
-              stroke="#3B82F6"
-              fill="#3B82F6"
-              fillOpacity={0.3}
+              name={firstDestination}
+              dataKey={firstDestination}
+              stroke="#000000"
+              fill="#000000"
+              fillOpacity={0.2}
               strokeWidth={2}
             />
-          )}
-          <Tooltip 
-            content={<CustomTooltip />}
-            cursor={{ fill: 'rgba(245, 158, 11, 0.1)' }}
-            wrapperStyle={{ zIndex: 1000 }}
-          />
-          {secondHazardIndicators && (
-            <Legend 
-              wrapperStyle={{ color: '#9CA3AF' }}
-              formatter={(value) => <span style={{ color: '#9CA3AF' }}>{value}</span>}
+            {secondHazardIndicators && (
+              <Radar
+                name={secondDestination}
+                dataKey={secondDestination}
+                stroke="#666666"
+                fill="#666666"
+                fillOpacity={0.2}
+                strokeWidth={2}
+              />
+            )}
+            <Tooltip 
+              content={<CustomTooltip />}
+              cursor={{ fill: 'rgba(0, 0, 0, 0.1)' }}
+              wrapperStyle={{ zIndex: 1000 }}
             />
-          )}
-        </RadarChart>
-      </ResponsiveContainer>
+            {secondHazardIndicators && (
+              <Legend 
+                wrapperStyle={{ color: '#000000' }}
+                formatter={(value) => <span style={{ color: '#000000' }}>{value}</span>}
+              />
+            )}
+          </RadarChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 }

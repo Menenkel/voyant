@@ -139,7 +139,9 @@ export async function getWeatherForCity(cityName: string): Promise<WeatherData> 
         'weather_code',
         'snowfall_sum'
       ].join(','),
-      timezone: 'auto'
+      air_quality: 'true',
+      timezone: 'auto',
+      forecast_days: '16'
     });
 
     const url = `https://api.open-meteo.com/v1/forecast?${params.toString()}`;
@@ -187,6 +189,53 @@ export async function getWeatherForCity(cityName: string): Promise<WeatherData> 
         snowfall_sum: data.daily.snowfall_sum
       }
     };
+
+    // Fetch air quality data separately
+    try {
+      const airQualityParams = new URLSearchParams({
+        latitude: latitude.toString(),
+        longitude: longitude.toString(),
+        current: [
+          'pm10',
+          'pm2_5',
+          'carbon_monoxide',
+          'nitrogen_dioxide',
+          'sulphur_dioxide',
+          'ozone',
+          'dust',
+          'uv_index'
+        ].join(','),
+        timezone: 'auto'
+      });
+
+      const airQualityUrl = `https://air-quality-api.open-meteo.com/v1/air-quality?${airQualityParams}`;
+      console.log(`Fetching air quality data for ${cityName}`);
+      
+      const airQualityResponse = await fetch(airQualityUrl);
+      
+      if (airQualityResponse.ok) {
+        const airQualityData = await airQualityResponse.json();
+        const airQualityCurrent = airQualityData.current;
+        
+        if (airQualityCurrent) {
+          weatherData.air_quality = {
+            pm10: airQualityCurrent.pm10 || 0,
+            pm2_5: airQualityCurrent.pm2_5 || 0,
+            carbon_monoxide: airQualityCurrent.carbon_monoxide || 0,
+            nitrogen_dioxide: airQualityCurrent.nitrogen_dioxide || 0,
+            sulphur_dioxide: airQualityCurrent.sulphur_dioxide || 0,
+            ozone: airQualityCurrent.ozone || 0,
+            dust: airQualityCurrent.dust || 0,
+            uv_index: airQualityCurrent.uv_index || 0
+          };
+          console.log(`Air quality data fetched for ${cityName}:`, weatherData.air_quality);
+        }
+      } else {
+        console.log(`Air quality data not available for ${cityName}`);
+      }
+    } catch (error) {
+      console.log(`Air quality fetch error for ${cityName}:`, error);
+    }
 
     // Cache the result
     weatherCache.set(cacheKey, {

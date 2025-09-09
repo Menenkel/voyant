@@ -41,8 +41,8 @@ export default function LocationMap({ countryName, lat, lon }: LocationMapProps)
 
   return (
     <div className="w-full max-w-4xl mx-auto mb-8">
-      <div className="bg-gray-900 rounded-lg p-6 border-2 border-yellow-500/30 shadow-lg">
-        <h3 className="text-lg font-semibold text-yellow-400 mb-4 text-center">
+      <div className="bg-white rounded-lg p-6 border-2 border-black shadow-lg">
+        <h3 className="text-lg font-semibold text-black mb-4 text-center">
           📍 Location: {countryName}
         </h3>
         
@@ -53,7 +53,7 @@ export default function LocationMap({ countryName, lat, lon }: LocationMapProps)
         />
         
         <div className="text-center mt-4">
-          <p className="text-sm text-gray-300">
+          <p className="text-sm text-gray-600">
             Coordinates: {lat.toFixed(4)}, {lon.toFixed(4)}
           </p>
         </div>

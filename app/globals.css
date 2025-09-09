@@ -2,8 +2,27 @@
 @import "leaflet/dist/leaflet.css";
 
 :root {
-  --background: #000000;
-  --foreground: #ffffff;
+  /* Black and White Design System */
+  --background: #ffffff;
+  --foreground: #000000;
+  --surface: #f8f9fa;
+  --border: #e5e7eb;
+  
+  /* Color Accents */
+  --accent-yellow: #f59e0b;
+  --accent-blue: #3b82f6;
+  --accent-green: #10b981;
+  --accent-purple: #8b5cf6;
+  --accent-red: #ef4444;
+  --accent-orange: #f97316;
+  
+  /* Section Colors */
+  --map-border: var(--accent-yellow);
+  --weather-border: var(--accent-blue);
+  --ai-border: var(--accent-purple);
+  --info-border: var(--accent-green);
+  --risk-border: var(--accent-red);
+  --fun-border: var(--accent-purple);
 }
 
 @theme inline {
@@ -17,12 +36,54 @@
 .dark {
   --background: #000000;
   --foreground: #ffffff;
+  --surface: #111827;
+  --border: #374151;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  line-height: 1.6;
+}
+
+/* Minimalistic Card Design */
+.card {
+  background: var(--background);
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  padding: 1.5rem;
+  transition: all 0.2s ease-in-out;
+}
+
+.card:hover {
+  border-color: var(--accent-yellow);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Section-specific border colors */
+.card-map {
+  border-color: var(--map-border);
+}
+
+.card-weather {
+  border-color: var(--weather-border);
+}
+
+.card-ai {
+  border-color: var(--ai-border);
+}
+
+.card-info {
+  border-color: var(--info-border);
+}
+
+.card-risk {
+  border-color: var(--risk-border);
+}
+
+.card-fun {
+  border-color: var(--fun-border);
 }
 
 

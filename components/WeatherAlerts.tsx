@@ -41,14 +41,14 @@ export default function WeatherAlerts({ alerts, title = "⚠️ Weather Alerts" 
 
   if (!alerts || alerts.length === 0) {
     return (
-      <div className="bg-gray-800 rounded-lg p-6 border-2 border-green-500/30 shadow-lg">
-        <h4 className="text-lg font-semibold text-green-400 mb-4">{title}</h4>
-        <div className="bg-gray-700 rounded-lg p-4">
+      <div className="bg-white rounded-lg p-6 border-2 border-green-500 shadow-lg">
+        <h4 className="text-lg font-semibold text-green-600 mb-4">{title}</h4>
+        <div className="bg-gray-100 rounded-lg p-4">
           <div className="flex items-center space-x-3">
             <span className="text-2xl">✅</span>
             <div>
-              <p className="text-white font-medium">No Weather Warnings</p>
-              <p className="text-gray-300 text-sm">
+              <p className="text-black font-medium">No Weather Warnings</p>
+              <p className="text-gray-600 text-sm">
                 No extreme weather warnings for the next 16 days (through {get16thDayDate()})
               </p>
             </div>
@@ -65,7 +65,7 @@ export default function WeatherAlerts({ alerts, title = "⚠️ Weather Alerts" 
       case 'high':
         return 'bg-orange-600 border-orange-500 text-white';
       case 'moderate':
-        return 'bg-yellow-600 border-yellow-500 text-black';
+        return 'bg-gray-600 border-gray-500 text-white';
       default:
         return 'bg-gray-600 border-gray-500 text-white';
     }
@@ -102,13 +102,13 @@ export default function WeatherAlerts({ alerts, title = "⚠️ Weather Alerts" 
   };
 
   return (
-    <div className="bg-gray-800 rounded-lg p-6 border-2 border-yellow-500/30 shadow-lg">
+    <div className="bg-white rounded-lg p-6 border-2 border-black shadow-lg">
       <div className="flex items-center justify-between mb-4">
-        <h4 className="text-lg font-semibold text-yellow-400">{title}</h4>
+        <h4 className="text-lg font-semibold text-black">{title}</h4>
         {totalAlerts > 1 && (
           <button
             onClick={() => setIsExpanded(!isExpanded)}
-            className="flex items-center space-x-2 text-yellow-400 hover:text-yellow-300 transition-colors"
+            className="flex items-center space-x-2 text-black hover:text-gray-600 transition-colors"
           >
             <span className="text-sm">
               {isExpanded ? 'Show Less' : `Show All (${totalAlerts})`}
@@ -122,16 +122,16 @@ export default function WeatherAlerts({ alerts, title = "⚠️ Weather Alerts" 
       
       <div className="space-y-4">
         {alerts.map((dayAlert, dayIndex) => (
-          <div key={dayIndex} className="bg-gray-700 rounded-lg p-4">
+          <div key={dayIndex} className="bg-gray-100 rounded-lg p-4">
             <div className="flex items-center justify-between mb-3">
-              <h5 className="text-white font-medium">
+              <h5 className="text-black font-medium">
                 📅 {new Date(dayAlert.forecastDate).toLocaleDateString('en-US', { 
                   weekday: 'long', 
                   month: 'long', 
                   day: 'numeric' 
                 })}
               </h5>
-              <span className="text-sm text-gray-400">
+              <span className="text-sm text-gray-600">
                 {dayAlert.location}
               </span>
             </div>
@@ -175,9 +175,9 @@ export default function WeatherAlerts({ alerts, title = "⚠️ Weather Alerts" 
         ))}
       </div>
       
-      <div className="mt-4 p-3 bg-gray-700 rounded-lg">
-        <p className="text-sm text-gray-300">
-          <span className="text-yellow-400">ℹ️</span> Weather alerts are based on 7-day forecasts and may change as conditions develop. 
+      <div className="mt-4 p-3 bg-gray-100 rounded-lg">
+        <p className="text-sm text-gray-600">
+          <span className="text-black">ℹ️</span> Weather alerts are based on 7-day forecasts and may change as conditions develop. 
           Always check local weather services for the most current information.
         </p>
       </div>

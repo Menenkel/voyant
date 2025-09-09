@@ -60,14 +60,14 @@ const pricingPlans = [
 
 export default function PricingPage() {
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-white">
       {/* Header */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-8">
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-white mb-4 animate-fade-in">
+          <h1 className="text-4xl font-bold text-black mb-4 animate-fade-in">
             Choose Your Plan
           </h1>
-          <p className="text-xl text-gray-300 max-w-2xl mx-auto animate-fade-in-delay">
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto animate-fade-in-delay">
             Get the travel safety insights you need, when you need them.
           </p>
         </div>
@@ -79,17 +79,17 @@ export default function PricingPage() {
           {pricingPlans.map((plan, index) => (
             <div
               key={plan.name}
-              className={`relative bg-gray-800 rounded-2xl p-8 border transition-all duration-300 hover-lift ${
+              className={`relative bg-white rounded-2xl p-8 border-2 transition-all duration-300 hover-lift ${
                 plan.popular 
-                  ? 'border-yellow-500/50 shadow-lg shadow-yellow-500/10' 
-                  : 'border-gray-700 hover:border-yellow-500/30'
+                  ? 'border-black shadow-lg' 
+                  : 'border-gray-300 hover:border-black'
               } animate-fade-in`}
               style={{ animationDelay: `${index * 0.1}s` }}
             >
               {/* Popular Badge */}
               {plan.popular && (
                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-yellow-500 text-black px-4 py-1 rounded-full text-sm font-medium">
+                  <span className="bg-black text-white px-4 py-1 rounded-full text-sm font-medium border-2 border-black">
                     Most Popular
                   </span>
                 </div>
@@ -97,12 +97,12 @@ export default function PricingPage() {
 
               {/* Plan Header */}
               <div className="text-center mb-8">
-                <h3 className="text-2xl font-bold text-white mb-2">{plan.name}</h3>
+                <h3 className="text-2xl font-bold text-black mb-2">{plan.name}</h3>
                 <div className="mb-4">
-                  <span className="text-4xl font-bold text-white">{plan.price}</span>
-                  <span className="text-gray-400 ml-2">{plan.period}</span>
+                  <span className="text-4xl font-bold text-black">{plan.price}</span>
+                  <span className="text-gray-600 ml-2">{plan.period}</span>
                 </div>
-                <p className="text-gray-300">{plan.description}</p>
+                <p className="text-gray-600">{plan.description}</p>
               </div>
 
               {/* Features */}
@@ -110,7 +110,7 @@ export default function PricingPage() {
                 {plan.features.map((feature, featureIndex) => (
                   <li key={featureIndex} className="flex items-start">
                     <svg
-                      className="w-5 h-5 text-yellow-400 mt-0.5 mr-3 flex-shrink-0"
+                      className="w-5 h-5 text-black mt-0.5 mr-3 flex-shrink-0"
                       fill="currentColor"
                       viewBox="0 0 20 20"
                     >
@@ -120,17 +120,17 @@ export default function PricingPage() {
                         clipRule="evenodd"
                       />
                     </svg>
-                    <span className="text-gray-300">{feature}</span>
+                    <span className="text-gray-600">{feature}</span>
                   </li>
                 ))}
               </ul>
 
               {/* CTA Button */}
               <button
-                className={`w-full py-3 px-6 rounded-lg font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 ${
+                className={`w-full py-3 px-6 rounded-lg font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white border-2 ${
                   plan.ctaVariant === 'primary'
-                    ? 'bg-yellow-500 text-black hover:bg-yellow-400 focus:ring-yellow-500 hover-glow'
-                    : 'bg-gray-700 text-white hover:bg-gray-600 focus:ring-gray-500 hover-lift'
+                    ? 'bg-black text-white hover:bg-gray-800 focus:ring-gray-400 hover-glow border-black'
+                    : 'bg-white text-black hover:bg-gray-100 focus:ring-gray-400 hover-lift border-gray-300'
                 }`}
               >
                 {plan.cta}
@@ -141,31 +141,31 @@ export default function PricingPage() {
 
         {/* FAQ Section */}
         <div className="mt-20 max-w-3xl mx-auto">
-          <h2 className="text-2xl font-bold text-white text-center mb-12 animate-fade-in">
+          <h2 className="text-2xl font-bold text-black text-center mb-12 animate-fade-in">
             Frequently Asked Questions
           </h2>
           <div className="space-y-6">
-            <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 animate-fade-in-delay">
-              <h3 className="text-lg font-semibold text-white mb-2">
+            <div className="bg-white rounded-lg p-6 border-2 border-gray-300 animate-fade-in-delay">
+              <h3 className="text-lg font-semibold text-black mb-2">
                 Can I change my plan anytime?
               </h3>
-              <p className="text-gray-300">
+              <p className="text-gray-600">
                 Yes, you can upgrade or downgrade your plan at any time. Changes take effect immediately.
               </p>
             </div>
-            <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 animate-fade-in-delay" style={{animationDelay: '0.2s'}}>
-              <h3 className="text-lg font-semibold text-white mb-2">
+            <div className="bg-white rounded-lg p-6 border-2 border-gray-300 animate-fade-in-delay" style={{animationDelay: '0.2s'}}>
+              <h3 className="text-lg font-semibold text-black mb-2">
                 What happens if I exceed my monthly queries?
               </h3>
-              <p className="text-gray-300">
+              <p className="text-gray-600">
                 Free users will be prompted to upgrade to Pro for unlimited access. Pro and Premium users have no limits.
               </p>
             </div>
-            <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 animate-fade-in-delay" style={{animationDelay: '0.4s'}}>
-              <h3 className="text-lg font-semibold text-white mb-2">
+            <div className="bg-white rounded-lg p-6 border-2 border-gray-300 animate-fade-in-delay" style={{animationDelay: '0.4s'}}>
+              <h3 className="text-lg font-semibold text-black mb-2">
                 Is there a free trial?
               </h3>
-              <p className="text-gray-300">
+              <p className="text-gray-600">
                 Pro plan includes a 14-day free trial. No credit card required to start exploring.
               </p>
             </div>
@@ -174,12 +174,12 @@ export default function PricingPage() {
 
         {/* Bottom CTA */}
         <div className="text-center mt-16 animate-fade-in-delay" style={{animationDelay: '0.6s'}}>
-          <p className="text-gray-300 mb-4">
+          <p className="text-gray-600 mb-4">
             Still have questions? We&apos;re here to help.
           </p>
           <Link
             href="/contact"
-            className="inline-flex items-center text-yellow-400 hover:text-yellow-300 transition-colors"
+            className="inline-flex items-center text-black hover:text-gray-600 transition-colors border-2 border-transparent hover:border-black px-4 py-2 rounded-lg"
           >
             Contact Support
             <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
