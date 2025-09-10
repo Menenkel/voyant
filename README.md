@@ -28,10 +28,12 @@ VOYANT helps travelers make informed decisions by providing detailed risk assess
 - **Temperature stream graph**: Beautiful gradient visualization from red (max) to grey (min) temperatures
 - **Units toggle**: Switch between Celsius/Fahrenheit and km/h/mph with instant conversion
 - Interactive weather charts with temperature and precipitation trends using Chart.js
-- Comprehensive air quality data (PM2.5, PM10, UV Index, Ozone) with health guidance
-- Detailed air quality descriptions with health context and safety recommendations
+- **Separated weather alerts and air quality**: Distinct boxes with black borders and micro-animations
+- **Enhanced air quality component**: Comprehensive metrics with detailed tooltips and health explanations
+- **Dynamic color coding**: Air quality levels color-coded based on health impact (green/yellow/orange/red/purple)
+- **Interactive tooltips**: Hover over air quality metrics for detailed explanations and normal value ranges
 - **Extreme weather alerts**: Automated warnings for heavy rain, high winds, temperature extremes, and snow/hail
-- **Collapsible alert interface**: Shows first alert by default, expand to view all alerts with smooth animations
+- **Expandable alert interface**: Shows first alert by default, expand to view all alerts with smooth animations
 - Seasonal climate forecasts with contextual advice and best times to visit
 
 ### 💧 **Health & Safety Insights**
@@ -59,11 +61,14 @@ VOYANT helps travelers make informed decisions by providing detailed risk assess
 - AI-powered travel summaries using ChatGPT integration with strict factual accuracy
 - Real-time weather data integration with detailed forecasts and temperature/rain predictions
 - 5-section structure: Quick Intro, Main Attractions, Weather & Climate, Accommodation, Airport Access
-- Wikipedia data integration for comprehensive destination information
+- **Enhanced Wikipedia integration**: Full page content retrieval for comprehensive destination information
+- **Pop culture facts system**: Prioritizes famous actors, musicians, directors, and cultural figures
+- **Flexible fact sourcing**: Uses Wikipedia data and training data for well-established pop culture facts
 - Enhanced 300-word summaries with hotel price estimates and airport accessibility
-- City-specific fun facts: ChatGPT-generated entertaining and factual information
+- **City-specific pop culture facts**: ChatGPT-generated fascinating, lesser-known but true information
 - No risk-related content in AI summaries (focuses on positive travel information)
 - Streamlined comparison mode without comparison guide section
+- **Dark green theme**: Updated border colors and styling for better visual hierarchy
 - Expandable sections with collapsible design for better user experience
 
 ## 🚀 Getting Started
@@ -133,6 +138,7 @@ voyant/
 │   ├── layout.tsx         # Root layout
 │   └── page.tsx           # Home page
 ├── components/            # React components
+│   ├── AirQuality.tsx     # Enhanced air quality component with tooltips
 │   ├── CountryMap.tsx     # Interactive map component
 │   ├── DestinationSearch.tsx # Main search interface
 │   ├── Footer.tsx         # Footer component
@@ -160,10 +166,14 @@ voyant/
 - Yellow accent colors for highlights and interactions
 - White borders and labels on maps for visibility
 
-### Micro-Animations
+### Micro-Animations & Enhanced UI
 - Smooth fade-in animations for content
-- Hover effects and transitions
+- Hover effects and transitions with scale animations
 - Interactive elements with visual feedback
+- **Black borders**: All information boxes feature consistent black borders
+- **Subtle color coding**: Each information type has distinct color themes
+- **Enhanced spacing**: Proper visual separation between sections
+- **Interactive tooltips**: Detailed explanations on hover for air quality metrics
 
 ### Responsive Design
 - Mobile-first approach
@@ -328,6 +338,18 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Smart Country Matching:** Handles country name variations (USA, UK, DRC, etc.)
 - **Basic Country Information:** Enhanced with size data and geographic context
 - **Dual Unit Display:** Both metric and imperial measurements for global accessibility
+
+### 🎨 Enhanced UI/UX & Pop Culture Facts (Latest Update)
+- **Separated Information Boxes:** Weather alerts and air quality now in distinct boxes with black borders
+- **Micro-Animations:** Added hover effects, scale animations, and smooth transitions throughout
+- **Enhanced Air Quality Component:** Comprehensive metrics with detailed tooltips and health explanations
+- **Dynamic Color Coding:** Air quality levels color-coded based on health impact (green/yellow/orange/red/purple)
+- **Interactive Tooltips:** Hover over air quality metrics for detailed explanations and normal value ranges
+- **Pop Culture Facts System:** Enhanced Wikipedia search and ChatGPT prompts for fascinating cultural facts
+- **Flexible Fact Sourcing:** Uses both Wikipedia data and training data for well-established pop culture facts
+- **Visual Hierarchy:** Dark green theme for globetrot box, petrol blue for fun facts, proper spacing between sections
+- **Enhanced Wikipedia Integration:** Full page content retrieval for comprehensive destination information
+- **City-Specific Pop Culture Facts:** ChatGPT-generated fascinating, lesser-known but true information about famous people
 
 ## 🙏 Acknowledgments
 
