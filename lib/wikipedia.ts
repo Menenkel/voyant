@@ -215,3 +215,61 @@ export async function getWikipediaDataForCountry(countryName: string): Promise<s
     return null;
   }
 }
+
+// Enhanced function to get more detailed Wikipedia content for pop culture facts
+export async function getWikipediaContentForPopCulture(cityName: string, countryName: string): Promise<string | null> {
+  try {
+    // Try to get the full page content instead of just summary
+    const searchTerms = [
+      `${cityName}, ${countryName}`,
+      `${cityName} (${countryName})`,
+      `${cityName}, ${getCountryCode(countryName)}`,
+      cityName
+    ];
+    
+    for (const term of searchTerms) {
+      try {
+        // First try to get the page ID
+        const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&format=json&list=search&srsearch=${encodeURIComponent(term)}&srlimit=1`;
+        const searchResponse = await fetch(searchUrl, {
+          headers: {
+            'User-Agent': 'VoyantTravelApp/1.0 (https://voyant-travel-app.vercel.app)'
+          }
+        });
+        
+        if (searchResponse.ok) {
+          const searchData = await searchResponse.json();
+          if (searchData.query?.search?.[0]?.pageid) {
+            const pageId = searchData.query.search[0].pageid;
+            
+            // Get the full page content
+            const contentUrl = `https://en.wikipedia.org/w/api.php?action=query&format=json&pageids=${pageId}&prop=extracts&exintro=false&explaintext=true&exsectionformat=plain`;
+            const contentResponse = await fetch(contentUrl, {
+              headers: {
+                'User-Agent': 'VoyantTravelApp/1.0 (https://voyant-travel-app.vercel.app)'
+              }
+            });
+            
+            if (contentResponse.ok) {
+              const contentData = await contentResponse.json();
+              const extract = contentData.query?.pages?.[pageId]?.extract;
+              if (extract && extract.length > 200) {
+                // Return first 3000 characters to focus on key information including pop culture
+                return extract.substring(0, 3000);
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.log(`Wikipedia content search failed for term: ${term}`);
+        continue;
+      }
+    }
+    
+    // Fallback to regular summary
+    return await getWikipediaData(`${cityName}, ${countryName}`);
+  } catch (error) {
+    console.error('Wikipedia content API error:', error);
+    return null;
+  }
+}

@@ -41,11 +41,14 @@ export default function WeatherAlerts({ alerts, title = "⚠️ Weather Alerts" 
 
   if (!alerts || alerts.length === 0) {
     return (
-      <div className="bg-white rounded-lg p-4 border-2 border-green-500 shadow-lg">
-        <h4 className="text-base font-semibold text-green-600 mb-3">{title}</h4>
-        <div className="bg-green-50 rounded-lg p-4 border-l-4 border-green-400">
+      <div className="bg-white rounded-lg p-6 border-2 border-black shadow-lg animate-fade-in hover:shadow-xl transition-all duration-300">
+        <h4 className="text-lg font-semibold text-black mb-4 flex items-center space-x-2">
+          <span className="animate-pulse">✅</span>
+          <span>{title}</span>
+        </h4>
+        <div className="bg-green-50 rounded-lg p-4 border-2 border-green-200 hover:bg-green-100 transition-colors duration-200">
           <div className="flex items-center space-x-3">
-            <span className="text-2xl">✅</span>
+            <span className="text-2xl animate-bounce">✅</span>
             <div>
               <p className="text-black font-medium">No Weather Warnings</p>
               <p className="text-gray-600 text-sm">
@@ -102,18 +105,21 @@ export default function WeatherAlerts({ alerts, title = "⚠️ Weather Alerts" 
   };
 
   return (
-    <div className="bg-white rounded-lg p-4 border-2 border-black shadow-lg">
-      <div className="flex items-center justify-between mb-3">
-        <h4 className="text-base font-semibold text-black">{title}</h4>
+    <div className="bg-white rounded-lg p-6 border-2 border-black shadow-lg animate-fade-in hover:shadow-xl transition-all duration-300">
+      <div className="flex items-center justify-between mb-4">
+        <h4 className="text-lg font-semibold text-black flex items-center space-x-2">
+          <span className="animate-pulse">⚠️</span>
+          <span>{title}</span>
+        </h4>
         {totalAlerts > 1 && (
           <button
             onClick={() => setIsExpanded(!isExpanded)}
-            className="flex items-center space-x-1 text-black hover:text-gray-600 transition-colors text-sm"
+            className="flex items-center space-x-1 text-black hover:text-gray-600 transition-all duration-200 text-sm bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-lg border border-gray-300"
           >
             <span>
               {isExpanded ? 'Show Less' : `Show All (${totalAlerts})`}
             </span>
-            <span className={`transform transition-transform ${isExpanded ? 'rotate-180' : ''}`}>
+            <span className={`transform transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}>
               ▼
             </span>
           </button>
@@ -146,20 +152,20 @@ export default function WeatherAlerts({ alerts, title = "⚠️ Weather Alerts" 
                 return (
                   <div 
                     key={alertIndex}
-                    className={`p-3 rounded-lg border-l-4 ${getSeverityColor(alert.severity)}`}
+                    className={`p-4 rounded-lg border-2 transition-all duration-300 hover:scale-105 ${getSeverityColor(alert.severity)}`}
                   >
                     <div className="flex items-start space-x-3">
-                      <span className="text-lg flex-shrink-0">
+                      <span className="text-lg flex-shrink-0 animate-pulse">
                         {getAlertIcon(alert.type)}
                       </span>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center space-x-2 mb-1">
+                        <div className="flex items-center space-x-2 mb-2">
                           <span className="font-semibold text-sm">{alert.type}</span>
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getSeverityColor(alert.severity)}`}>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getSeverityColor(alert.severity)}`}>
                             {alert.severity.toUpperCase()}
                           </span>
                         </div>
-                        <p className="text-sm opacity-90 mb-1">
+                        <p className="text-sm opacity-90 mb-2">
                           {alert.description}
                         </p>
                         <p className="text-xs opacity-75">
@@ -175,9 +181,9 @@ export default function WeatherAlerts({ alerts, title = "⚠️ Weather Alerts" 
         ))}
       </div>
       
-      <div className="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
-        <p className="text-xs text-gray-600">
-          <span className="text-black">ℹ️</span> Weather alerts are based on 16-day forecasts and may change as conditions develop. 
+      <div className="mt-4 p-3 bg-blue-50 rounded-lg border-2 border-blue-200 hover:bg-blue-100 transition-colors duration-200">
+        <p className="text-xs text-blue-800">
+          <span className="font-medium">ℹ️ Weather Alert Information:</span> These alerts are based on 16-day forecasts and may change as conditions develop. 
           Always check local weather services for the most current information.
         </p>
       </div>

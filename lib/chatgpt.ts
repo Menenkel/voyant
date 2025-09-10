@@ -297,18 +297,17 @@ export async function generateCityFunFact(
 
   const systemMessage: ChatGPTMessage = {
     role: 'system',
-    content: `You are a travel expert who provides ONLY factual, verifiable information about cities. Your goal is to share one interesting, lesser-known but TRUE fact about the city that entertains and surprises users.
+    content: `You are a travel expert who provides fascinating, lesser-known but TRUE facts about cities. Your goal is to share one interesting pop culture fact that entertains and surprises users.
 
 CRITICAL REQUIREMENTS - FACTUAL ACCURACY IS MANDATORY:
 - Create ONE entertaining fact only (1-2 sentences maximum)
 - MUST be 100% factual and verifiable - NO FABRICATION OR CREATIVE INTERPRETATION
-- MUST be based ONLY on the provided Wikipedia data or well-established historical/geographical facts
 - Should be lesser-known but TRUE information that most tourists don't know
 - Focus on something unique to this specific city, not the country
-- PRIORITIZE POP CULTURE: Famous actors, musicians, singers, directors, writers, or cultural figures born in or associated with the city
+- PRIORITIZE POP CULTURE: Famous actors, musicians, singers, directors, writers, filmmakers, or cultural figures born in or associated with the city
 - SECONDARY: Quirky architectural details, unusual local customs, surprising statistics, or hidden gems
-- Use ONLY the provided Wikipedia data as your source - do not invent or embellish
-- If Wikipedia data doesn't contain interesting lesser-known facts, provide a simple, factual statement
+- Use the provided Wikipedia data as your primary source, but you may also use your training data for well-established pop culture facts
+- If Wikipedia data doesn't contain interesting pop culture facts, use your knowledge of famous people associated with the city
 - Do not include quotation marks around the fun fact
 - Keep it concise, factual, and entertaining
 - NEVER create fictional traditions, customs, or stories
@@ -320,6 +319,9 @@ EXAMPLES OF GOOD ENTERTAINING FACTUAL FACTS (POP CULTURE PRIORITY):
 - "Mozart was born in Salzburg, Austria, and the city celebrates his legacy with the annual Salzburg Festival."
 - "The Beatles formed in Liverpool, England, and the city has a dedicated Beatles Story museum."
 - "Leonardo da Vinci was born in Vinci, Italy, and the town's museum houses replicas of his inventions."
+- "Johnny Cash was born in Kingsland, Arkansas, and the city has a Johnny Cash Memorial."
+- "Marilyn Monroe was born in Los Angeles, California, and her childhood home is now a historic landmark."
+- "Bob Dylan was born in Duluth, Minnesota, and the city has a Bob Dylan Way street."
 
 EXAMPLES OF GOOD NON-POP CULTURE FACTS:
 - "Vienna has more than 1,700 acres of vineyards within city limits, making it the world's largest wine-growing region inside a city."
@@ -336,11 +338,10 @@ STRICTLY AVOID:
 - Common tourist information
 - Generic city statistics
 - Information that applies to the whole country
-- ANY information not directly supported by the provided Wikipedia data
 - Unverified claims about celebrities or cultural figures`
   };
 
-  let userContent = `Generate a FACTUAL, entertaining, lesser-known fact about ${cityName}, ${countryName}. PRIORITIZE pop culture facts about famous actors, musicians, singers, directors, writers, or cultural figures born in or associated with this city. This must be 100% true and verifiable information that most tourists wouldn't know.`;
+  let userContent = `Generate a FACTUAL, entertaining, lesser-known fact about ${cityName}, ${countryName}. PRIORITIZE pop culture facts about famous actors, musicians, singers, directors, writers, filmmakers, or cultural figures born in or associated with this city. This must be 100% true and verifiable information that most tourists wouldn't know.`;
 
   if (wikipediaData) {
     userContent += `\n\nWikipedia information about ${cityName}:\n${wikipediaData}`;
@@ -348,7 +349,7 @@ STRICTLY AVOID:
     userContent += `\n\nNo Wikipedia data available for this city.`;
   }
 
-  userContent += `\n\nCRITICAL: Only provide information that is directly supported by the Wikipedia data above. Do not invent, embellish, or create fictional traditions. If the Wikipedia data doesn't contain interesting lesser-known facts about famous people or cultural figures, provide a simple, factual statement about the city. DOUBLE-CHECK all names, dates, and facts for accuracy.`;
+  userContent += `\n\nINSTRUCTIONS: Use the Wikipedia data as your primary source, but if it doesn't contain interesting pop culture facts about famous people, you may use your training data to provide well-established facts about celebrities, musicians, actors, or cultural figures associated with this city. Focus on lesser-known but true information that would surprise tourists. DOUBLE-CHECK all names, dates, and facts for accuracy.`;
 
   const userMessage: ChatGPTMessage = {
     role: 'user',

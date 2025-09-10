@@ -292,14 +292,14 @@ const WeatherChart: React.FC<WeatherChartProps> = ({ forecast, location, useImpe
       )}
 
       {/* Temperature Stream Graph */}
-      <div className="bg-white rounded-lg p-4 border-2 border-black">
+      <div className="bg-white rounded-lg p-6 border-2 border-black shadow-lg animate-fade-in hover:shadow-xl transition-all duration-300">
         <div className="h-64">
           <Line data={temperatureData} options={chartOptions} />
         </div>
       </div>
 
       {/* Precipitation Chart */}
-      <div className="bg-white rounded-lg p-4 border-2 border-black">
+      <div className="bg-white rounded-lg p-6 border-2 border-black shadow-lg animate-fade-in hover:shadow-xl transition-all duration-300">
         <div className="h-48">
           <Bar data={precipitationData} options={precipitationOptions} />
         </div>
@@ -335,11 +335,11 @@ const WeatherChart: React.FC<WeatherChartProps> = ({ forecast, location, useImpe
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {dailyForecast.map((day, index) => (
-            <div key={index} className="bg-gray-100 rounded-lg p-4 text-center border-2 border-black">
+            <div key={index} className="bg-gray-50 rounded-lg p-4 text-center border-2 border-black hover:bg-gray-100 hover:scale-105 transition-all duration-300 shadow-md hover:shadow-lg">
               <p className="text-black text-sm font-medium mb-2">
                 {formatDate(day.date)}
               </p>
-              <div className="text-2xl mb-2">
+              <div className="text-2xl mb-2 animate-pulse">
                 {day.weather_description === 'Clear sky' && '☀️'}
                 {day.weather_description === 'Partly cloudy' && '⛅'}
                 {day.weather_description === 'Overcast' && '☁️'}

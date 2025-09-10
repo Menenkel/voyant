@@ -5,6 +5,7 @@ import CountryMap from './CountryMap';
 import WeatherChart from './WeatherChart';
 import RiskRadarChart from './RiskRadarChart';
 import WeatherAlerts from './WeatherAlerts';
+import AirQuality from './AirQuality';
 
 interface SearchHistory {
   destination: string;
@@ -700,19 +701,16 @@ export default function DestinationSearch() {
         <div className={`space-y-6 ${compareMode && secondResults ? 'grid grid-cols-1 lg:grid-cols-2 gap-8' : ''}`}>
           {/* First Destination Results */}
           <div className="space-y-6">
-            <h3 className="text-2xl font-bold text-black text-center mb-6">
-              {compareMode ? `${results.destination} - Country Data` : 'Country Data'}
-            </h3>
             
 
             {/* Globaltrot-Bot Summary */}
             {results.chatgptSummary && (
-              <div className="bg-white rounded-lg p-6 border-2 border-purple-500 shadow-lg">
+              <div className="bg-white rounded-lg p-6 border-2 border-green-600 shadow-lg mt-8">
                 <div className="flex items-center justify-between mb-4">
-                  <h4 className="text-lg font-semibold text-purple-600">🤖 Globetrot-Bot Summary</h4>
+                  <h4 className="text-lg font-semibold text-green-600">🤖 Globetrot-Bot Summary</h4>
                   <button
                     onClick={() => setIsGlobetrotBotExpanded(!isGlobetrotBotExpanded)}
-                    className="text-purple-600 hover:text-purple-500 transition-colors duration-200 flex items-center space-x-2"
+                    className="text-green-600 hover:text-green-500 transition-colors duration-200 flex items-center space-x-2"
                   >
                     <span className="text-sm">
                       {isGlobetrotBotExpanded ? 'Show Less' : 'Show More'}
@@ -730,9 +728,9 @@ export default function DestinationSearch() {
                         const cleanLine = line.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1');
                         
                         if (cleanLine.startsWith('# ')) {
-                          return <h1 key={index} className="text-xl font-bold text-purple-600 mb-3 mt-4">{cleanLine.substring(2)}</h1>;
+                          return <h1 key={index} className="text-xl font-bold text-green-600 mb-3 mt-4">{cleanLine.substring(2)}</h1>;
                         } else if (cleanLine.startsWith('## ')) {
-                          return <h2 key={index} className="text-lg font-semibold text-purple-500 mb-2 mt-3">{cleanLine.substring(3)}</h2>;
+                          return <h2 key={index} className="text-lg font-semibold text-green-500 mb-2 mt-3">{cleanLine.substring(3)}</h2>;
                         } else if (cleanLine.startsWith('- ')) {
                           return <div key={index} className="ml-4 mb-1 text-black">• {cleanLine.substring(2)}</div>;
                         } else if (cleanLine.trim() === '') {
@@ -749,8 +747,8 @@ export default function DestinationSearch() {
 
             {/* Not really important, but still good to know */}
             {results.fun_fact && (
-              <div className="bg-white rounded-lg p-6 border-2 border-purple-500 shadow-lg">
-                <h4 className="text-lg font-semibold text-purple-600 mb-4">🎭 Not really important, but still good to know</h4>
+              <div className="bg-white rounded-lg p-6 border-2 border-blue-800 shadow-lg">
+                <h4 className="text-lg font-semibold text-blue-800 mb-4">🎭 Not really important, but still good to know</h4>
                 <div className="p-4 bg-gray-100 rounded-lg">
                   <p className="text-black font-medium italic">"{results.fun_fact?.replace(/^"|"$/g, '') || 'No fun fact available'}"</p>
                 </div>
@@ -957,33 +955,10 @@ export default function DestinationSearch() {
                   />
 
                   {/* Air Quality */}
-                  {results.realWeatherData.air_quality && (
-                <div className="p-4 bg-gray-100 rounded-lg">
-                      <h5 className="text-blue-600 font-semibold mb-3">Air Quality</h5>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div className="col-span-2">
-                          <span className="text-gray-600 text-sm">PM2.5:</span>
-                          <p className="text-black font-semibold">{results.realWeatherData.air_quality.pm2_5} μg/m³</p>
-                          <p className="text-gray-500 text-sm leading-relaxed">{results.realWeatherData.air_quality.pm2_5_description}</p>
-                </div>
-                        <div className="col-span-2">
-                          <span className="text-gray-600 text-sm">PM10:</span>
-                          <p className="text-black font-semibold">{results.realWeatherData.air_quality.pm10} μg/m³</p>
-                          <p className="text-gray-500 text-sm leading-relaxed">{results.realWeatherData.air_quality.pm10_description}</p>
-                </div>
-                        <div className="col-span-2">
-                          <span className="text-gray-600 text-sm">UV Index:</span>
-                          <p className="text-black font-semibold">{results.realWeatherData.air_quality.uv_index}</p>
-                          <p className="text-gray-500 text-sm leading-relaxed">{results.realWeatherData.air_quality.uv_index_description}</p>
-                </div>
-                        <div className="col-span-2">
-                          <span className="text-gray-600 text-sm">Ozone:</span>
-                          <p className="text-black font-semibold">{results.realWeatherData.air_quality.ozone} μg/m³</p>
-                          <p className="text-gray-500 text-sm leading-relaxed">{results.realWeatherData.air_quality.ozone_description}</p>
-              </div>
-            </div>
-                    </div>
-                  )}
+                  <AirQuality 
+                    airQuality={results.realWeatherData.air_quality} 
+                    title="🌬️ Air Quality"
+                  />
                 </div>
               ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1012,19 +987,16 @@ export default function DestinationSearch() {
           {/* Second Destination Results */}
           {secondResults && (
             <div className="space-y-6">
-              <h3 className="text-2xl font-bold text-black text-center mb-6">
-                {secondResults.destination} - Country Data
-              </h3>
               
 
               {/* Globaltrot-Bot Summary */}
               {secondResults.chatgptSummary && (
-              <div className="bg-white rounded-lg p-6 border-2 border-purple-500 shadow-lg">
+              <div className="bg-white rounded-lg p-6 border-2 border-green-600 shadow-lg mt-8">
                   <div className="flex items-center justify-between mb-4">
-                    <h4 className="text-lg font-semibold text-purple-600">🤖 Globetrot-Bot Summary</h4>
+                    <h4 className="text-lg font-semibold text-green-600">🤖 Globetrot-Bot Summary</h4>
                     <button
                       onClick={() => setIsSecondGlobetrotBotExpanded(!isSecondGlobetrotBotExpanded)}
-                      className="text-purple-600 hover:text-purple-500 transition-colors duration-200 flex items-center space-x-2"
+                      className="text-green-600 hover:text-green-500 transition-colors duration-200 flex items-center space-x-2"
                     >
                       <span className="text-sm">
                         {isSecondGlobetrotBotExpanded ? 'Show Less' : 'Show More'}
@@ -1042,9 +1014,9 @@ export default function DestinationSearch() {
                           const cleanLine = line.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1');
                           
                           if (cleanLine.startsWith('# ')) {
-                            return <h1 key={index} className="text-xl font-bold text-purple-600 mb-3 mt-4">{cleanLine.substring(2)}</h1>;
+                            return <h1 key={index} className="text-xl font-bold text-green-600 mb-3 mt-4">{cleanLine.substring(2)}</h1>;
                           } else if (cleanLine.startsWith('## ')) {
-                            return <h2 key={index} className="text-lg font-semibold text-purple-500 mb-2 mt-3">{cleanLine.substring(3)}</h2>;
+                            return <h2 key={index} className="text-lg font-semibold text-green-500 mb-2 mt-3">{cleanLine.substring(3)}</h2>;
                           } else if (cleanLine.startsWith('- ')) {
                             return <div key={index} className="ml-4 mb-1 text-black">• {cleanLine.substring(2)}</div>;
                           } else if (cleanLine.trim() === '') {

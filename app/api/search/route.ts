@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { searchDestinations, getCountryByName, transformCountryData, getComparisonData } from '@/lib/database';
-import { getWikipediaData, getWikipediaDataForCountry } from '@/lib/wikipedia';
+import { getWikipediaData, getWikipediaDataForCountry, getWikipediaContentForPopCulture } from '@/lib/wikipedia';
 import { generateSummary, generateCityFunFact } from '@/lib/chatgpt';
 import { getWeatherForCity, getWeatherForCoordinates, getWeatherDescription, getAirQualityDescription, getWindSpeedDescription, getPM10Description, getUVIndexDescription, getOzoneDescription, generateWeatherAlerts } from '@/lib/weather';
 
@@ -200,7 +200,11 @@ export async function GET(request: NextRequest) {
         try {
           const cityName = cityCoordinates.cityName || destination.split(',')[0].trim();
           const countryName = countryData.country;
-          cityFunFact = await generateCityFunFact(cityName, countryName, wikipediaData);
+          
+          // Get enhanced Wikipedia content for pop culture facts
+          const popCultureWikipediaData = await getWikipediaContentForPopCulture(cityName, countryName);
+          
+          cityFunFact = await generateCityFunFact(cityName, countryName, popCultureWikipediaData || wikipediaData);
           console.log(`City fun fact generated for ${cityName}, ${countryName}`);
         } catch (error) {
           console.error('City fun fact generation error:', error);
