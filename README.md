@@ -71,6 +71,17 @@ VOYANT helps travelers make informed decisions by providing detailed risk assess
 - **Dark green theme**: Updated border colors and styling for better visual hierarchy
 - Expandable sections with collapsible design for better user experience
 
+### 🎨 **Enhanced UI/UX & Pop Culture Facts (Latest Update)**
+- **Improved spider chart visualization**: Better spacing, larger fonts, and clearer hazard labels
+- **Enhanced comparison mode**: Consistent air quality design and emoji-free headings across both cities
+- **Better color distinction**: Blue and red colors for easy country comparison in spider charts
+- **Fixed temperature stream tooltips**: Resolved duplication issues for cleaner user experience
+- **Risk ranking clarity**: Added explanations and similar country comparisons for better context
+- **Micro-animations**: Subtle hover effects and transitions throughout the interface
+- **Black borders**: Consistent styling across all information boxes
+- **Pop culture focus**: Enhanced ChatGPT prompts for fascinating, lesser-known city facts
+- **Wikipedia integration**: Improved data fetching for comprehensive pop culture information
+
 ## 🚀 Getting Started
 
 ### Prerequisites
