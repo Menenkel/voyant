@@ -32,6 +32,8 @@ export interface ComparisonData {
   globalRankBelow: { country: string; rank: number }[];
   peaceRankAbove: { country: string; rank: number }[];
   peaceRankBelow: { country: string; rank: number }[];
+  globalRankSimilar: { country: string; rank: number }[];
+  peaceRankSimilar: { country: string; rank: number }[];
 }
 
 export async function searchCountries(query: string): Promise<CountryData[]> {
@@ -259,6 +261,96 @@ export async function getCountryForCity(cityName: string): Promise<CountryData |
   } catch (error) {
     console.error('Get country for city error:', error);
     return null;
+  }
+}
+
+// Function to get countries with similar rankings
+export async function getCountriesWithSimilarRankings(
+  globalRank: number, 
+  peaceRank: number, 
+  currentCountry: string
+): Promise<ComparisonData> {
+  try {
+    const { data, error } = await supabase
+      .from('Voyant2')
+      .select('country, global_rank, global_peace_rank, inform_index')
+      .neq('country', currentCountry)
+      .order('global_rank', { ascending: true });
+
+    if (error || !data) {
+      return {
+        informSimilar: [],
+        globalRankAbove: [],
+        globalRankBelow: [],
+        peaceRankAbove: [],
+        peaceRankBelow: [],
+        globalRankSimilar: [],
+        peaceRankSimilar: []
+      };
+    }
+
+    // Find countries with similar global risk ranks (±5 positions)
+    const globalRankSimilar = data
+      .filter(country => Math.abs(country.global_rank - globalRank) <= 5)
+      .slice(0, 3)
+      .map(country => ({ country: country.country, rank: country.global_rank }));
+
+    // Find countries with similar peace ranks (±5 positions)
+    const peaceRankSimilar = data
+      .filter(country => Math.abs(country.global_peace_rank - peaceRank) <= 5)
+      .slice(0, 3)
+      .map(country => ({ country: country.country, rank: country.global_peace_rank }));
+
+    // Find countries with similar INFORM index (±0.5)
+    const informSimilar = data
+      .filter(country => Math.abs(country.inform_index - (data.find(c => c.country === currentCountry)?.inform_index || 0)) <= 0.5)
+      .slice(0, 3)
+      .map(country => ({ country: country.country, value: country.inform_index }));
+
+    // Find countries with better global ranks (lower numbers = safer)
+    const globalRankAbove = data
+      .filter(country => country.global_rank < globalRank)
+      .slice(0, 2)
+      .map(country => ({ country: country.country, rank: country.global_rank }));
+
+    // Find countries with worse global ranks (higher numbers = riskier)
+    const globalRankBelow = data
+      .filter(country => country.global_rank > globalRank)
+      .slice(0, 2)
+      .map(country => ({ country: country.country, rank: country.global_rank }));
+
+    // Find countries with better peace ranks (lower numbers = more peaceful)
+    const peaceRankAbove = data
+      .filter(country => country.global_peace_rank < peaceRank)
+      .slice(0, 2)
+      .map(country => ({ country: country.country, rank: country.global_peace_rank }));
+
+    // Find countries with worse peace ranks (higher numbers = less peaceful)
+    const peaceRankBelow = data
+      .filter(country => country.global_peace_rank > peaceRank)
+      .slice(0, 2)
+      .map(country => ({ country: country.country, rank: country.global_peace_rank }));
+
+    return {
+      informSimilar,
+      globalRankAbove,
+      globalRankBelow,
+      peaceRankAbove,
+      peaceRankBelow,
+      globalRankSimilar,
+      peaceRankSimilar
+    };
+  } catch (error) {
+    console.error('Error getting similar rankings:', error);
+    return {
+      informSimilar: [],
+      globalRankAbove: [],
+      globalRankBelow: [],
+      peaceRankAbove: [],
+      peaceRankBelow: [],
+      globalRankSimilar: [],
+      peaceRankSimilar: []
+    };
   }
 }
 

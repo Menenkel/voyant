@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { searchDestinations, getCountryByName, transformCountryData, getComparisonData } from '@/lib/database';
+import { searchDestinations, getCountryByName, transformCountryData, getComparisonData, getCountriesWithSimilarRankings } from '@/lib/database';
 import { getWikipediaData, getWikipediaDataForCountry, getWikipediaContentForPopCulture } from '@/lib/wikipedia';
 import { generateSummary, generateCityFunFact } from '@/lib/chatgpt';
 import { getWeatherForCity, getWeatherForCoordinates, getWeatherDescription, getAirQualityDescription, getWindSpeedDescription, getPM10Description, getUVIndexDescription, getOzoneDescription, generateWeatherAlerts } from '@/lib/weather';
@@ -69,6 +69,19 @@ export async function GET(request: NextRequest) {
       
       const result = transformCountryData(countryData, cityCoordinates || undefined, destination);
       const comparisonData = await getComparisonData(countryData);
+      
+      // Get countries with similar rankings for better context
+      const similarRankings = await getCountriesWithSimilarRankings(
+        countryData.global_rank,
+        countryData.global_peace_rank,
+        countryData.country
+      );
+      
+      // Merge the similar rankings data with existing comparison data
+      const enhancedComparisonData = {
+        ...comparisonData,
+        ...similarRankings
+      };
       
       // Get Wikipedia data for summarization
       let wikipediaData = null;
@@ -217,7 +230,7 @@ export async function GET(request: NextRequest) {
       const finalResult = {
         ...result,
         fun_fact: cityFunFact || result.fun_fact,
-        comparisonData,
+        comparisonData: enhancedComparisonData,
         chatgptSummary,
         realWeatherData,
         weatherAlerts

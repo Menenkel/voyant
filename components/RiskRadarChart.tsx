@@ -42,30 +42,32 @@ export default function RiskRadarChart({
   return (
     <div className="w-full">
       <div className="mb-2 text-center">
-        <p className="text-xs text-gray-600">
-          <strong>Higher values = Higher risk</strong> • Scale: 0 (no risk) to 10 (extreme risk)
+        <p className="text-sm text-gray-600">
+          <strong>Higher values = Higher risk</strong> • Scale: 0 (low risk) to 10 (extreme risk)
         </p>
       </div>
-      <div className="h-64">
+      <div className="h-[28rem] p-2">
         <ResponsiveContainer width="100%" height="100%">
-          <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data}>
-            <PolarGrid stroke="#000000" />
+          <RadarChart cx="50%" cy="50%" outerRadius="75%" data={data}>
+            <PolarGrid stroke="#000000" strokeWidth={1.5} />
             <PolarAngleAxis 
               dataKey="indicator" 
-              tick={{ fill: '#000000', fontSize: 10 }}
-              tickLine={{ stroke: '#000000' }}
+              tick={{ fill: '#000000', fontSize: 14, fontWeight: 'bold' }}
+              tickLine={{ stroke: '#000000', strokeWidth: 2 }}
+              tickFormatter={(value) => value}
             />
             <PolarRadiusAxis 
               angle={90} 
               domain={[0, 10]} 
-              tick={{ fill: '#000000', fontSize: 10 }}
-              tickLine={{ stroke: '#000000' }}
+              tick={{ fill: '#000000', fontSize: 14, fontWeight: 'bold' }}
+              tickLine={{ stroke: '#000000', strokeWidth: 2 }}
+              tickCount={6}
             />
             <Radar
               name={firstDestination}
               dataKey={firstDestination}
-              stroke="#000000"
-              fill="#000000"
+              stroke="#2563eb"
+              fill="#2563eb"
               fillOpacity={0.2}
               strokeWidth={2}
             />
@@ -73,8 +75,8 @@ export default function RiskRadarChart({
               <Radar
                 name={secondDestination}
                 dataKey={secondDestination}
-                stroke="#666666"
-                fill="#666666"
+                stroke="#dc2626"
+                fill="#dc2626"
                 fillOpacity={0.2}
                 strokeWidth={2}
               />
@@ -87,7 +89,14 @@ export default function RiskRadarChart({
             {secondHazardIndicators && (
               <Legend 
                 wrapperStyle={{ color: '#000000' }}
-                formatter={(value) => <span style={{ color: '#000000' }}>{value}</span>}
+                formatter={(value) => (
+                  <span style={{ 
+                    color: value === firstDestination ? '#2563eb' : '#dc2626',
+                    fontWeight: 'bold'
+                  }}>
+                    {value}
+                  </span>
+                )}
               />
             )}
           </RadarChart>

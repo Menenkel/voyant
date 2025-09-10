@@ -20,7 +20,7 @@ interface WeatherAlertsProps {
   title?: string;
 }
 
-export default function WeatherAlerts({ alerts, title = "⚠️ Weather Alerts" }: WeatherAlertsProps) {
+export default function WeatherAlerts({ alerts, title = "Weather Alerts" }: WeatherAlertsProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   // Calculate the 16th day from today
@@ -43,12 +43,12 @@ export default function WeatherAlerts({ alerts, title = "⚠️ Weather Alerts" 
     return (
       <div className="bg-white rounded-lg p-6 border-2 border-black shadow-lg animate-fade-in hover:shadow-xl transition-all duration-300">
         <h4 className="text-lg font-semibold text-black mb-4 flex items-center space-x-2">
-          <span className="animate-pulse">✅</span>
+          <span className="animate-pulse">✓</span>
           <span>{title}</span>
         </h4>
         <div className="bg-green-50 rounded-lg p-4 border-2 border-green-200 hover:bg-green-100 transition-colors duration-200">
           <div className="flex items-center space-x-3">
-            <span className="text-2xl animate-bounce">✅</span>
+            <span className="text-2xl animate-bounce">✓</span>
             <div>
               <p className="text-black font-medium">No Weather Warnings</p>
               <p className="text-gray-600 text-sm">

@@ -23,6 +23,8 @@ interface SearchResult {
     globalRankBelow: { country: string; rank: number }[];
     peaceRankAbove: { country: string; rank: number }[];
     peaceRankBelow: { country: string; rank: number }[];
+    globalRankSimilar: { country: string; rank: number }[];
+    peaceRankSimilar: { country: string; rank: number }[];
   };
   supabaseData?: {
     country: string;
@@ -572,7 +574,7 @@ export default function DestinationSearch() {
       {results && !isCountrySearch(results) && (
         <div className="bg-white rounded-lg p-6 border-2 border-black shadow-lg">
           <div className="flex items-center justify-between mb-4">
-            <h4 className="text-lg font-semibold text-black">🏛️ Basic Country Information</h4>
+            <h4 className="text-lg font-semibold text-black">Basic Country Information</h4>
             <button
               onClick={() => setIsCountryInfoExpanded(!isCountryInfoExpanded)}
               className="text-black hover:text-gray-600 transition-colors duration-200 flex items-center space-x-2"
@@ -606,10 +608,26 @@ export default function DestinationSearch() {
               <div className="p-4 bg-gray-100 rounded-lg border-2 border-black">
                 <span className="text-gray-600 text-sm">Global Risk Rank:</span>
                 <p className="text-black font-semibold">#{results.supabaseData?.global_rank}</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Lower numbers = safer countries
+                </p>
+                {results.comparisonData?.globalRankSimilar && results.comparisonData.globalRankSimilar.length > 0 && (
+                  <div className="mt-2 text-xs text-gray-500">
+                    Similar: {results.comparisonData.globalRankSimilar.map(c => `${c.country} (#${c.rank})`).join(', ')}
+                  </div>
+                )}
               </div>
               <div className="p-4 bg-gray-100 rounded-lg border-2 border-black">
                 <span className="text-gray-600 text-sm">Peace Index Rank:</span>
                 <p className="text-black font-semibold">#{results.supabaseData?.global_peace_rank}</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Lower numbers = more peaceful countries
+                </p>
+                {results.comparisonData?.peaceRankSimilar && results.comparisonData.peaceRankSimilar.length > 0 && (
+                  <div className="mt-2 text-xs text-gray-500">
+                    Similar: {results.comparisonData.peaceRankSimilar.map(c => `${c.country} (#${c.rank})`).join(', ')}
+                  </div>
+                )}
               </div>
               <div className="p-4 bg-gray-100 rounded-lg border-2 border-black">
                 <span className="text-gray-600 text-sm">Electricity Access:</span>
@@ -636,7 +654,7 @@ export default function DestinationSearch() {
       {secondResults && !isCountrySearch(secondResults) && (
         <div className="bg-white rounded-lg p-6 border-2 border-black shadow-lg">
           <div className="flex items-center justify-between mb-4">
-            <h4 className="text-lg font-semibold text-black">🏛️ Basic Country Information</h4>
+            <h4 className="text-lg font-semibold text-black">Basic Country Information</h4>
             <button
               onClick={() => setIsSecondCountryInfoExpanded(!isSecondCountryInfoExpanded)}
               className="text-black hover:text-gray-600 transition-colors duration-200 flex items-center space-x-2"
@@ -670,10 +688,26 @@ export default function DestinationSearch() {
               <div className="p-4 bg-gray-100 rounded-lg border-2 border-black">
                 <span className="text-gray-600 text-sm">Global Risk Rank:</span>
                 <p className="text-black font-semibold">#{secondResults.supabaseData?.global_rank}</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Lower numbers = safer countries
+                </p>
+                {secondResults.comparisonData?.globalRankSimilar && secondResults.comparisonData.globalRankSimilar.length > 0 && (
+                  <div className="mt-2 text-xs text-gray-500">
+                    Similar: {secondResults.comparisonData.globalRankSimilar.map(c => `${c.country} (#${c.rank})`).join(', ')}
+                  </div>
+                )}
               </div>
               <div className="p-4 bg-gray-100 rounded-lg border-2 border-black">
                 <span className="text-gray-600 text-sm">Peace Index Rank:</span>
                 <p className="text-black font-semibold">#{secondResults.supabaseData?.global_peace_rank}</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Lower numbers = more peaceful countries
+                </p>
+                {secondResults.comparisonData?.peaceRankSimilar && secondResults.comparisonData.peaceRankSimilar.length > 0 && (
+                  <div className="mt-2 text-xs text-gray-500">
+                    Similar: {secondResults.comparisonData.peaceRankSimilar.map(c => `${c.country} (#${c.rank})`).join(', ')}
+                  </div>
+                )}
               </div>
               <div className="p-4 bg-gray-100 rounded-lg border-2 border-black">
                 <span className="text-gray-600 text-sm">Electricity Access:</span>
@@ -707,7 +741,7 @@ export default function DestinationSearch() {
             {results.chatgptSummary && (
               <div className="bg-white rounded-lg p-6 border-2 border-green-600 shadow-lg mt-8">
                 <div className="flex items-center justify-between mb-4">
-                  <h4 className="text-lg font-semibold text-green-600">🤖 Globetrot-Bot Summary</h4>
+                  <h4 className="text-lg font-semibold text-green-600">Globetrot-Bot Summary</h4>
                   <button
                     onClick={() => setIsGlobetrotBotExpanded(!isGlobetrotBotExpanded)}
                     className="text-green-600 hover:text-green-500 transition-colors duration-200 flex items-center space-x-2"
@@ -748,7 +782,7 @@ export default function DestinationSearch() {
             {/* Not really important, but still good to know */}
             {results.fun_fact && (
               <div className="bg-white rounded-lg p-6 border-2 border-blue-800 shadow-lg">
-                <h4 className="text-lg font-semibold text-blue-800 mb-4">🎭 Not really important, but still good to know</h4>
+                <h4 className="text-lg font-semibold text-blue-800 mb-4">Not really important, but still good to know</h4>
                 <div className="p-4 bg-gray-100 rounded-lg">
                   <p className="text-black font-medium italic">"{results.fun_fact?.replace(/^"|"$/g, '') || 'No fun fact available'}"</p>
                 </div>
@@ -758,7 +792,7 @@ export default function DestinationSearch() {
             {/* Economic Data - Only for Country Searches */}
             {isCountrySearch(results) && (
             <div className="bg-white rounded-lg p-6 border-2 border-green-500 shadow-lg">
-              <h4 className="text-lg font-semibold text-green-600 mb-4">💰 Economic Data</h4>
+              <h4 className="text-lg font-semibold text-green-600 mb-4">Economic Data</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="p-4 bg-gray-100 rounded-lg">
                   <span className="text-gray-600 text-sm">GDP Per Capita:</span>
@@ -783,7 +817,7 @@ export default function DestinationSearch() {
             {/* Risk Assessment with Comparisons - Only for Country Searches */}
             {isCountrySearch(results) && (
             <div className="bg-white rounded-lg p-6 border-2 border-red-500 shadow-lg">
-              <h4 className="text-lg font-semibold text-red-600 mb-4">⚠️ Risk Assessment</h4>
+              <h4 className="text-lg font-semibold text-red-600 mb-4">Risk Assessment</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="p-4 bg-gray-100 rounded-lg">
                   <span className="text-gray-600 text-sm">Risk Class:</span>
@@ -801,28 +835,44 @@ export default function DestinationSearch() {
                 <div className="p-4 bg-gray-100 rounded-lg">
                   <span className="text-gray-600 text-sm">Global Risk Rank:</span>
                   <p className="text-black font-semibold">#{results.supabaseData?.global_rank}</p>
-                  {results.comparisonData?.globalRankAbove && results.comparisonData.globalRankAbove.length > 0 && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Lower numbers = safer countries
+                  </p>
+                  {results.comparisonData?.globalRankSimilar && results.comparisonData.globalRankSimilar.length > 0 && (
                     <div className="mt-2 text-xs text-gray-500">
-                      Above: {results.comparisonData.globalRankAbove.map(c => `${c.country} (#${c.rank})`).join(', ')}
+                      Similar: {results.comparisonData.globalRankSimilar.map(c => `${c.country} (#${c.rank})`).join(', ')}
+                    </div>
+                  )}
+                  {results.comparisonData?.globalRankAbove && results.comparisonData.globalRankAbove.length > 0 && (
+                    <div className="mt-1 text-xs text-green-600">
+                      Safer: {results.comparisonData.globalRankAbove.map(c => `${c.country} (#${c.rank})`).join(', ')}
                     </div>
                   )}
                   {results.comparisonData?.globalRankBelow && results.comparisonData.globalRankBelow.length > 0 && (
-                    <div className="mt-2 text-xs text-gray-500">
-                      Below: {results.comparisonData.globalRankBelow.map(c => `${c.country} (#${c.rank})`).join(', ')}
+                    <div className="mt-1 text-xs text-red-600">
+                      Riskier: {results.comparisonData.globalRankBelow.map(c => `${c.country} (#${c.rank})`).join(', ')}
                     </div>
                   )}
                 </div>
                 <div className="p-4 bg-gray-100 rounded-lg">
                   <span className="text-gray-600 text-sm">Peace Index Rank:</span>
                   <p className="text-black font-semibold">#{results.supabaseData?.global_peace_rank}</p>
-                  {results.comparisonData?.peaceRankAbove && results.comparisonData.peaceRankAbove.length > 0 && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Lower numbers = more peaceful countries
+                  </p>
+                  {results.comparisonData?.peaceRankSimilar && results.comparisonData.peaceRankSimilar.length > 0 && (
                     <div className="mt-2 text-xs text-gray-500">
-                      Above: {results.comparisonData.peaceRankAbove.map(c => `${c.country} (#${c.rank})`).join(', ')}
+                      Similar: {results.comparisonData.peaceRankSimilar.map(c => `${c.country} (#${c.rank})`).join(', ')}
+                    </div>
+                  )}
+                  {results.comparisonData?.peaceRankAbove && results.comparisonData.peaceRankAbove.length > 0 && (
+                    <div className="mt-1 text-xs text-green-600">
+                      More peaceful: {results.comparisonData.peaceRankAbove.map(c => `${c.country} (#${c.rank})`).join(', ')}
                     </div>
                   )}
                   {results.comparisonData?.peaceRankBelow && results.comparisonData.peaceRankBelow.length > 0 && (
-                    <div className="mt-2 text-xs text-gray-500">
-                      Below: {results.comparisonData.peaceRankBelow.map(c => `${c.country} (#${c.rank})`).join(', ')}
+                    <div className="mt-1 text-xs text-red-600">
+                      Less peaceful: {results.comparisonData.peaceRankBelow.map(c => `${c.country} (#${c.rank})`).join(', ')}
                     </div>
                   )}
                 </div>
@@ -833,7 +883,7 @@ export default function DestinationSearch() {
             {/* Natural Hazards Spider Chart - For All Queries */}
             {results.supabaseData && (
             <div className="bg-white rounded-lg p-6 border-2 border-orange-500 shadow-lg">
-              <h4 className="text-lg font-semibold text-orange-600 mb-4">🌪️ Natural Hazards (0-10 Scale)</h4>
+              <h4 className="text-lg font-semibold text-orange-600 mb-4">Natural Hazards (0-10 Scale)</h4>
                 <div className="mb-4">
                   <p className="text-gray-600 text-sm">
                     National-level natural hazard risks for {results.supabaseData.country}
@@ -949,15 +999,15 @@ export default function DestinationSearch() {
                 </div>
 
                   {/* Weather Alerts */}
-                  <WeatherAlerts 
-                    alerts={results.weatherAlerts} 
-                    title="⚠️ Weather Alerts"
-                  />
+                 <WeatherAlerts 
+                   alerts={results.weatherAlerts} 
+                   title="Weather Alerts"
+                 />
 
                   {/* Air Quality */}
                   <AirQuality 
                     airQuality={results.realWeatherData.air_quality} 
-                    title="🌬️ Air Quality"
+                    title="Air Quality"
                   />
                 </div>
               ) : (
@@ -993,7 +1043,7 @@ export default function DestinationSearch() {
               {secondResults.chatgptSummary && (
               <div className="bg-white rounded-lg p-6 border-2 border-green-600 shadow-lg mt-8">
                   <div className="flex items-center justify-between mb-4">
-                    <h4 className="text-lg font-semibold text-green-600">🤖 Globetrot-Bot Summary</h4>
+                    <h4 className="text-lg font-semibold text-green-600">Globetrot-Bot Summary</h4>
                     <button
                       onClick={() => setIsSecondGlobetrotBotExpanded(!isSecondGlobetrotBotExpanded)}
                       className="text-green-600 hover:text-green-500 transition-colors duration-200 flex items-center space-x-2"
@@ -1044,7 +1094,7 @@ export default function DestinationSearch() {
               {/* Economic Data - Only for Country Searches */}
               {isCountrySearch(secondResults) && (
               <div className="bg-white rounded-lg p-6 border-2 border-green-500 shadow-lg">
-                <h4 className="text-lg font-semibold text-green-600 mb-4">💰 Economic Data</h4>
+                <h4 className="text-lg font-semibold text-green-600 mb-4">Economic Data</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="p-4 bg-gray-100 rounded-lg">
                     <span className="text-gray-600 text-sm">GDP Per Capita:</span>
@@ -1069,7 +1119,7 @@ export default function DestinationSearch() {
               {/* Risk Assessment with Comparisons - Only for Country Searches */}
               {isCountrySearch(secondResults) && (
               <div className="bg-white rounded-lg p-6 border-2 border-red-500 shadow-lg">
-                <h4 className="text-lg font-semibold text-red-600 mb-4">⚠️ Risk Assessment</h4>
+                <h4 className="text-lg font-semibold text-red-600 mb-4">Risk Assessment</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="p-4 bg-gray-100 rounded-lg">
                     <span className="text-gray-600 text-sm">Risk Class:</span>
@@ -1120,7 +1170,7 @@ export default function DestinationSearch() {
               {/* Weather & Climate Data */}
               <div className="bg-white rounded-lg p-6 border-2 border-blue-500 shadow-lg">
                 <div className="flex items-center justify-between mb-4">
-                  <h4 className="text-lg font-semibold text-blue-600">🌤️ Weather & Climate</h4>
+                  <h4 className="text-lg font-semibold text-blue-600">Weather & Climate</h4>
                   
                   {/* Units Switch */}
                   <div className="flex items-center space-x-2">
@@ -1197,37 +1247,14 @@ export default function DestinationSearch() {
                     {/* Weather Alerts */}
                     <WeatherAlerts 
                       alerts={secondResults.weatherAlerts} 
-                      title="⚠️ Weather Alerts"
+                      title="Weather Alerts"
                     />
 
                     {/* Air Quality */}
-                    {secondResults.realWeatherData.air_quality && (
-                  <div className="p-4 bg-gray-100 rounded-lg">
-                        <h5 className="text-blue-600 font-semibold mb-3">Air Quality</h5>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                          <div className="col-span-2">
-                            <span className="text-gray-600 text-sm">PM2.5:</span>
-                            <p className="text-black font-semibold">{secondResults.realWeatherData.air_quality.pm2_5} μg/m³</p>
-                            <p className="text-gray-500 text-sm leading-relaxed">{secondResults.realWeatherData.air_quality.pm2_5_description}</p>
-                  </div>
-                          <div className="col-span-2">
-                            <span className="text-gray-600 text-sm">PM10:</span>
-                            <p className="text-black font-semibold">{secondResults.realWeatherData.air_quality.pm10} μg/m³</p>
-                            <p className="text-gray-500 text-sm leading-relaxed">{secondResults.realWeatherData.air_quality.pm10_description}</p>
-                  </div>
-                          <div className="col-span-2">
-                            <span className="text-gray-600 text-sm">UV Index:</span>
-                            <p className="text-black font-semibold">{secondResults.realWeatherData.air_quality.uv_index}</p>
-                            <p className="text-gray-500 text-sm leading-relaxed">{secondResults.realWeatherData.air_quality.uv_index_description}</p>
-                  </div>
-                          <div className="col-span-2">
-                            <span className="text-gray-600 text-sm">Ozone:</span>
-                            <p className="text-black font-semibold">{secondResults.realWeatherData.air_quality.ozone} μg/m³</p>
-                            <p className="text-gray-500 text-sm leading-relaxed">{secondResults.realWeatherData.air_quality.ozone_description}</p>
-                </div>
-              </div>
-                      </div>
-                    )}
+                    <AirQuality 
+                      airQuality={secondResults.realWeatherData.air_quality} 
+                      title="Air Quality"
+                    />
                   </div>
                 ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

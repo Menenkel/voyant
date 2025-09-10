@@ -22,14 +22,14 @@ interface AirQualityProps {
   title?: string;
 }
 
-export default function AirQuality({ airQuality, title = "🌬️ Air Quality" }: AirQualityProps) {
+export default function AirQuality({ airQuality, title = "Air Quality" }: AirQualityProps) {
   if (!airQuality) {
     return (
       <div className="bg-white rounded-lg p-6 border-2 border-black shadow-lg animate-fade-in">
         <h4 className="text-lg font-semibold text-black mb-4">{title}</h4>
         <div className="bg-gray-50 rounded-lg p-4 border-2 border-gray-200">
           <div className="flex items-center space-x-3">
-            <span className="text-2xl">❓</span>
+            <span className="text-2xl">?</span>
             <div>
               <p className="text-black font-medium">Air Quality Data Unavailable</p>
               <p className="text-gray-600 text-sm">

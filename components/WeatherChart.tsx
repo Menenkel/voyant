@@ -192,9 +192,7 @@ const WeatherChart: React.FC<WeatherChartProps> = ({ forecast, location, useImpe
               const minTemp = minTemps[dataIndex];
               return `Max: ${maxTemp}${getTemperatureUnit()}, Min: ${minTemp}${getTemperatureUnit()}`;
             } else if (datasetLabel.includes('Min Temperature')) {
-              const maxTemp = maxTemps[dataIndex];
-              const minTemp = minTemps[dataIndex];
-              return `Max: ${maxTemp}${getTemperatureUnit()}, Min: ${minTemp}${getTemperatureUnit()}`;
+              return null; // Hide this dataset from tooltip
             } else if (datasetLabel.includes('Temperature')) {
               return `${datasetLabel}: ${value}${getTemperatureUnit()}`;
             } else if (datasetLabel.includes('Precipitation')) {
