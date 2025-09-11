@@ -82,6 +82,15 @@ VOYANT helps travelers make informed decisions by providing detailed risk assess
 - **Pop culture focus**: Enhanced ChatGPT prompts for fascinating, lesser-known city facts
 - **Wikipedia integration**: Improved data fetching for comprehensive pop culture information
 
+### 📰 **City-Specific News Integration (Latest Feature)**
+- **BBC RSS feed integration**: Real-time news filtering by city name and tourism relevance
+- **Intelligent filtering**: Tourism-focused keywords (events, safety, transport, weather, etc.)
+- **Smart caching**: 6-hour TTL to reduce API calls and improve performance
+- **Relevance scoring**: Articles ranked by city mentions and tourism keyword matches
+- **Clean card layout**: Professional news display with publication dates and external links
+- **Comparison mode support**: News available for both destinations in comparison view
+- **Error handling**: Graceful fallbacks for network issues or missing data
+
 ## 🚀 Getting Started
 
 ### Prerequisites
@@ -142,7 +151,8 @@ voyant/
 │   │   ├── search/        # Destination search endpoint
 │   │   ├── compare/       # Destination comparison endpoint
 │   │   ├── city-search/   # City suggestions endpoint
-│   │   └── weather/       # Weather data endpoint
+│   │   ├── weather/       # Weather data endpoint
+│   │   └── news/          # City-specific news endpoint
 │   ├── contact/           # Contact page
 │   ├── features/          # Features page
 │   ├── globals.css        # Global styles
@@ -150,6 +160,7 @@ voyant/
 │   └── page.tsx           # Home page
 ├── components/            # React components
 │   ├── AirQuality.tsx     # Enhanced air quality component with tooltips
+│   ├── CityNews.tsx       # City-specific news component with RSS integration
 │   ├── CountryMap.tsx     # Interactive map component
 │   ├── DestinationSearch.tsx # Main search interface
 │   ├── Footer.tsx         # Footer component
