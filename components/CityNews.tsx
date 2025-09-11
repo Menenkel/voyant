@@ -23,8 +23,6 @@ interface CityNewsProps {
 }
 
 export default function CityNews({ city, title = "Latest News" }: CityNewsProps) {
-  console.log('CityNews: Component initialized for city:', city);
-  
   const [newsData, setNewsData] = useState<NewsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -41,7 +39,6 @@ export default function CityNews({ city, title = "Latest News" }: CityNewsProps)
       
       try {
         const url = `/api/news?city=${encodeURIComponent(city)}`;
-        console.log('CityNews: Making API call to:', url);
         
         // Add timeout to fetch request
         const controller = new AbortController();
@@ -52,23 +49,16 @@ export default function CityNews({ city, title = "Latest News" }: CityNewsProps)
         });
         
         clearTimeout(timeoutId);
-        console.log('CityNews: Response received, status:', response.status);
         
         if (!response.ok) {
           throw new Error(`Failed to fetch news: ${response.status}`);
         }
         
         const data = await response.json();
-        console.log('CityNews: API Response for', city, ':', data);
-        console.log('CityNews: Received city from API:', data.city);
-        console.log('CityNews: Component cancelled status:', isCancelled);
         
         // Only update state if component hasn't been cancelled
         if (!isCancelled) {
-          console.log('CityNews: Setting news data for', city);
           setNewsData(data);
-        } else {
-          console.log('CityNews: Component was cancelled, not setting data for', city);
         }
       } catch (err) {
         if (!isCancelled) {
@@ -171,7 +161,6 @@ export default function CityNews({ city, title = "Latest News" }: CityNewsProps)
 
   // Only check for no news if we have data but no articles
   if (newsData && (!newsData.articles || newsData.articles.length === 0)) {
-    console.log('CityNews: Showing no news - newsData:', newsData, 'articles:', newsData.articles, 'length:', newsData.articles?.length);
     return (
       <div className="bg-white rounded-lg border-2 border-black p-6 animate-fade-in">
         <div className="flex items-center justify-between mb-4">
@@ -206,11 +195,8 @@ export default function CityNews({ city, title = "Latest News" }: CityNewsProps)
     );
   }
 
-  console.log('CityNews: Rendering main component - newsData:', newsData, 'articles:', newsData?.articles, 'length:', newsData?.articles?.length);
-  
   return (
     <div className="bg-white rounded-lg border-2 border-black p-6 animate-fade-in hover:shadow-lg transition-shadow duration-200">
-      <div className="text-red-500 text-xs mb-2">🔍 CityNews RENDERED for: {city}</div>
       <div className="flex items-center justify-between mb-4">
         <h4 className="text-lg font-semibold text-black flex items-center space-x-2">
           <span className="animate-pulse">📰</span>

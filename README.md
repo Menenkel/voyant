@@ -83,13 +83,18 @@ VOYANT helps travelers make informed decisions by providing detailed risk assess
 - **Wikipedia integration**: Improved data fetching for comprehensive pop culture information
 
 ### 📰 **City-Specific News Integration (Latest Feature)**
-- **BBC RSS feed integration**: Real-time news filtering by city name and tourism relevance
-- **Intelligent filtering**: Tourism-focused keywords (events, safety, transport, weather, etc.)
+- **Multi-source RSS feed integration**: 15+ international news sources including BBC, CNN, NPR, Al Jazeera, DW News, France 24, and more
+- **Global coverage**: Works for cities worldwide, not just UK-focused content
+- **Intelligent city name matching**: Handles city names with countries (e.g., "London, United Kingdom" → matches "London")
+- **Enhanced city aliases**: Supports alternative names (NYC → New York, LA → Los Angeles, SF → San Francisco)
+- **Tourism-focused filtering**: Keywords for events, safety, transport, weather, festivals, concerts, hotels, restaurants
+- **Configurable time windows**: Default 72 hours (3 days), extendable to 168 hours (7 days) via API parameter
 - **Smart caching**: 6-hour TTL to reduce API calls and improve performance
-- **Relevance scoring**: Articles ranked by city mentions and tourism keyword matches
-- **Clean card layout**: Professional news display with publication dates and external links
-- **Comparison mode support**: News available for both destinations in comparison view
+- **Relevance scoring**: Articles ranked by city mentions and tourism keyword matches with word boundary matching
+- **Collapsed by default**: Clean interface with expandable news sections
+- **Source attribution**: Each article shows its news source (BBC, Guardian, CNN, etc.)
 - **Error handling**: Graceful fallbacks for network issues or missing data
+- **Race condition prevention**: Robust component lifecycle management
 
 ## 🚀 Getting Started
 
