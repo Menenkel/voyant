@@ -6,6 +6,7 @@ import WeatherChart from './WeatherChart';
 import RiskRadarChart from './RiskRadarChart';
 import WeatherAlerts from './WeatherAlerts';
 import AirQuality from './AirQuality';
+import CityNews from './CityNews';
 
 interface SearchHistory {
   destination: string;
@@ -1009,6 +1010,12 @@ export default function DestinationSearch() {
                     airQuality={results.realWeatherData.air_quality} 
                     title="Air Quality"
                   />
+
+                  {/* City News */}
+                  <CityNews 
+                    city={results.destination} 
+                    title="Latest News"
+                  />
                 </div>
               ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1254,6 +1261,12 @@ export default function DestinationSearch() {
                     <AirQuality 
                       airQuality={secondResults.realWeatherData.air_quality} 
                       title="Air Quality"
+                    />
+
+                    {/* City News */}
+                    <CityNews 
+                      city={secondResults.destination} 
+                      title="Latest News"
                     />
                   </div>
                 ) : (
