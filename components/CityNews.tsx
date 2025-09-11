@@ -23,11 +23,16 @@ interface CityNewsProps {
 }
 
 export default function CityNews({ city, title = "Latest News" }: CityNewsProps) {
+  console.log('CityNews: Component initialized for city:', city);
+  
   const [newsData, setNewsData] = useState<NewsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
+    let isCancelled = false;
+    
     const fetchNews = async () => {
       if (!city) return;
       
@@ -35,23 +40,54 @@ export default function CityNews({ city, title = "Latest News" }: CityNewsProps)
       setError(null);
       
       try {
-        const response = await fetch(`/api/news?city=${encodeURIComponent(city)}`);
+        const url = `/api/news?city=${encodeURIComponent(city)}`;
+        console.log('CityNews: Making API call to:', url);
+        
+        // Add timeout to fetch request
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        
+        const response = await fetch(url, { 
+          signal: controller.signal 
+        });
+        
+        clearTimeout(timeoutId);
+        console.log('CityNews: Response received, status:', response.status);
         
         if (!response.ok) {
           throw new Error(`Failed to fetch news: ${response.status}`);
         }
         
         const data = await response.json();
-        setNewsData(data);
+        console.log('CityNews: API Response for', city, ':', data);
+        console.log('CityNews: Received city from API:', data.city);
+        console.log('CityNews: Component cancelled status:', isCancelled);
+        
+        // Only update state if component hasn't been cancelled
+        if (!isCancelled) {
+          console.log('CityNews: Setting news data for', city);
+          setNewsData(data);
+        } else {
+          console.log('CityNews: Component was cancelled, not setting data for', city);
+        }
       } catch (err) {
-        console.error('Error fetching news:', err);
-        setError(err instanceof Error ? err.message : 'Failed to fetch news');
+        if (!isCancelled) {
+          console.error('Error fetching news:', err);
+          setError(err instanceof Error ? err.message : 'Failed to fetch news');
+        }
       } finally {
-        setLoading(false);
+        if (!isCancelled) {
+          setLoading(false);
+        }
       }
     };
 
     fetchNews();
+    
+    // Cleanup function to prevent race conditions
+    return () => {
+      isCancelled = true;
+    };
   }, [city]);
 
   const formatDate = (dateString: string) => {
@@ -77,10 +113,21 @@ export default function CityNews({ city, title = "Latest News" }: CityNewsProps)
   if (loading) {
     return (
       <div className="bg-white rounded-lg border-2 border-black p-6 animate-fade-in">
-        <h4 className="text-lg font-semibold text-black mb-4 flex items-center space-x-2">
-          <span className="animate-pulse">📰</span>
-          <span>{title}</span>
-        </h4>
+        <div className="flex items-center justify-between mb-4">
+          <h4 className="text-lg font-semibold text-black flex items-center space-x-2">
+            <span className="animate-pulse">📰</span>
+            <span>{title}</span>
+          </h4>
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="text-gray-600 hover:text-gray-800 transition-colors duration-200 flex items-center space-x-2"
+          >
+            <span className="text-sm">Loading...</span>
+            <span className={`transform transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}>
+              ▼
+            </span>
+          </button>
+        </div>
         <div className="flex items-center justify-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
           <span className="ml-3 text-gray-600">Loading news...</span>
@@ -92,56 +139,117 @@ export default function CityNews({ city, title = "Latest News" }: CityNewsProps)
   if (error) {
     return (
       <div className="bg-white rounded-lg border-2 border-black p-6 animate-fade-in">
-        <h4 className="text-lg font-semibold text-black mb-4 flex items-center space-x-2">
-          <span>📰</span>
-          <span>{title}</span>
-        </h4>
-        <div className="bg-red-50 rounded-lg p-4 border-2 border-red-200">
-          <div className="flex items-center space-x-3">
-            <span className="text-2xl">⚠️</span>
-            <div>
-              <p className="text-red-800 font-medium">News Unavailable</p>
-              <p className="text-red-600 text-sm mt-1">{error}</p>
+        <div className="flex items-center justify-between mb-4">
+          <h4 className="text-lg font-semibold text-black flex items-center space-x-2">
+            <span>📰</span>
+            <span>{title}</span>
+          </h4>
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="text-gray-600 hover:text-gray-800 transition-colors duration-200 flex items-center space-x-2"
+          >
+            <span className="text-sm">{isExpanded ? 'Hide' : 'Show'}</span>
+            <span className={`transform transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}>
+              ▼
+            </span>
+          </button>
+        </div>
+        {isExpanded && (
+          <div className="bg-red-50 rounded-lg p-4 border-2 border-red-200">
+            <div className="flex items-center space-x-3">
+              <span className="text-2xl">⚠️</span>
+              <div>
+                <p className="text-red-800 font-medium">News Unavailable</p>
+                <p className="text-red-600 text-sm mt-1">{error}</p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     );
   }
 
-  if (!newsData || newsData.articles.length === 0) {
+  // Only check for no news if we have data but no articles
+  if (newsData && (!newsData.articles || newsData.articles.length === 0)) {
+    console.log('CityNews: Showing no news - newsData:', newsData, 'articles:', newsData.articles, 'length:', newsData.articles?.length);
     return (
       <div className="bg-white rounded-lg border-2 border-black p-6 animate-fade-in">
-        <h4 className="text-lg font-semibold text-black mb-4 flex items-center space-x-2">
-          <span>📰</span>
-          <span>{title}</span>
-        </h4>
-        <div className="bg-gray-50 rounded-lg p-4 border-2 border-gray-200">
-          <div className="flex items-center space-x-3">
-            <span className="text-2xl">📰</span>
-            <div>
-              <p className="text-gray-800 font-medium">No Recent News Found</p>
-              <p className="text-gray-600 text-sm mt-1">
-                No relevant news articles found for {city} in the last 24 hours.
-              </p>
+        <div className="flex items-center justify-between mb-4">
+          <h4 className="text-lg font-semibold text-black flex items-center space-x-2">
+            <span>📰</span>
+            <span>{title}</span>
+          </h4>
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="text-gray-600 hover:text-gray-800 transition-colors duration-200 flex items-center space-x-2"
+          >
+            <span className="text-sm">{isExpanded ? 'Hide' : 'Show'}</span>
+            <span className={`transform transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}>
+              ▼
+            </span>
+          </button>
+        </div>
+        {isExpanded && (
+          <div className="bg-gray-50 rounded-lg p-4 border-2 border-gray-200">
+            <div className="flex items-center space-x-3">
+              <span className="text-2xl">📰</span>
+              <div>
+                <p className="text-gray-800 font-medium">No Recent News Found</p>
+                <p className="text-gray-600 text-sm mt-1">
+                  No relevant news articles found for {city} in the last 3 days.
+                </p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     );
   }
 
+  console.log('CityNews: Rendering main component - newsData:', newsData, 'articles:', newsData?.articles, 'length:', newsData?.articles?.length);
+  
   return (
     <div className="bg-white rounded-lg border-2 border-black p-6 animate-fade-in hover:shadow-lg transition-shadow duration-200">
-      <h4 className="text-lg font-semibold text-black mb-4 flex items-center space-x-2">
-        <span className="animate-pulse">📰</span>
-        <span>{title}</span>
-        <span className="text-sm text-gray-500 font-normal">
-          ({newsData.totalFound} article{newsData.totalFound !== 1 ? 's' : ''})
-        </span>
-      </h4>
+      <div className="text-red-500 text-xs mb-2">🔍 CityNews RENDERED for: {city}</div>
+      <div className="flex items-center justify-between mb-4">
+        <h4 className="text-lg font-semibold text-black flex items-center space-x-2">
+          <span className="animate-pulse">📰</span>
+          <span>{title}</span>
+          <span className="text-sm text-gray-500 font-normal">
+            ({newsData.totalFound} article{newsData.totalFound !== 1 ? 's' : ''})
+          </span>
+        </h4>
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className={`transition-colors duration-200 flex items-center space-x-2 ${
+            newsData.totalFound > 0 
+              ? 'text-blue-600 hover:text-blue-800 font-medium' 
+              : 'text-gray-600 hover:text-gray-800'
+          }`}
+        >
+          <span className="text-sm">
+            {isExpanded ? 'Hide' : newsData.totalFound > 0 ? `Show ${newsData.totalFound} article${newsData.totalFound !== 1 ? 's' : ''}` : 'Show'}
+          </span>
+          <span className={`transform transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}>
+            ▼
+          </span>
+        </button>
+      </div>
       
-      <div className="space-y-4">
+      {/* Show preview when collapsed and articles are available */}
+      {!isExpanded && newsData.totalFound > 0 && (
+        <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+          <p className="text-sm text-blue-800 font-medium mb-1">
+            Latest: {newsData.articles[0].title}
+          </p>
+          <p className="text-xs text-blue-600">
+            Click "Show" above to read the full article
+          </p>
+        </div>
+      )}
+      
+      {isExpanded && (
+        <div className="space-y-4">
         {newsData.articles.map((article, index) => (
           <div 
             key={index}
@@ -183,13 +291,14 @@ export default function CityNews({ city, title = "Latest News" }: CityNewsProps)
             </div>
           </div>
         ))}
-      </div>
-      
-      <div className="mt-4 pt-3 border-t border-gray-200">
-        <p className="text-xs text-gray-500 text-center">
-          News powered by BBC • Last updated: {formatDate(newsData.lastUpdated)}
-        </p>
-      </div>
+        
+        <div className="mt-4 pt-3 border-t border-gray-200">
+          <p className="text-xs text-gray-500 text-center">
+            News powered by BBC • Last updated: {formatDate(newsData.lastUpdated)}
+          </p>
+        </div>
+        </div>
+      )}
     </div>
   );
 }

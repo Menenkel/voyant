@@ -1011,11 +1011,6 @@ export default function DestinationSearch() {
                     title="Air Quality"
                   />
 
-                  {/* City News */}
-                  <CityNews 
-                    city={results.destination} 
-                    title="Latest News"
-                  />
                 </div>
               ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1038,6 +1033,12 @@ export default function DestinationSearch() {
               </div>
               )}
             </div>
+
+            {/* City News - Always rendered */}
+            <CityNews 
+              city={results.destination} 
+              title="Latest News"
+            />
 
           </div>
 

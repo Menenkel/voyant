@@ -25,9 +25,38 @@ interface NewsArticle {
   relevanceScore: number;
 }
 
+// RSS feed sources for better international coverage
+const RSS_FEEDS = [
+  // UK Sources
+  { name: 'BBC', url: 'https://feeds.bbci.co.uk/news/rss.xml' },
+  { name: 'BBC World', url: 'https://feeds.bbci.co.uk/news/world/rss.xml' },
+  { name: 'Guardian', url: 'https://www.theguardian.com/world/rss' },
+  
+  // US Sources
+  { name: 'CNN', url: 'http://rss.cnn.com/rss/edition.rss' },
+  { name: 'CNN World', url: 'http://rss.cnn.com/rss/edition_world.rss' },
+  { name: 'NPR', url: 'https://feeds.npr.org/1001/rss.xml' },
+  { name: 'NPR World', url: 'https://feeds.npr.org/1004/rss.xml' },
+  { name: 'PBS', url: 'https://feeds.feedburner.com/PBSNewsHour' },
+  
+  // International Sources
+  { name: 'Al Jazeera', url: 'https://www.aljazeera.com/xml/rss/all.xml' },
+  { name: 'DW News', url: 'https://rss.dw.com/rdf/rss-en-all' },
+  { name: 'France 24', url: 'https://www.france24.com/en/rss' },
+  { name: 'RT News', url: 'https://www.rt.com/rss/' },
+  
+  // News Aggregators
+  { name: 'Google News', url: 'https://news.google.com/rss?hl=en-US&gl=US&ceid=US:en' },
+  { name: 'Yahoo News', url: 'https://news.yahoo.com/rss/' },
+  
+  // Specialized International
+  { name: 'BBC Business', url: 'https://feeds.bbci.co.uk/news/business/rss.xml' },
+  { name: 'BBC Technology', url: 'https://feeds.bbci.co.uk/news/technology/rss.xml' }
+];
+
 // Function to fetch and parse RSS feed with caching
 async function fetchRSSFeed(): Promise<any> {
-  const cacheKey = 'bbc_rss';
+  const cacheKey = 'multi_rss';
   const cached = rssCache.get(cacheKey);
   
   // Check if cache is still valid
@@ -37,22 +66,184 @@ async function fetchRSSFeed(): Promise<any> {
   }
 
   try {
-    console.log('Fetching fresh RSS feed from BBC');
+    console.log('Fetching fresh RSS feeds from multiple sources');
     const parser = new Parser();
-    const feed = await parser.parseURL('https://feeds.bbci.co.uk/news/rss.xml');
+    const allItems: any[] = [];
+    
+    // Fetch from multiple sources
+    for (const feedSource of RSS_FEEDS) {
+      try {
+        const feed = await parser.parseURL(feedSource.url);
+        if (feed.items) {
+          // Add source information to each item
+          feed.items.forEach((item: any) => {
+            item.source = feedSource.name;
+          });
+          allItems.push(...feed.items);
+        }
+      } catch (error) {
+        console.warn(`Failed to fetch ${feedSource.name} feed:`, error);
+        // Continue with other feeds even if one fails
+      }
+    }
+    
+    // Create a combined feed object
+    const combinedFeed = {
+      title: 'Combined News Feed',
+      items: allItems,
+      lastBuildDate: new Date().toISOString()
+    };
     
     // Cache the data
     rssCache.set(cacheKey, {
-      data: feed,
+      data: combinedFeed,
       timestamp: Date.now()
     });
     
-    return feed;
+    return combinedFeed;
   } catch (error) {
-    console.error('Error fetching RSS feed:', error);
-    throw new Error('Failed to fetch RSS feed');
+    console.error('Error fetching RSS feeds:', error);
+    throw new Error('Failed to fetch RSS feeds');
   }
 }
+
+// City name variations and aliases for better matching
+const CITY_ALIASES: { [key: string]: string[] } = {
+  'new york': ['nyc', 'manhattan', 'brooklyn', 'queens', 'bronx', 'staten island'],
+  'los angeles': ['la', 'hollywood', 'beverly hills', 'santa monica'],
+  'san francisco': ['sf', 'bay area', 'silicon valley'],
+  'washington': ['dc', 'washington dc', 'district of columbia'],
+  'mumbai': ['bombay'],
+  'kolkata': ['calcutta'],
+  'chennai': ['madras'],
+  'bangalore': ['bengaluru'],
+  'pune': ['punjab'],
+  'hyderabad': ['secunderabad'],
+  'moscow': ['moscow city'],
+  'st petersburg': ['saint petersburg', 'leningrad'],
+  'rome': ['roma'],
+  'milan': ['milano'],
+  'naples': ['napoli'],
+  'florence': ['firenze'],
+  'venice': ['venezia'],
+  'munich': ['münchen'],
+  'cologne': ['köln'],
+  'vienna': ['wien'],
+  'prague': ['praha'],
+  'budapest': ['budapest city'],
+  'warsaw': ['warszawa'],
+  'copenhagen': ['københavn'],
+  'stockholm': ['stockholm city'],
+  'oslo': ['oslo city'],
+  'helsinki': ['helsingfors'],
+  'madrid': ['madrid city'],
+  'barcelona': ['barcelona city'],
+  'lisbon': ['lisboa'],
+  'athens': ['athina'],
+  'istanbul': ['constantinople'],
+  'ankara': ['ankara city'],
+  'cairo': ['al qahirah'],
+  'jerusalem': ['al quds'],
+  'tel aviv': ['tel aviv yafo'],
+  'dubai': ['dubai city'],
+  'riyadh': ['riyadh city'],
+  'doha': ['doha city'],
+  'kuwait city': ['kuwait'],
+  'manama': ['manama city'],
+  'muscat': ['muscat city'],
+  'abu dhabi': ['abu dhabi city'],
+  'singapore': ['singapore city'],
+  'hong kong': ['hongkong', 'hk'],
+  'taipei': ['taipei city'],
+  'seoul': ['seoul city'],
+  'tokyo': ['tokyo city', 'tōkyō'],
+  'osaka': ['osaka city'],
+  'kyoto': ['kyoto city'],
+  'yokohama': ['yokohama city'],
+  'nagoya': ['nagoya city'],
+  'sapporo': ['sapporo city'],
+  'fukuoka': ['fukuoka city'],
+  'kobe': ['kobe city'],
+  'kawasaki': ['kawasaki city'],
+  'saitama': ['saitama city'],
+  'hiroshima': ['hiroshima city'],
+  'sendai': ['sendai city'],
+  'chiba': ['chiba city'],
+  'kitakyushu': ['kitakyushu city'],
+  'sakai': ['sakai city'],
+  'niigata': ['niigata city'],
+  'hamamatsu': ['hamamatsu city'],
+  'okayama': ['okayama city'],
+  'kumamoto': ['kumamoto city'],
+  'shizuoka': ['shizuoka city'],
+  'sagamihara': ['sagamihara city'],
+  'nara': ['nara city'],
+  'matsuyama': ['matsuyama city'],
+  'kagoshima': ['kagoshima city'],
+  'funabashi': ['funabashi city'],
+  'kashiwa': ['kashiwa city'],
+  'himeji': ['himeji city'],
+  'machida': ['machida city'],
+  'nagasaki': ['nagasaki city'],
+  'kumagaya': ['kumagaya city'],
+  'okazaki': ['okazaki city'],
+  'kawagoe': ['kawagoe city'],
+  'hachioji': ['hachioji city'],
+  'utsunomiya': ['utsunomiya city'],
+  'matsudo': ['matsudo city'],
+  'nishinomiya': ['nishinomiya city'],
+  'kanazawa': ['kanazawa city'],
+  'koshigaya': ['koshigaya city'],
+  'katsushika': ['katsushika city'],
+  'ota': ['ota city'],
+  'matsubara': ['matsubara city'],
+  'kawaguchi': ['kawaguchi city'],
+  'soka': ['soka city'],
+  'toshima': ['toshima city'],
+  'minato': ['minato city'],
+  'shibuya': ['shibuya city'],
+  'shinjuku': ['shinjuku city'],
+  'nakano': ['nakano city'],
+  'suginami': ['suginami city'],
+  'meguro': ['meguro city'],
+  'setagaya': ['setagaya city'],
+  'ota ward': ['ota ward'],
+  'katsushika ward': ['katsushika ward'],
+  'edogawa': ['edogawa city'],
+  'sumida': ['sumida city'],
+  'koto': ['koto city'],
+  'chuo': ['chuo city'],
+  'chiyoda': ['chiyoda city'],
+  'bunkyo': ['bunkyo city'],
+  'taito': ['taito city'],
+  'arakawa': ['arakawa city'],
+  'adachi': ['adachi city'],
+  'kita': ['kita city'],
+  'itabashi': ['itabashi city'],
+  'nerima': ['nerima city'],
+  'toshima ward': ['toshima ward'],
+  'minato ward': ['minato ward'],
+  'shibuya ward': ['shibuya ward'],
+  'shinjuku ward': ['shinjuku ward'],
+  'nakano ward': ['nakano ward'],
+  'suginami ward': ['suginami ward'],
+  'meguro ward': ['meguro ward'],
+  'setagaya ward': ['setagaya ward'],
+  'ota ward': ['ota ward'],
+  'katsushika ward': ['katsushika ward'],
+  'edogawa ward': ['edogawa ward'],
+  'sumida ward': ['sumida ward'],
+  'koto ward': ['koto ward'],
+  'chuo ward': ['chuo ward'],
+  'chiyoda ward': ['chiyoda ward'],
+  'bunkyo ward': ['bunkyo ward'],
+  'taito ward': ['taito ward'],
+  'arakawa ward': ['arakawa ward'],
+  'adachi ward': ['adachi ward'],
+  'kita ward': ['kita ward'],
+  'itabashi ward': ['itabashi ward'],
+  'nerima ward': ['nerima ward']
+};
 
 // Function to calculate relevance score for an article
 function calculateRelevanceScore(article: any, cityName: string): number {
@@ -64,10 +255,46 @@ function calculateRelevanceScore(article: any, cityName: string): number {
   
   // City name mentions (higher weight for title)
   const cityLower = cityName.toLowerCase();
-  if (title.includes(cityLower)) score += 10;
-  if (description.includes(cityLower)) score += 5;
   
-  // Tourism keyword matches
+  // Extract just the city name (remove country if present)
+  const cityOnly = cityLower.split(',')[0].trim();
+  const cityWords = cityOnly.split(' ').filter(word => word.length > 2); // Filter out short words like "de", "la", etc.
+  
+  // Get city aliases for both full name and city-only name
+  const aliases = CITY_ALIASES[cityLower] || CITY_ALIASES[cityOnly] || [];
+  const allCityNames = [cityLower, cityOnly, ...aliases];
+  
+  // Check for exact city name match (including aliases)
+  allCityNames.forEach(city => {
+    // Use word boundaries to avoid partial matches
+    const cityRegex = new RegExp(`\\b${city.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+    if (cityRegex.test(title)) score += 10;
+    if (cityRegex.test(description)) score += 5;
+  });
+  
+  // For multi-word cities, only check individual words if they're significant
+  if (cityWords.length > 1) {
+    cityWords.forEach(word => {
+      // Only match significant words (longer than 3 characters)
+      if (word.length > 3) {
+        const wordRegex = new RegExp(`\\b${word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+        if (wordRegex.test(title)) score += 2; // Reduced weight for individual words
+        if (wordRegex.test(description)) score += 1;
+      }
+    });
+  }
+  
+  // Only return score if the full city name or a significant alias is mentioned
+  const hasFullCityMatch = allCityNames.some(city => {
+    const cityRegex = new RegExp(`\\b${city.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+    return cityRegex.test(title) || cityRegex.test(description);
+  });
+  
+  if (!hasFullCityMatch) {
+    return 0; // No full city name mention = not relevant
+  }
+  
+  // Tourism keyword matches (only if city is mentioned)
   TOURISM_KEYWORDS.forEach(keyword => {
     if (combinedText.includes(keyword.toLowerCase())) {
       score += 2;
@@ -78,26 +305,43 @@ function calculateRelevanceScore(article: any, cityName: string): number {
 }
 
 // Function to filter and rank articles
-function filterAndRankArticles(feed: any, cityName: string): NewsArticle[] {
+function filterAndRankArticles(feed: any, cityName: string, hoursBack: number = 72): NewsArticle[] {
   if (!feed.items || !Array.isArray(feed.items)) {
     return [];
   }
 
+  // Calculate cutoff time (default: 72 hours back)
+  const cutoffTime = new Date(Date.now() - (hoursBack * 60 * 60 * 1000));
+
   const articles: NewsArticle[] = feed.items
     .map((item: any) => {
       const relevanceScore = calculateRelevanceScore(item, cityName);
+      const pubDate = new Date(item.pubDate || new Date().toISOString());
       
       return {
         title: item.title || 'No title',
         link: item.link || '#',
         description: item.contentSnippet || item.content || 'No description available',
         pubDate: item.pubDate || new Date().toISOString(),
-        relevanceScore
+        relevanceScore,
+        source: item.source || 'Unknown',
+        pubDateObj: pubDate
       };
     })
-    .filter((article: NewsArticle) => article.relevanceScore > 0) // Only include relevant articles
-    .sort((a: NewsArticle, b: NewsArticle) => b.relevanceScore - a.relevanceScore) // Sort by relevance
-    .slice(0, 5); // Get top 5 articles
+    .filter((article: any) => {
+      // Filter by relevance and time
+      return article.relevanceScore > 0 && article.pubDateObj >= cutoffTime;
+    })
+    .sort((a: any, b: any) => b.relevanceScore - a.relevanceScore) // Sort by relevance
+    .slice(0, 5) // Get top 5 articles
+    .map((article: any) => ({
+      title: article.title,
+      link: article.link,
+      description: article.description,
+      pubDate: article.pubDate,
+      relevanceScore: article.relevanceScore,
+      source: article.source
+    }));
 
   return articles;
 }
@@ -106,6 +350,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const city = searchParams.get('city');
+    const hoursBack = parseInt(searchParams.get('hours') || '72'); // Default to 72 hours (3 days)
 
     if (!city) {
       return NextResponse.json(
@@ -114,13 +359,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log(`Fetching news for city: ${city}`);
+    console.log(`Fetching news for city: ${city} (last ${hoursBack} hours)`);
 
     // Fetch RSS feed
     const feed = await fetchRSSFeed();
     
     // Filter and rank articles
-    const relevantArticles = filterAndRankArticles(feed, city);
+    const relevantArticles = filterAndRankArticles(feed, city, hoursBack);
     
     console.log(`Found ${relevantArticles.length} relevant articles for ${city}`);
 
@@ -128,6 +373,7 @@ export async function GET(request: NextRequest) {
       city,
       articles: relevantArticles,
       totalFound: relevantArticles.length,
+      hoursBack,
       lastUpdated: new Date().toISOString()
     });
 
