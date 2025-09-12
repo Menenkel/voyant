@@ -331,8 +331,8 @@ export default function DestinationSearchNew() {
 
   const TabContent = ({ result, tabId, setTabId }: { result: SearchResult; tabId: string; setTabId: (tab: string) => void }) => (
     <div className="bg-white rounded-lg border-2 border-gray-200 shadow-sm">
-      {/* Tab Navigation */}
-      <div className="flex border-b border-gray-200">
+      {/* Tab Navigation - Sticky at top */}
+      <div className="sticky top-0 z-50 bg-white flex border-b border-gray-200 shadow-sm">
         {[
           { id: 'stats', label: 'Country Stats', color: 'green' },
           { id: 'summary', label: '1 Minute Summary', color: 'blue' },
@@ -356,11 +356,7 @@ export default function DestinationSearchNew() {
           return (
             <button
               key={tab.id}
-              onClick={() => {
-                setTabId(tab.id);
-                // Scroll to top of the page to show map and tabs
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
+              onClick={() => setTabId(tab.id)}
               className={`flex-1 px-4 py-3 text-sm font-medium transition-colors duration-200 ${colorClasses[tab.color as keyof typeof colorClasses]}`}
             >
               {tab.label}
