@@ -23,7 +23,8 @@ export async function generateSummary(
   weatherData?: any,
   secondWeatherData?: any,
   citySafetyData?: { safetyInfo: string; safetyLevel: string } | null,
-  cityPopulationData?: { population: number; populationText: string } | null
+  cityPopulationData?: { population: number; populationText: string } | null,
+  vaccineData?: { mandatoryVaccines: string; recommendedVaccines: string } | null
 ): Promise<string> {
   const apiKey = process.env.OPENAI_API_KEY;
   
@@ -51,11 +52,11 @@ Guidelines:
 - Start directly with "## Quick Intro" - NO main title/headline above it
 - End with the last available section (Weather and Climate if available, otherwise Drinking Water Quality)
 - ALWAYS include "best times to visit" in the Weather and Climate section (if weather data is available)
-- ALWAYS include airport distance information in the Airport Access section (AI generated)
-- ALWAYS include hotel price estimates in the Accommodation section (AI generated)
-- ALWAYS include drinking water quality information in the Drinking Water Quality section (AI generated)
-- ALWAYS include a Safety Overview section with 1-2 key safety facts based on the risk_class and global_peace_rank, plus city-specific safety information if available
-- ALWAYS include a Health & Vaccinations section with specific recommended vaccinations for the destination and disclaimer about checking latest requirements online
+- ALWAYS include airport distance information in the Airport Access section (AI generated) - EXACTLY 1 sentence only
+- ALWAYS include hotel price estimates in the Accommodation section (AI generated) - EXACTLY 1 sentence only
+- ALWAYS include drinking water quality information in the Drinking Water Quality section (AI generated) - EXACTLY 1 sentence only
+- ALWAYS include a Safety Overview section with 1 key safety fact based on the risk_class and global_peace_rank, plus city-specific safety information if available - EXACTLY 1 sentence only
+- ALWAYS include a Health & Vaccinations section with vaccination information from the provided data or indicate if data is not available - EXACTLY 1 sentence only
 - ALWAYS include air quality information in the Weather and Climate section (if air quality data is available)
 - WEATHER SECTION MUST BE CONCISE: Use exactly one sentence each for current conditions, 16-day forecast, air quality, and best travel times
 - Do NOT include any Risks section - end your summary after the last available section
@@ -70,15 +71,23 @@ Guidelines:
 - CONFIDENCE LEVELS: For each section, add a confidence level at the end in parentheses: (confidence: low/medium/high)
 - AI GENERATION: Generate airport access, accommodation, drinking water quality, and safety information based on your knowledge of the destination
 - NAVIGATION LINKS: Only add navigation links for Weather and Climate sections in this format: [View detailed {section} information →] where {section} can be "climate"
-- Example format for country queries: "## Quick Intro\nBrief 1-2 sentence overview including population information (confidence: high)\n\n## Main Attractions\n- Attraction 1\n- Attraction 2\n- Attraction 3 (confidence: medium)\n\n## Airport Access\n1-2 sentences about airport access (confidence: high)\n\n## Accommodation\n1-2 sentences about accommodation options (confidence: medium)\n\n## Drinking Water Quality\n1-2 sentences about water safety (confidence: high)\n\n## Safety Overview\n1-2 sentences about safety (confidence: high)\n\n## Health & Vaccinations\nSpecific recommended vaccinations for the destination (e.g., Hepatitis A, Typhoid, Yellow Fever for certain regions). IMPORTANT: Check the latest vaccination requirements online before traveling. (confidence: high)\n\n## Weather and Climate\nCurrent conditions: One sentence. 16-day forecast insights: One sentence. Air quality: One sentence. Best travel times: One sentence. (confidence: high)\n[View detailed climate information →]"
-- Example format for city queries: "## Quick Intro\nBrief 1-2 sentence overview including population information (confidence: high)\n\n## Main Attractions\n- Attraction 1\n- Attraction 2\n- Attraction 3 (confidence: medium)\n\n## Airport Access\n1-2 sentences about airport access (confidence: high)\n\n## Accommodation\n1-2 sentences about accommodation options (confidence: medium)\n\n## Drinking Water Quality\n1-2 sentences about water safety (confidence: high)\n\n## Safety Overview\n1-2 sentences about safety (confidence: high)\n\n## Health & Vaccinations\nSpecific recommended vaccinations for the destination (e.g., Hepatitis A, Typhoid, Yellow Fever for certain regions). IMPORTANT: Check the latest vaccination requirements online before traveling. (confidence: high)\n\n## Weather and Climate\nCurrent conditions: One sentence. 16-day forecast insights: One sentence. Air quality: One sentence. Best travel times: One sentence. (confidence: high)\n[View detailed climate information →]"
+- Example format for country queries: "## Quick Intro\nBrief 1-2 sentence overview including population information (confidence: high)\n\n## Main Attractions\n- Attraction 1\n- Attraction 2\n- Attraction 3 (confidence: medium)\n\n## Airport Access\nSingle sentence about airport access (confidence: high)\n\n## Accommodation\nSingle sentence about accommodation options (confidence: medium)\n\n## Drinking Water Quality\nSingle sentence about water safety (confidence: high)\n\n## Safety Overview\nSingle sentence about safety (confidence: high)\n\n## Health & Vaccinations\nSingle sentence about vaccinations. IMPORTANT: Check the latest vaccination requirements online before traveling. (confidence: high)\n\n## Weather and Climate\nCurrent conditions: One sentence. 16-day forecast insights: One sentence. Air quality: One sentence. Best travel times: One sentence. (confidence: high)\n[View detailed climate information →]"
+- Example format for city queries: "## Quick Intro\nBrief 1-2 sentence overview including population information (confidence: high)\n\n## Main Attractions\n- Attraction 1\n- Attraction 2\n- Attraction 3 (confidence: medium)\n\n## Airport Access\nSingle sentence about airport access (confidence: high)\n\n## Accommodation\nSingle sentence about accommodation options (confidence: medium)\n\n## Drinking Water Quality\nSingle sentence about water safety (confidence: high)\n\n## Safety Overview\nSingle sentence about safety (confidence: high)\n\n## Health & Vaccinations\nSingle sentence about vaccinations. IMPORTANT: Check the latest vaccination requirements online before traveling. (confidence: high)\n\n## Weather and Climate\nCurrent conditions: One sentence. 16-day forecast insights: One sentence. Air quality: One sentence. Best travel times: One sentence. (confidence: high)\n[View detailed climate information →]"
 - If comparing two locations, highlight key differences for tourists
 - Focus on what makes each destination special and worth visiting
 - IMPORTANT: For city queries, focus on city-specific information and avoid mentioning national-level statistics (like population, GDP, life expectancy, HDI) or any natural disaster risks in your summary. For city queries, do NOT include a Risks section at all - end your summary after the Weather and Climate section`
   };
 
   // Prepare the user message with data
-  let userContent = `Please create a concise travel guide for ${destination} based on the following data. IMPORTANT: Do not use ** for bold formatting anywhere in your response. Use only headlines (# and ##) and simple bullet points (-). CRITICAL: ALWAYS include: Quick Intro, Main Attractions, Airport Access, Accommodation, Drinking Water Quality, Safety Overview, and Health & Vaccinations (all AI generated). CONDITIONALLY include: Weather and Climate (only if weather data available). Do NOT include a Risks section. CONFIDENCE LEVELS: Add confidence levels (low/medium/high) at the end of each section in parentheses. NAVIGATION LINKS: Only add [View detailed {section} information →] links for Weather and Climate sections. Do NOT add navigation links for Main Attractions, Airport Access, Accommodation, Drinking Water Quality, Safety Overview, or Health & Vaccinations sections. CONCISENESS: Keep each section to 1-2 sentences maximum, except Main Attractions which should be a bullet list. HEALTH REQUIREMENTS: Provide specific recommended vaccinations for the destination (e.g., Hepatitis A, Typhoid, Yellow Fever for certain regions) followed by "IMPORTANT: Check the latest vaccination requirements online before traveling." WEATHER INSIGHTS: Include specific insights about the next 16 days in the Weather and Climate section. QUICK INTRO REQUIREMENT: The Quick Intro section MUST include population information from the provided data. For city queries, use the City Population if available, otherwise use Country Population. Always specify whether it's city or country population in your description.
+  let userContent = `Please create a concise travel guide for ${destination} based on the following data. 
+
+CRITICAL FORMATTING REQUIREMENTS:
+- Do not use ** for bold formatting anywhere in your response
+- Use only headlines (# and ##) and simple bullet points (-)
+- Airport Access, Accommodation, Drinking Water Quality, Safety Overview, and Health & Vaccinations must be EXACTLY 1 sentence each (no more, no less)
+- Each of these sections should contain only one period (.) at the end
+
+MANDATORY SECTIONS: Quick Intro, Main Attractions, Airport Access, Accommodation, Drinking Water Quality, Safety Overview, and Health & Vaccinations (all AI generated). CONDITIONALLY include: Weather and Climate (only if weather data available). Do NOT include a Risks section. CONFIDENCE LEVELS: Add confidence levels (low/medium/high) at the end of each section in parentheses. NAVIGATION LINKS: Only add [View detailed {section} information →] links for Weather and Climate sections. Do NOT add navigation links for Main Attractions, Airport Access, Accommodation, Drinking Water Quality, Safety Overview, or Health & Vaccinations sections. Main Attractions should be a bullet list. Weather and Climate should be 4 sentences (current conditions, 16-day forecast, air quality, best travel times). HEALTH REQUIREMENTS: Use the provided vaccination data in the Health & Vaccinations section. If no vaccine data is provided, indicate that vaccination data is not available. Always include "IMPORTANT: Check the latest vaccination requirements online before traveling." WEATHER INSIGHTS: Include specific insights about the next 16 days in the Weather and Climate section. QUICK INTRO REQUIREMENT: The Quick Intro section MUST include population information from the provided data. For city queries, use the City Population if available, otherwise use Country Population. Always specify whether it's city or country population in your description.
 
 DATA LIMITATION WARNING: If the provided data does not contain sufficient information about the specific city (e.g., if Wikipedia data is missing or refers to a different city), you must clearly state this limitation and only provide information that is directly supported by the provided data. Do not use external knowledge to fill in missing information.
 
@@ -97,6 +106,10 @@ DESTINATION DATA:
 ${citySafetyData ? `CITY-SPECIFIC SAFETY DATA:
 - Safety Level: ${citySafetyData.safetyLevel}
 - Safety Information: ${citySafetyData.safetyInfo}` : ''}
+
+${vaccineData ? `VACCINATION DATA:
+- Mandatory Vaccines: ${vaccineData.mandatoryVaccines}
+- Recommended Vaccines: ${vaccineData.recommendedVaccines}` : 'VACCINATION DATA: Not available for this destination'}
 
 DATA AVAILABILITY INDICATORS:
 - Airport Access Data: AI GENERATED (based on destination knowledge)

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { searchDestinations, getCountryByName, transformCountryData, getComparisonData, getCountriesWithSimilarRankings } from '@/lib/database';
 import { getWikipediaData, getWikipediaDataForCountry, getWikipediaContentForPopCulture } from '@/lib/wikipedia';
 import { generateSummary, generateCityFunFact, generateLanguagesAndCurrency, generatePopulationData, generateGDPData, generateCitySafetyInfo } from '@/lib/chatgpt';
+import { getVaccineDataByCountry, getVaccineDataByISO3 } from '@/lib/vaccines';
 import { getWeatherForCity, getWeatherForCoordinates, getWeatherDescription, getAirQualityDescription, getWindSpeedDescription, getPM10Description, getUVIndexDescription, getOzoneDescription, generateWeatherAlerts } from '@/lib/weather';
 
 export async function GET(request: NextRequest) {
@@ -76,17 +77,15 @@ export async function GET(request: NextRequest) {
         console.error('ChatGPT languages/currency fetch error:', error);
       }
       
-      // Get population data from ChatGPT (override Supabase data if it's 0 or incorrect)
+      // Get population data from ChatGPT (always override Supabase data for accuracy)
       let populationData = null;
-      if (countryData.population_mio === 0) {
-        try {
-          populationData = await generatePopulationData(countryData.country, false);
-          console.log(`Population data fetched for ${countryData.country}:`, populationData);
-          // Override the Supabase population data
-          countryData.population_mio = populationData.population;
-        } catch (error) {
-          console.error('ChatGPT population fetch error:', error);
-        }
+      try {
+        populationData = await generatePopulationData(countryData.country, false);
+        console.log(`Population data fetched for ${countryData.country}:`, populationData);
+        // Override the Supabase population data with ChatGPT data
+        countryData.population_mio = populationData.population;
+      } catch (error) {
+        console.error('ChatGPT population fetch error:', error);
       }
       
       // Get city population data if it's a city search
@@ -244,6 +243,19 @@ export async function GET(request: NextRequest) {
         }
       }
       
+      // Fetch vaccine data for the country
+      let vaccineData = null;
+      try {
+        vaccineData = getVaccineDataByISO3(countryData.ISO3) || getVaccineDataByCountry(countryData.country);
+        if (vaccineData) {
+          console.log(`Vaccine data fetched for ${countryData.country}:`, vaccineData);
+        } else {
+          console.log(`No vaccine data available for ${countryData.country}`);
+        }
+      } catch (error) {
+        console.error('Vaccine data fetch error:', error);
+      }
+
       // Generate ChatGPT summary WITH weather data
       let chatgptSummary = null;
       try {
@@ -259,7 +271,8 @@ export async function GET(request: NextRequest) {
           realWeatherData, // Pass weather data to ChatGPT
           undefined, // secondWeatherData
           citySafetyData, // Pass city safety data to ChatGPT
-          cityPopulationData // Pass city population data to ChatGPT
+          cityPopulationData, // Pass city population data to ChatGPT
+          vaccineData // Pass vaccine data to ChatGPT
         );
       } catch (error) {
         console.error('ChatGPT summary generation error:', error);

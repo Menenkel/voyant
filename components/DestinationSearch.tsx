@@ -377,7 +377,7 @@ export default function DestinationSearchNew() {
                 <div className="text-black leading-relaxed">
                   {(() => {
                     const lines = result.chatgptSummary.split('\n');
-                    const sections: { [key: string]: { title: string; content: string[]; isExpandable: boolean } } = {};
+                    const sections: { [key: string]: { title: string; content: string[]; isExpandable: boolean; isConciseSection?: boolean } } = {};
                     let currentSection = '';
                     let currentContent: string[] = [];
                     
@@ -404,10 +404,17 @@ export default function DestinationSearchNew() {
                     
                     // Save last section
                     if (currentSection) {
+                      const isConciseSection = currentSection.includes('Airport Access') || 
+                                             currentSection.includes('Accommodation') || 
+                                             currentSection.includes('Drinking Water Quality') || 
+                                             currentSection.includes('Safety Overview') || 
+                                             currentSection.includes('Health & Vaccinations');
+                      
                       sections[currentSection] = {
                         title: currentSection,
                         content: currentContent,
-                        isExpandable: !currentSection.includes('Main Attractions') && !currentSection.includes('Quick Intro')
+                        isExpandable: !currentSection.includes('Main Attractions') && !currentSection.includes('Quick Intro'),
+                        isConciseSection: isConciseSection
                       };
                     }
                     
@@ -417,6 +424,28 @@ export default function DestinationSearchNew() {
                       const isMainAttractions = sectionName.includes('Main Attractions');
                       const isQuickIntro = sectionName.includes('Quick Intro');
                       const isWeatherClimate = sectionName.includes('Weather and Climate');
+                      const isConciseSection = section.isConciseSection || false;
+                      
+                      // For concise sections, truncate to first sentence if not expanded
+                      const getDisplayContent = () => {
+                        if (isMainAttractions || isQuickIntro || isExpanded) {
+                          return section.content;
+                        }
+                        
+                        if (isConciseSection) {
+                          // For concise sections, show only the first sentence
+                          return section.content.map(line => {
+                            // Find the first sentence (text before the first period)
+                            const firstSentence = line.split('.')[0];
+                            return firstSentence ? firstSentence + '.' : line;
+                          }).slice(0, 1); // Only show the first line for concise sections
+                        }
+                        
+                        // For other sections, show first 1-2 lines
+                        return section.content.slice(0, isWeatherClimate ? 1 : 2);
+                      };
+                      
+                      const displayContent = getDisplayContent();
                       
                       return (
                         <div key={sectionIndex} className="mb-4">
@@ -424,7 +453,7 @@ export default function DestinationSearchNew() {
                             <h2 className="text-lg font-semibold text-blue-500 mb-2">
                               {sectionName}
                             </h2>
-                            {section.isExpandable && section.content.length > (isWeatherClimate ? 1 : 2) && (
+                            {section.isExpandable && (section.content.length > 1 || (isConciseSection && section.content.length > 0 && section.content[0].includes('.'))) && (
                               <button
                                 onClick={() => toggleSection(sectionName)}
                                 className="text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors duration-200"
@@ -435,7 +464,7 @@ export default function DestinationSearchNew() {
                           </div>
                           
                           <div className={`${isMainAttractions || isQuickIntro || isExpanded ? 'block' : 'block'}`}>
-                            {(isMainAttractions || isQuickIntro || isExpanded ? section.content : section.content.slice(0, isWeatherClimate ? 1 : 2)).map((line, lineIndex) => {
+                            {displayContent.map((line, lineIndex) => {
                               if (line.startsWith('- ')) {
                                 return <div key={lineIndex} className="ml-4 mb-1">• {line.substring(2)}</div>;
                               } else if (line.includes('[View detailed') && line.includes('→]')) {
@@ -486,7 +515,7 @@ export default function DestinationSearchNew() {
                             })}
                           </div>
                           
-                          {!isMainAttractions && !isQuickIntro && !isExpanded && section.content.length > (isWeatherClimate ? 1 : 2) && (
+                          {!isMainAttractions && !isQuickIntro && !isExpanded && (section.content.length > 1 || (isConciseSection && section.content.length > 0 && section.content[0].includes('.'))) && (
                             <div className="text-gray-600 text-sm italic">
                               Click "Show more" to see additional information
                             </div>
@@ -520,17 +549,8 @@ export default function DestinationSearchNew() {
                 <div className="text-xs text-gray-600">Country</div>
               </div>
               <div className="text-center p-3 bg-green-50 rounded-lg">
-                <div className="text-lg font-semibold text-green-600">
-                  {result.cityPopulation ? result.cityPopulation.populationText : `${result.supabaseData?.population_mio}M`}
-                </div>
-                <div className="text-xs text-gray-600">
-                  {result.cityPopulation ? 'City Population' : 'Country Population'}
-                </div>
-                {result.cityPopulation && result.supabaseData?.population_mio && (
-                  <div className="text-xs text-gray-500 mt-1">
-                    Country: {result.supabaseData.population_mio}M
-                  </div>
-                )}
+                <div className="text-lg font-semibold text-green-600">{result.supabaseData?.population_mio}M</div>
+                <div className="text-xs text-gray-600">Country Population</div>
               </div>
               <div className="text-center p-3 bg-orange-50 rounded-lg">
                 <div className="text-lg font-semibold text-orange-600">{result.supabaseData?.area_km2?.toLocaleString()} km²</div>

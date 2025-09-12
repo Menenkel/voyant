@@ -82,18 +82,71 @@ export async function getCountryByISO(isoCode: string): Promise<CountryData | nu
 
 export async function getCountryByName(countryName: string): Promise<CountryData | null> {
   try {
-    const { data, error } = await supabase
-      .from('Voyant2')
-      .select('*')
-      .ilike('country', `%${countryName.toLowerCase()}%`)
-      .single();
+    // Get normalized variations of the country name
+    const variations = normalizeCountryName(countryName);
+    console.log('Searching for country:', countryName, 'with variations:', variations);
+    
+    // Try exact matches first (case insensitive)
+    for (const variation of variations) {
+      const { data, error } = await supabase
+        .from('Voyant2')
+        .select('*')
+        .ilike('country', variation)
+        .single();
 
-    if (error) {
-      console.error('Supabase get country by name error:', error);
-      return null;
+      if (data && !error) {
+        console.log('Found exact match for:', variation, '->', data.country);
+        return data;
+      }
+    }
+    
+    // If no exact match, try partial matches but prioritize known mappings
+    for (const variation of variations) {
+      // For short variations like "uk", be more specific and prioritize known mappings
+      if (variation.length <= 3) {
+        // First try to find countries that start with the variation
+        const { data, error } = await supabase
+          .from('Voyant2')
+          .select('*')
+          .ilike('country', `${variation}%`)
+          .order('country', { ascending: true })
+          .limit(1)
+          .single();
+
+        if (data && !error) {
+          console.log('Found prefix match for short variation:', variation, '->', data.country);
+          return data;
+        }
+        
+        // If no prefix match, try partial match
+        const { data: partialData, error: partialError } = await supabase
+          .from('Voyant2')
+          .select('*')
+          .ilike('country', `%${variation}%`)
+          .order('country', { ascending: true })
+          .limit(1)
+          .single();
+
+        if (partialData && !partialError) {
+          console.log('Found partial match for short variation:', variation, '->', partialData.country);
+          return partialData;
+        }
+      } else {
+        const { data, error } = await supabase
+          .from('Voyant2')
+          .select('*')
+          .ilike('country', `%${variation}%`)
+          .single();
+
+        if (data && !error) {
+          console.log('Found partial match for:', variation, '->', data.country);
+          return data;
+        }
+      }
     }
 
-    return data;
+    console.error('No country found for:', countryName, 'variations:', variations);
+    return null;
   } catch (error) {
     console.error('Database get country by name error:', error);
     return null;
@@ -103,7 +156,22 @@ export async function getCountryByName(countryName: string): Promise<CountryData
 // Enhanced search function that handles both countries and cities
 // Normalize country names to handle common variations
 function normalizeCountryName(countryName: string): string[] {
-  const variations = [countryName.toLowerCase()];
+  const normalizedName = countryName.toLowerCase().trim();
+  
+  // Reverse mapping - from abbreviations/variations to official names
+  const reverseMappings: { [key: string]: string } = {
+    'uk': 'united kingdom',
+    'great britain': 'united kingdom', 
+    'britain': 'united kingdom',
+    'usa': 'united states',
+    'us': 'united states',
+    'united states of america': 'united states'
+  };
+  
+  // If the input is an abbreviation, prioritize the official name
+  if (reverseMappings[normalizedName]) {
+    return [reverseMappings[normalizedName], normalizedName];
+  }
   
   // Common country name variations
   const countryMappings: { [key: string]: string[] } = {
@@ -121,7 +189,7 @@ function normalizeCountryName(countryName: string): string[] {
     'macedonia': ['north macedonia', 'former yugoslav republic of macedonia']
   };
   
-  const normalizedName = countryName.toLowerCase().trim();
+  const variations = [normalizedName];
   if (countryMappings[normalizedName]) {
     variations.push(...countryMappings[normalizedName]);
   }
