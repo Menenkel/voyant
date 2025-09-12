@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { searchDestinations, getCountryByName, transformCountryData, getComparisonData, getCountriesWithSimilarRankings } from '@/lib/database';
 import { getWikipediaData, getWikipediaDataForCountry, getWikipediaContentForPopCulture } from '@/lib/wikipedia';
-import { generateSummary, generateCityFunFact, generateLanguagesAndCurrency } from '@/lib/chatgpt';
+import { generateSummary, generateCityFunFact, generateLanguagesAndCurrency, generatePopulationData } from '@/lib/chatgpt';
 import { getWeatherForCity, getWeatherForCoordinates, getWeatherDescription, getAirQualityDescription, getWindSpeedDescription, getPM10Description, getUVIndexDescription, getOzoneDescription, generateWeatherAlerts } from '@/lib/weather';
 
 export async function GET(request: NextRequest) {
@@ -76,7 +76,32 @@ export async function GET(request: NextRequest) {
         console.error('ChatGPT languages/currency fetch error:', error);
       }
       
-      const result = transformCountryData(countryData, cityCoordinates || undefined, destination, languagesAndCurrency);
+      // Get population data from ChatGPT (override Supabase data if it's 0 or incorrect)
+      let populationData = null;
+      if (countryData.population_mio === 0) {
+        try {
+          populationData = await generatePopulationData(countryData.country, false);
+          console.log(`Population data fetched for ${countryData.country}:`, populationData);
+          // Override the Supabase population data
+          countryData.population_mio = populationData.population;
+        } catch (error) {
+          console.error('ChatGPT population fetch error:', error);
+        }
+      }
+      
+      // Get city population data if it's a city search
+      let cityPopulationData = null;
+      if (cityCoordinates && destination.includes(',')) {
+        const cityName = destination.split(',')[0].trim();
+        try {
+          cityPopulationData = await generatePopulationData(cityName, true);
+          console.log(`City population data fetched for ${cityName}:`, cityPopulationData);
+        } catch (error) {
+          console.error('ChatGPT city population fetch error:', error);
+        }
+      }
+      
+      const result = transformCountryData(countryData, cityCoordinates || undefined, destination, languagesAndCurrency, cityPopulationData);
       const comparisonData = await getComparisonData(countryData);
       
       // Get countries with similar rankings for better context

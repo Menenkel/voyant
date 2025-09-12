@@ -378,7 +378,7 @@ export async function getCountriesWithSimilarRankings(
 }
 
 // Convert Supabase data to the format expected by your app
-export function transformCountryData(countryData: CountryData, cityCoordinates?: { lat: number; lng: number; cityName?: string }, originalDestination?: string, languagesAndCurrency?: { languages: string; currency: string } | null) {
+export function transformCountryData(countryData: CountryData, cityCoordinates?: { lat: number; lng: number; cityName?: string }, originalDestination?: string, languagesAndCurrency?: { languages: string; currency: string } | null, cityPopulationData?: { population: number; populationText: string } | null) {
   // Generate realistic fake weather data
   const weatherConditions = ['Sunny', 'Partly Cloudy', 'Cloudy', 'Rainy', 'Stormy'];
   const precipitationLevels = ['Low', 'Moderate', 'High'];
@@ -420,6 +420,7 @@ export function transformCountryData(countryData: CountryData, cityCoordinates?:
     destination: originalDestination?.replace(/,/g, ', ') || cityCoordinates?.cityName || countryData.country,
     fun_fact: countryData.fun_fact?.replace(/^"|"$/g, '') || 'No fun fact available',
     coordinates: cityCoordinates,
+    cityPopulation: cityPopulationData,
     // Supabase data
     supabaseData: {
       country: countryData.country,

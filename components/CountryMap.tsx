@@ -115,10 +115,10 @@ export default function CountryMap({ searchQuery, secondDestination, coordinates
   };
 
 
-  // Update coordinates when search query changes
+  // Update coordinates when search query changes (only if coordinates prop is not provided)
   useEffect(() => {
     const updateCoords = async () => {
-      if (searchQuery.trim()) {
+      if (searchQuery.trim() && !coordinates) {
         setIsLoading(true);
         const result = await fetchCoords(searchQuery);
         if (result) {
@@ -129,12 +129,12 @@ export default function CountryMap({ searchQuery, secondDestination, coordinates
       }
     };
     updateCoords();
-  }, [searchQuery]);
+  }, [searchQuery, coordinates]);
 
-  // Update second coordinates when second destination changes
+  // Update second coordinates when second destination changes (only if secondCoordinates prop is not provided)
   useEffect(() => {
     const updateSecondCoords = async () => {
-      if (secondDestination && secondDestination.trim()) {
+      if (secondDestination && secondDestination.trim() && !secondCoordinates) {
         const result = await fetchCoords(secondDestination);
         if (result) {
           setSecondCoords([result.lat, result.lon]);
@@ -143,20 +143,25 @@ export default function CountryMap({ searchQuery, secondDestination, coordinates
       }
     };
     updateSecondCoords();
-  }, [secondDestination]);
+  }, [secondDestination, secondCoordinates]);
 
-  // Update map view when coordinates change
+  // Update map view when coordinates change (with debounce to prevent rapid updates)
   useEffect(() => {
     if (mapRef.current && (coords || secondCoords)) {
       const map = mapRef.current;
       const center = getMapCenter();
       const zoom = getMapZoom();
       
-      // Use flyTo for smooth transition
-      map.flyTo(center, zoom, {
-        duration: 1.5,
-        easeLinearity: 0.1
-      });
+      // Debounce map updates to prevent rapid successive calls
+      const timeoutId = setTimeout(() => {
+        // Use flyTo for smooth transition
+        map.flyTo(center, zoom, {
+          duration: 1.5,
+          easeLinearity: 0.1
+        });
+      }, 100); // 100ms debounce
+      
+      return () => clearTimeout(timeoutId);
     }
   }, [coords, secondCoords]);
 

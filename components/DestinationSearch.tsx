@@ -18,6 +18,7 @@ interface SearchResult {
   fun_fact?: string;
   chatgptSummary?: string;
   coordinates?: { lat: number; lng: number; cityName?: string };
+  cityPopulation?: { population: number; populationText: string } | null;
   comparisonData?: {
     informSimilar: { country: string; value: number }[];
     globalRankAbove: { country: string; rank: number }[];
@@ -337,7 +338,12 @@ export default function DestinationSearchNew() {
               </div>
               <div className="text-center p-3 bg-green-50 rounded-lg">
                 <div className="text-lg font-semibold text-green-600">{result.supabaseData?.population_mio}M</div>
-                <div className="text-xs text-gray-600">Population</div>
+                <div className="text-xs text-gray-600">Country Population</div>
+                {result.cityPopulation && (
+                  <div className="text-xs text-gray-500 mt-1">
+                    City: {result.cityPopulation.populationText}
+                  </div>
+                )}
               </div>
               <div className="text-center p-3 bg-orange-50 rounded-lg">
                 <div className="text-lg font-semibold text-orange-600">{result.supabaseData?.area_km2?.toLocaleString()} km²</div>

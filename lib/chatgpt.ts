@@ -490,3 +490,100 @@ IMPORTANT:
     };
   }
 }
+
+// Generate population information using ChatGPT
+export async function generatePopulationData(
+  locationName: string,
+  isCity: boolean = false
+): Promise<{ population: number; populationText: string }> {
+  const apiKey = process.env.OPENAI_API_KEY;
+  
+  if (!apiKey) {
+    throw new Error('OpenAI API key not found');
+  }
+
+  const systemMessage: ChatGPTMessage = {
+    role: 'system',
+    content: `You are a geography and demographics expert who provides accurate population information. Your task is to extract the current population for a given location.
+
+CRITICAL REQUIREMENTS:
+- Provide ONLY factual, verifiable information
+- Return the response in a specific JSON format
+- Use the most recent available population data (2024-2025)
+- For countries, provide total population in millions
+- For cities, provide population in thousands or millions as appropriate
+- Be concise but accurate
+
+RESPONSE FORMAT:
+Return ONLY a valid JSON object with this exact structure:
+{
+  "population": 3.07,
+  "populationText": "3.07 million"
+}
+
+EXAMPLES:
+- For Namibia: {"population": 3.07, "populationText": "3.07 million"}
+- For Botswana: {"population": 2.7, "populationText": "2.7 million"}
+- For Tokyo: {"population": 37.4, "populationText": "37.4 million"}
+- For Windhoek: {"population": 0.39, "populationText": "390,000"}
+
+IMPORTANT:
+- Do not include any text before or after the JSON
+- Do not use markdown formatting
+- Do not include explanations or additional information
+- Ensure the JSON is valid and parseable
+- Use decimal format for population (e.g., 3.07 not 3,070,000)`
+  };
+
+  const locationType = isCity ? 'city' : 'country';
+  const userMessage: ChatGPTMessage = {
+    role: 'user',
+    content: `Provide the current population for ${locationName} (${locationType}). Return only the JSON object as specified.`
+  };
+
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-3.5-turbo',
+        messages: [systemMessage, userMessage],
+        max_tokens: 100,
+        temperature: 0.1, // Low temperature for factual accuracy
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`OpenAI API error: ${response.status} - ${errorData.error?.message || 'Unknown error'}`);
+    }
+
+    const data: ChatGPTResponse = await response.json();
+    const content = data.choices[0]?.message?.content?.trim();
+    
+    if (!content) {
+      throw new Error('No response from ChatGPT');
+    }
+
+    // Parse the JSON response
+    try {
+      const parsed = JSON.parse(content);
+      return {
+        population: parsed.population || 0,
+        populationText: parsed.populationText || 'N/A'
+      };
+    } catch (parseError) {
+      console.error('Failed to parse ChatGPT population response:', content);
+      throw new Error('Invalid JSON response from ChatGPT');
+    }
+  } catch (error) {
+    console.error('ChatGPT population generation error:', error);
+    return {
+      population: 0,
+      populationText: 'N/A'
+    };
+  }
+}
