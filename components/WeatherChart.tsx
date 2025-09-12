@@ -333,11 +333,11 @@ const WeatherChart: React.FC<WeatherChartProps> = ({ forecast, location, useImpe
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {dailyForecast.map((day, index) => (
-            <div key={index} className="bg-gray-50 rounded-lg p-4 text-center border-2 border-black hover:bg-gray-100 hover:scale-105 transition-all duration-300 shadow-md hover:shadow-lg">
+            <div key={index} className="bg-gray-50 rounded-lg p-4 text-center border-2 border-black hover:bg-gray-100 hover:scale-105 transition-all duration-300 shadow-md hover:shadow-lg h-full flex flex-col">
               <p className="text-black text-sm font-medium mb-2">
                 {formatDate(day.date)}
               </p>
-              <div className="text-2xl mb-2 animate-pulse">
+              <div className="text-2xl mb-2 animate-pulse flex-shrink-0">
                 {day.weather_description === 'Clear sky' && '☀️'}
                 {day.weather_description === 'Partly cloudy' && '⛅'}
                 {day.weather_description === 'Overcast' && '☁️'}
@@ -348,10 +348,10 @@ const WeatherChart: React.FC<WeatherChartProps> = ({ forecast, location, useImpe
                 {day.weather_description === 'Snow' && '❄️'}
                 {!['Clear sky', 'Partly cloudy', 'Overcast', 'Slight rain', 'Moderate rain', 'Heavy rain', 'Thunderstorm', 'Snow'].includes(day.weather_description) && '🌤️'}
               </div>
-              <p className="text-black font-semibold text-sm mb-1">
+              <p className="text-black font-semibold text-sm mb-1 flex-grow flex items-center justify-center leading-tight break-words hyphens-auto">
                 {day.weather_description}
               </p>
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between text-sm flex-shrink-0">
                 <span className="text-red-600 font-semibold">
                   {convertTemperature(day.max_temp)}{getTemperatureUnit()}
                 </span>
@@ -359,7 +359,7 @@ const WeatherChart: React.FC<WeatherChartProps> = ({ forecast, location, useImpe
                   {convertTemperature(day.min_temp)}{getTemperatureUnit()}
                 </span>
               </div>
-              <p className="text-gray-600 text-xs mt-1">
+              <p className="text-gray-600 text-xs mt-1 flex-shrink-0">
                 {day.precipitation}mm • {convertWindSpeed(day.wind_speed)} {getWindSpeedUnit()}
               </p>
             </div>

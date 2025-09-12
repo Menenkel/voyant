@@ -341,10 +341,24 @@ STRICTLY AVOID:
 - Unverified claims about celebrities or cultural figures`
   };
 
-  let userContent = `Generate a FACTUAL, entertaining, lesser-known fact about ${cityName}, ${countryName}. PRIORITIZE pop culture facts about famous actors, musicians, singers, directors, writers, filmmakers, or cultural figures born in or associated with this city. This must be 100% true and verifiable information that most tourists wouldn't know.`;
+  // Disambiguate city names to avoid confusion
+  let disambiguatedCityName = cityName;
+  if (cityName.toLowerCase().includes('washington') && countryName.toLowerCase().includes('united states')) {
+    // Check if it's Washington, DC (capital) or Washington state
+    if (cityName.toLowerCase().includes('dc') || cityName.toLowerCase().includes('district')) {
+      disambiguatedCityName = 'Washington, DC (the capital city)';
+    } else {
+      // Default to Washington, DC for US searches unless specifically Washington state
+      disambiguatedCityName = 'Washington, DC (the capital city of the United States)';
+    }
+  }
+
+  let userContent = `Generate a FACTUAL, entertaining, lesser-known fact about ${disambiguatedCityName}, ${countryName}. PRIORITIZE pop culture facts about famous actors, musicians, singers, directors, writers, filmmakers, or cultural figures born in or associated with this city. This must be 100% true and verifiable information that most tourists wouldn't know.
+
+CRITICAL: If the city name is "Washington" in the United States, you MUST focus on Washington, DC (the capital city), NOT Washington state. Washington, DC is the capital of the United States and is a separate entity from Washington state.`;
 
   if (wikipediaData) {
-    userContent += `\n\nWikipedia information about ${cityName}:\n${wikipediaData}`;
+    userContent += `\n\nWikipedia information about ${disambiguatedCityName}:\n${wikipediaData}`;
   } else {
     userContent += `\n\nNo Wikipedia data available for this city.`;
   }

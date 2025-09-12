@@ -3,7 +3,7 @@ import Parser from 'rss-parser';
 
 // Cache for RSS feed data
 const rssCache = new Map<string, { data: any; timestamp: number }>();
-const CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours in milliseconds
+const CACHE_TTL = 1 * 60 * 60 * 1000; // 1 hour in milliseconds
 
 // Tourism-relevant keywords for filtering
 const TOURISM_KEYWORDS = [
@@ -15,6 +15,164 @@ const TOURISM_KEYWORDS = [
   "weather", "storm", "flood", "heatwave", "drought", "landslide", "health", "vaccination",
   "tsunami", "hail", "tornado", "cyclone", "typhoon",
   "travel", "visa"
+];
+
+// Publication names that contain city names but shouldn't match
+const PUBLICATION_EXCLUSIONS = [
+  "washington post", "washington times", "washington examiner",
+  "new york times", "new york post", "new york daily news",
+  "los angeles times", "la times",
+  "chicago tribune", "chicago sun-times",
+  "boston globe", "boston herald",
+  "miami herald", "miami times",
+  "philadelphia inquirer", "philadelphia daily news",
+  "houston chronicle", "houston press",
+  "dallas morning news", "dallas times herald",
+  "atlanta journal", "atlanta constitution",
+  "seattle times", "seattle post-intelligencer",
+  "denver post", "denver rocky mountain news",
+  "minneapolis star tribune", "minneapolis tribune",
+  "detroit free press", "detroit news",
+  "cleveland plain dealer", "cleveland press",
+  "cincinnati enquirer", "cincinnati post",
+  "pittsburgh post-gazette", "pittsburgh press",
+  "baltimore sun", "baltimore news-american",
+  "st. louis post-dispatch", "st. louis globe-democrat",
+  "kansas city star", "kansas city times",
+  "milwaukee journal", "milwaukee sentinel",
+  "indianapolis star", "indianapolis news",
+  "columbus dispatch", "columbus citizen-journal",
+  "louisville courier-journal", "louisville times",
+  "nashville tennessean", "nashville banner",
+  "memphis commercial appeal", "memphis press-scimitar",
+  "new orleans times-picayune", "new orleans states-item",
+  "oklahoma city oklahoman", "oklahoma city times",
+  "tulsa world", "tulsa tribune",
+  "albuquerque journal", "albuquerque tribune",
+  "phoenix republic", "phoenix gazette",
+  "las vegas review-journal", "las vegas sun",
+  "salt lake city tribune", "salt lake city deseret news",
+  "portland oregonian", "portland journal",
+  "sacramento bee", "sacramento union",
+  "san jose mercury news", "san jose news",
+  "san diego union-tribune", "san diego evening tribune",
+  "san antonio express-news", "san antonio light",
+  "austin american-statesman", "austin statesman",
+  "fort worth star-telegram", "fort worth press",
+  "el paso times", "el paso herald-post",
+  "corpus christi caller-times", "corpus christi times",
+  "laredo morning times", "laredo times",
+  "brownsville herald", "brownsville news",
+  "mcallen monitor", "mcallen evening news",
+  "harlingen valley morning star", "harlingen star",
+  "waco tribune-herald", "waco news-tribune",
+  "killeen daily herald", "killeen herald",
+  "college station eagle", "college station daily",
+  "bryan eagle", "bryan daily",
+  "temple daily telegram", "temple herald",
+  "belton journal", "belton herald",
+  "killeen daily herald", "killeen herald",
+  "copperas cove leader-press", "copperas cove herald",
+  "harker heights herald", "harker heights news",
+  "nolanville herald", "nolanville news",
+  "lampasas dispatch-record", "lampasas herald",
+  "burnet bulletin", "burnet county news",
+  "marble falls highlander", "marble falls news",
+  "llano county journal", "llano county news",
+  "mason county news", "mason county herald",
+  "gillespie county news", "gillespie county herald",
+  "fredericksburg standard-radio post", "fredericksburg news",
+  "kerrville daily times", "kerrville herald",
+  "bandera bulletin", "bandera county news",
+  "medina county news", "medina county herald",
+  "uvalde leader-news", "uvalde herald",
+  "real county news", "real county herald",
+  "edwards county news", "edwards county herald",
+  "kinney county news", "kinney county herald",
+  "val verde county news", "val verde county herald",
+  "terrell county news", "terrell county herald",
+  "brewster county news", "brewster county herald",
+  "presidio county news", "presidio county herald",
+  "jeff davis county news", "jeff davis county herald",
+  "culberson county news", "culberson county herald",
+  "hudspeth county news", "hudspeth county herald",
+  "el paso county news", "el paso county herald",
+  "hudspeth county news", "hudspeth county herald",
+  "culberson county news", "culberson county herald",
+  "jeff davis county news", "jeff davis county herald",
+  "presidio county news", "presidio county herald",
+  "brewster county news", "brewster county herald",
+  "terrell county news", "terrell county herald",
+  "val verde county news", "val verde county herald",
+  "kinney county news", "kinney county herald",
+  "edwards county news", "edwards county herald",
+  "real county news", "real county herald",
+  "uvalde leader-news", "uvalde herald",
+  "bandera bulletin", "bandera county news",
+  "kerrville daily times", "kerrville herald",
+  "fredericksburg standard-radio post", "fredericksburg news",
+  "gillespie county news", "gillespie county herald",
+  "mason county news", "mason county herald",
+  "llano county journal", "llano county news",
+  "marble falls highlander", "marble falls news",
+  "burnet bulletin", "burnet county news",
+  "lampasas dispatch-record", "lampasas herald",
+  "nolanville herald", "nolanville news",
+  "harker heights herald", "harker heights news",
+  "copperas cove leader-press", "copperas cove herald",
+  "killeen daily herald", "killeen herald",
+  "belton journal", "belton herald",
+  "temple daily telegram", "temple herald",
+  "bryan eagle", "bryan daily",
+  "college station eagle", "college station daily",
+  "killeen daily herald", "killeen herald",
+  "waco tribune-herald", "waco news-tribune",
+  "harlingen valley morning star", "harlingen star",
+  "mcallen monitor", "mcallen evening news",
+  "brownsville herald", "brownsville news",
+  "laredo morning times", "laredo times",
+  "corpus christi caller-times", "corpus christi times",
+  "el paso times", "el paso herald-post",
+  "fort worth star-telegram", "fort worth press",
+  "austin american-statesman", "austin statesman",
+  "san antonio express-news", "san antonio light",
+  "san diego union-tribune", "san diego evening tribune",
+  "san jose mercury news", "san jose news",
+  "sacramento bee", "sacramento union",
+  "portland oregonian", "portland journal",
+  "salt lake city tribune", "salt lake city deseret news",
+  "las vegas review-journal", "las vegas sun",
+  "phoenix republic", "phoenix gazette",
+  "albuquerque journal", "albuquerque tribune",
+  "tulsa world", "tulsa tribune",
+  "oklahoma city oklahoman", "oklahoma city times",
+  "new orleans times-picayune", "new orleans states-item",
+  "memphis commercial appeal", "memphis press-scimitar",
+  "nashville tennessean", "nashville banner",
+  "louisville courier-journal", "louisville times",
+  "columbus dispatch", "columbus citizen-journal",
+  "indianapolis star", "indianapolis news",
+  "milwaukee journal", "milwaukee sentinel",
+  "kansas city star", "kansas city times",
+  "st. louis post-dispatch", "st. louis globe-democrat",
+  "baltimore sun", "baltimore news-american",
+  "pittsburgh post-gazette", "pittsburgh press",
+  "cincinnati enquirer", "cincinnati post",
+  "cleveland plain dealer", "cleveland press",
+  "detroit free press", "detroit news",
+  "minneapolis star tribune", "minneapolis tribune",
+  "denver post", "denver rocky mountain news",
+  "seattle times", "seattle post-intelligencer",
+  "atlanta journal", "atlanta constitution",
+  "dallas morning news", "dallas times herald",
+  "houston chronicle", "houston press",
+  "philadelphia inquirer", "philadelphia daily news",
+  "miami herald", "miami times",
+  "boston globe", "boston herald",
+  "chicago tribune", "chicago sun-times",
+  "los angeles times", "la times",
+  "new york times", "new york post", "new york daily news",
+  "washington post", "washington times", "washington examiner"
 ];
 
 interface NewsArticle {
@@ -42,8 +200,8 @@ const RSS_FEEDS = [
   // International Sources
   { name: 'Al Jazeera', url: 'https://www.aljazeera.com/xml/rss/all.xml' },
   { name: 'DW News', url: 'https://rss.dw.com/rdf/rss-en-all' },
-  { name: 'France 24', url: 'https://www.france24.com/en/rss' },
-  { name: 'RT News', url: 'https://www.rt.com/rss/' },
+  { name: 'Reuters', url: 'https://feeds.reuters.com/reuters/topNews' },
+  { name: 'AP News', url: 'https://feeds.apnews.com/apnews/topnews' },
   
   // News Aggregators
   { name: 'Google News', url: 'https://news.google.com/rss?hl=en-US&gl=US&ceid=US:en' },
@@ -55,12 +213,12 @@ const RSS_FEEDS = [
 ];
 
 // Function to fetch and parse RSS feed with caching
-async function fetchRSSFeed(): Promise<any> {
+async function fetchRSSFeed(forceRefresh: boolean = false): Promise<any> {
   const cacheKey = 'multi_rss';
   const cached = rssCache.get(cacheKey);
   
-  // Check if cache is still valid
-  if (cached && (Date.now() - cached.timestamp) < CACHE_TTL) {
+  // Check if cache is still valid (unless force refresh is requested)
+  if (!forceRefresh && cached && (Date.now() - cached.timestamp) < CACHE_TTL) {
     console.log('Using cached RSS feed data');
     return cached.data;
   }
@@ -264,6 +422,15 @@ function calculateRelevanceScore(article: any, cityName: string): number {
   const aliases = CITY_ALIASES[cityLower] || CITY_ALIASES[cityOnly] || [];
   const allCityNames = [cityLower, cityOnly, ...aliases];
   
+  // Check if the article is from a publication that contains the city name but shouldn't match
+  const isPublicationExclusion = PUBLICATION_EXCLUSIONS.some(publication => {
+    return combinedText.includes(publication.toLowerCase());
+  });
+  
+  if (isPublicationExclusion) {
+    return 0; // Exclude articles from publications that contain city names
+  }
+  
   // Check for exact city name match (including aliases)
   allCityNames.forEach(city => {
     // Use word boundaries to avoid partial matches
@@ -351,6 +518,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const city = searchParams.get('city');
     const hoursBack = parseInt(searchParams.get('hours') || '72'); // Default to 72 hours (3 days)
+    const forceRefresh = searchParams.get('forceRefresh') === 'true';
 
     if (!city) {
       return NextResponse.json(
@@ -361,8 +529,8 @@ export async function GET(request: NextRequest) {
 
     console.log(`Fetching news for city: ${city} (last ${hoursBack} hours)`);
 
-    // Fetch RSS feed
-    const feed = await fetchRSSFeed();
+    // Fetch RSS feed (with optional force refresh)
+    const feed = await fetchRSSFeed(forceRefresh);
     
     // Filter and rank articles
     const relevantArticles = filterAndRankArticles(feed, city, hoursBack);

@@ -435,9 +435,9 @@ export default function DestinationSearch() {
           )}
         </div>
         
-        <div className={`max-w-4xl mx-auto ${compareMode ? 'grid grid-cols-1 md:grid-cols-2 gap-6' : 'max-w-lg'}`}>
+        <div className={`max-w-4xl mx-auto ${compareMode ? 'grid grid-cols-1 md:grid-cols-2 gap-6 items-start' : 'max-w-lg'}`}>
           {/* First Destination */}
-          <div className="relative">
+          <div className={`relative ${compareMode ? 'h-full flex flex-col' : ''}`}>
             <label className="block text-left text-sm font-medium text-black mb-2">
               {compareMode ? 'First Destination' : 'Search for any city or country'}
             </label>
@@ -733,9 +733,9 @@ export default function DestinationSearch() {
 
       {/* Results Display */}
       {results && (
-        <div className={`space-y-6 ${compareMode && secondResults ? 'grid grid-cols-1 lg:grid-cols-2 gap-8' : ''}`}>
+        <div className={`space-y-6 ${compareMode && secondResults ? 'grid grid-cols-1 lg:grid-cols-2 gap-8 items-start' : ''}`}>
           {/* First Destination Results */}
-          <div className="space-y-6">
+          <div className={`space-y-6 ${compareMode && secondResults ? 'h-full flex flex-col' : ''}`}>
             
 
             {/* Globaltrot-Bot Summary */}
@@ -1044,7 +1044,7 @@ export default function DestinationSearch() {
 
           {/* Second Destination Results */}
           {secondResults && (
-            <div className="space-y-6">
+            <div className={`space-y-6 ${compareMode ? 'h-full flex flex-col' : ''}`}>
               
 
               {/* Globaltrot-Bot Summary */}
@@ -1174,6 +1174,47 @@ export default function DestinationSearch() {
               </div>
               )}
 
+              {/* Natural Hazards Spider Chart - For All Queries */}
+              {secondResults.supabaseData && (
+              <div className="bg-white rounded-lg p-6 border-2 border-orange-500 shadow-lg">
+                <h4 className="text-lg font-semibold text-orange-600 mb-4">Natural Hazards (0-10 Scale)</h4>
+                  <div className="mb-4">
+                    <p className="text-gray-600 text-sm">
+                      National-level natural hazard risks for {secondResults.supabaseData.country}
+                    </p>
+                    <p className="text-gray-600 text-xs mt-1">
+                      <strong>Higher values = Higher risk</strong> • Scale: 0 (low risk) to 10 (extreme risk)
+                    </p>
+                  </div>
+                  <RiskRadarChart
+                    hazardIndicators={{
+                      earthquake: secondResults.supabaseData.earthquake,
+                      river_flood: secondResults.supabaseData.river_flood,
+                      tsunami: secondResults.supabaseData.tsunami,
+                      tropical_storm: secondResults.supabaseData.tropical_storm,
+                      coastal_flood: secondResults.supabaseData.coastal_flood,
+                      drought: secondResults.supabaseData.drought,
+                      epidemic: secondResults.supabaseData.epidemic,
+                      projected_conflict: secondResults.supabaseData.projected_conflict,
+                      current_conflict: secondResults.supabaseData.current_conflict
+                    }}
+                    secondHazardIndicators={compareMode && results?.supabaseData ? {
+                      earthquake: results.supabaseData.earthquake,
+                      river_flood: results.supabaseData.river_flood,
+                      tsunami: results.supabaseData.tsunami,
+                      tropical_storm: results.supabaseData.tropical_storm,
+                      coastal_flood: results.supabaseData.coastal_flood,
+                      drought: results.supabaseData.drought,
+                      epidemic: results.supabaseData.epidemic,
+                      projected_conflict: results.supabaseData.projected_conflict,
+                      current_conflict: results.supabaseData.current_conflict
+                    } : undefined}
+                    firstDestination={secondResults.supabaseData.country}
+                    secondDestination={compareMode && results?.supabaseData ? results.supabaseData.country : undefined}
+                    color="#dc2626"
+                  />
+                </div>
+              )}
 
               {/* Weather & Climate Data */}
               <div className="bg-white rounded-lg p-6 border-2 border-blue-500 shadow-lg">
