@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { searchDestinations, getCountryByName, transformCountryData, getComparisonData, getCountriesWithSimilarRankings } from '@/lib/database';
 import { getWikipediaData, getWikipediaDataForCountry, getWikipediaContentForPopCulture } from '@/lib/wikipedia';
-import { generateSummary, generateCityFunFact, generateLanguagesAndCurrency, generatePopulationData } from '@/lib/chatgpt';
+import { generateSummary, generateCityFunFact, generateLanguagesAndCurrency, generatePopulationData, generateGDPData, generateCitySafetyInfo } from '@/lib/chatgpt';
 import { getWeatherForCity, getWeatherForCoordinates, getWeatherDescription, getAirQualityDescription, getWindSpeedDescription, getPM10Description, getUVIndexDescription, getOzoneDescription, generateWeatherAlerts } from '@/lib/weather';
 
 export async function GET(request: NextRequest) {
@@ -101,7 +101,28 @@ export async function GET(request: NextRequest) {
         }
       }
       
-      const result = transformCountryData(countryData, cityCoordinates || undefined, destination, languagesAndCurrency, cityPopulationData);
+      // Get GDP data from ChatGPT (always override Supabase data)
+      let gdpData = null;
+      try {
+        gdpData = await generateGDPData(countryData.country);
+        console.log(`GDP data fetched for ${countryData.country}:`, gdpData);
+      } catch (error) {
+        console.error('ChatGPT GDP fetch error:', error);
+      }
+      
+      // Get city-specific safety information if it's a city search
+      let citySafetyData = null;
+      if (cityCoordinates && destination.includes(',')) {
+        const cityName = destination.split(',')[0].trim();
+        try {
+          citySafetyData = await generateCitySafetyInfo(cityName, countryData.country);
+          console.log(`City safety data fetched for ${cityName}:`, citySafetyData);
+        } catch (error) {
+          console.error('ChatGPT city safety fetch error:', error);
+        }
+      }
+      
+      const result = transformCountryData(countryData, cityCoordinates || undefined, destination, languagesAndCurrency, cityPopulationData, gdpData, citySafetyData);
       const comparisonData = await getComparisonData(countryData);
       
       // Get countries with similar rankings for better context
@@ -235,7 +256,10 @@ export async function GET(request: NextRequest) {
           undefined,
           undefined,
           !!cityCoordinates, // isCityQuery: true if city coordinates were found
-          realWeatherData // Pass weather data to ChatGPT
+          realWeatherData, // Pass weather data to ChatGPT
+          undefined, // secondWeatherData
+          citySafetyData, // Pass city safety data to ChatGPT
+          cityPopulationData // Pass city population data to ChatGPT
         );
       } catch (error) {
         console.error('ChatGPT summary generation error:', error);

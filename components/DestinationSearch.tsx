@@ -19,6 +19,7 @@ interface SearchResult {
   chatgptSummary?: string;
   coordinates?: { lat: number; lng: number; cityName?: string };
   cityPopulation?: { population: number; populationText: string } | null;
+  citySafety?: { safetyInfo: string; safetyLevel: string } | null;
   comparisonData?: {
     informSimilar: { country: string; value: number }[];
     globalRankAbove: { country: string; rank: number }[];
@@ -49,6 +50,7 @@ interface SearchResult {
     current_conflict: number;
     life_expectancy: number;
     gdp_per_capita_usd: number;
+    gdp_text?: string;
     human_dev_index: number;
     fun_fact: string;
     area_km2?: number;
@@ -111,8 +113,11 @@ export default function DestinationSearchNew() {
   const [showSecondSuggestions, setShowSecondSuggestions] = useState(false);
   
   // Tab-based navigation for organized information display
-  const [activeTab, setActiveTab] = useState('summary');
-  const [secondActiveTab, setSecondActiveTab] = useState('summary');
+  const [activeTab, setActiveTab] = useState('stats');
+  const [secondActiveTab, setSecondActiveTab] = useState('stats');
+  
+  // State for managing expanded sections in summary
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
   
   const [useImperialUnits, setUseImperialUnits] = useState(false);
 
@@ -131,6 +136,19 @@ export default function DestinationSearchNew() {
 
   const getWindSpeedUnit = (): string => {
     return useImperialUnits ? ' mph' : ' km/h';
+  };
+
+  // Function to toggle expanded sections
+  const toggleSection = (sectionName: string) => {
+    setExpandedSections(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(sectionName)) {
+        newSet.delete(sectionName);
+      } else {
+        newSet.add(sectionName);
+      }
+      return newSet;
+    });
   };
 
   const isCountrySearch = (result: SearchResult): boolean => {
@@ -195,8 +213,8 @@ export default function DestinationSearchNew() {
     if (value.length > 2) {
       fetchCitySuggestions(value);
       } else {
-        setCitySuggestions([]);
-        setShowSuggestions(false);
+      setCitySuggestions([]);
+      setShowSuggestions(false);
       }
   };
 
@@ -215,9 +233,9 @@ export default function DestinationSearchNew() {
   const fetchCitySuggestions = async (query: string) => {
     try {
       const response = await fetch(`/api/city-search?q=${encodeURIComponent(query)}&limit=8`);
-      const data = await response.json();
-      setCitySuggestions(data.suggestions || []);
-      setShowSuggestions(true);
+        const data = await response.json();
+        setCitySuggestions(data.suggestions || []);
+        setShowSuggestions(true);
     } catch (err) {
       console.error('Failed to fetch city suggestions:', err);
     }
@@ -226,29 +244,89 @@ export default function DestinationSearchNew() {
   const fetchSecondCitySuggestions = async (query: string) => {
     try {
       const response = await fetch(`/api/city-search?q=${encodeURIComponent(query)}&limit=8`);
-      const data = await response.json();
-      setSecondCitySuggestions(data.suggestions || []);
-      setShowSecondSuggestions(true);
+        const data = await response.json();
+        setSecondCitySuggestions(data.suggestions || []);
+        setShowSecondSuggestions(true);
     } catch (err) {
       console.error('Failed to fetch city suggestions:', err);
     }
   };
 
-  const handleCitySelect = (suggestion: any) => {
+  const handleCitySelect = async (suggestion: any) => {
     setSearchQuery(suggestion.display);
-    setCitySuggestions([]);
-    setShowSuggestions(false);
+        setCitySuggestions([]);
+        setShowSuggestions(false);
+    
+    // Automatically trigger search
+    setIsSearching(true);
+    setError('');
+    
+    try {
+      const response = await fetch(`/api/search?destination=${encodeURIComponent(suggestion.display)}&t=${Date.now()}`);
+      const data = await response.json();
+      
+      if (data.error) {
+        setError(data.error);
+      } else {
+        setResults(data);
+        setSearchHistory(prev => [
+          { destination: suggestion.display, timestamp: Date.now() },
+          ...prev.filter(h => h.destination !== suggestion.display).slice(0, 9)
+        ]);
+      }
+    } catch (err) {
+      setError('Failed to fetch data. Please try again.');
+    } finally {
+      setIsSearching(false);
+    }
   };
 
-  const handleSecondCitySelect = (suggestion: any) => {
+  const handleSecondCitySelect = async (suggestion: any) => {
     setSecondDestination(suggestion.display);
     setSecondCitySuggestions([]);
     setShowSecondSuggestions(false);
+    
+    // Automatically trigger second search
+    try {
+      const response = await fetch(`/api/search?destination=${encodeURIComponent(suggestion.display)}&t=${Date.now()}`);
+      const data = await response.json();
+      
+      if (data.error) {
+        setError(data.error);
+      } else {
+        setSecondResults(data);
+      }
+    } catch (err) {
+      setError('Failed to fetch second destination data. Please try again.');
+    }
   };
 
-  const handleHistorySelect = (destination: string) => {
+  const handleHistorySelect = async (destination: string) => {
     setSearchQuery(destination);
     setShowHistory(false);
+    
+    // Automatically trigger search
+    setIsSearching(true);
+    setError('');
+
+    try {
+      const response = await fetch(`/api/search?destination=${encodeURIComponent(destination)}&t=${Date.now()}`);
+      const data = await response.json();
+      
+      if (data.error) {
+        setError(data.error);
+      } else {
+        setResults(data);
+        setSearchHistory(prev => [
+          { destination: destination, timestamp: Date.now() },
+          ...prev.filter(h => h.destination !== destination).slice(0, 9)
+        ]);
+      }
+    } catch (err) {
+      setError('Failed to fetch data. Please try again.');
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   const TabContent = ({ result, tabId, setTabId }: { result: SearchResult; tabId: string; setTabId: (tab: string) => void }) => (
@@ -256,9 +334,9 @@ export default function DestinationSearchNew() {
       {/* Tab Navigation */}
       <div className="flex border-b border-gray-200">
         {[
-          { id: 'summary', label: '30 Second Summary', color: 'blue' },
-          { id: 'stats', label: 'Quick Stats', color: 'green' },
-          { id: 'weather', label: 'Weather', color: 'sky' },
+          { id: 'stats', label: 'Country Stats', color: 'green' },
+          { id: 'summary', label: '1 Minute Summary', color: 'blue' },
+          { id: 'weather', label: 'Weather and Climate', color: 'sky' },
           { id: 'airquality', label: 'Air Quality', color: 'teal' },
           { id: 'safety', label: 'Safety', color: 'red' },
           { id: 'funfact', label: 'Good to know?', color: 'amber' },
@@ -291,27 +369,132 @@ export default function DestinationSearchNew() {
       <div className="p-6">
         {tabId === 'summary' && (
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">30 Second Summary</h3>
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">1 Minute Summary</h3>
             
-            {/* Summary */}
+            {/* Expandable Summary */}
             {result.chatgptSummary && (
               <div className="p-6 bg-gradient-to-r from-blue-50 to-green-50 rounded-lg border border-blue-200">
-                <div className="text-black leading-relaxed whitespace-pre-line">
-                  {result.chatgptSummary.split('\n').map((line, index) => {
-                    const cleanLine = line.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1');
+                <div className="text-black leading-relaxed">
+                  {(() => {
+                    const lines = result.chatgptSummary.split('\n');
+                    const sections: { [key: string]: { title: string; content: string[]; isExpandable: boolean } } = {};
+                    let currentSection = '';
+                    let currentContent: string[] = [];
                     
-                    if (cleanLine.startsWith('# ')) {
-                      return <h1 key={index} className="text-xl font-bold text-blue-600 mb-3 mt-4">{cleanLine.substring(2)}</h1>;
-                    } else if (cleanLine.startsWith('## ')) {
-                      return <h2 key={index} className="text-lg font-semibold text-blue-500 mb-2 mt-3">{cleanLine.substring(3)}</h2>;
-                    } else if (cleanLine.startsWith('- ')) {
-                      return <div key={index} className="ml-4 mb-1 text-black">• {cleanLine.substring(2)}</div>;
-                    } else if (cleanLine.trim() === '') {
-                      return <br key={index} />;
-                    } else {
-                      return <p key={index} className="mb-2 text-black">{cleanLine}</p>;
+                    // Parse the summary into sections
+                    lines.forEach((line, index) => {
+                      const cleanLine = line.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1');
+                      
+                      if (cleanLine.startsWith('## ')) {
+                        // Save previous section
+                        if (currentSection) {
+                          sections[currentSection] = {
+                            title: currentSection,
+                            content: currentContent,
+                            isExpandable: !currentSection.includes('Main Attractions') && !currentSection.includes('Quick Intro')
+                          };
+                        }
+                        // Start new section
+                        currentSection = cleanLine.substring(3);
+                        currentContent = [];
+                      } else if (cleanLine.trim() !== '') {
+                        currentContent.push(cleanLine);
+                      }
+                    });
+                    
+                    // Save last section
+                    if (currentSection) {
+                      sections[currentSection] = {
+                        title: currentSection,
+                        content: currentContent,
+                        isExpandable: !currentSection.includes('Main Attractions') && !currentSection.includes('Quick Intro')
+                      };
                     }
-                  })}
+                    
+                    // Render sections
+                    return Object.entries(sections).map(([sectionName, section], sectionIndex) => {
+                      const isExpanded = expandedSections.has(sectionName);
+                      const isMainAttractions = sectionName.includes('Main Attractions');
+                      const isQuickIntro = sectionName.includes('Quick Intro');
+                      const isWeatherClimate = sectionName.includes('Weather and Climate');
+                      
+                      return (
+                        <div key={sectionIndex} className="mb-4">
+                          <div className="flex items-center justify-between">
+                            <h2 className="text-lg font-semibold text-blue-500 mb-2">
+                              {sectionName}
+                            </h2>
+                            {section.isExpandable && section.content.length > (isWeatherClimate ? 1 : 2) && (
+                              <button
+                                onClick={() => toggleSection(sectionName)}
+                                className="text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors duration-200"
+                              >
+                                {isExpanded ? 'Show less' : 'Show more'}
+                              </button>
+                            )}
+                          </div>
+                          
+                          <div className={`${isMainAttractions || isQuickIntro || isExpanded ? 'block' : 'block'}`}>
+                            {(isMainAttractions || isQuickIntro || isExpanded ? section.content : section.content.slice(0, isWeatherClimate ? 1 : 2)).map((line, lineIndex) => {
+                              if (line.startsWith('- ')) {
+                                return <div key={lineIndex} className="ml-4 mb-1">• {line.substring(2)}</div>;
+                              } else if (line.includes('[View detailed') && line.includes('→]')) {
+                                const linkMatch = line.match(/\[View detailed (.*?) information →\]/);
+                                if (linkMatch) {
+                                  const beforeLink = line.substring(0, line.indexOf('[View detailed'));
+                                  const linkText = linkMatch[0];
+                                  const section = linkMatch[1];
+                                  const tabMap: { [key: string]: string } = {
+                                    'climate': 'weather',
+                                    'safety': 'safety'
+                                  };
+                                  const targetTab = tabMap[section.toLowerCase()];
+                                  
+                                  // If there's text before the link, split them
+                                  if (beforeLink.trim()) {
+                                    return (
+                                      <div key={lineIndex} className="mb-2">
+                                        <p className="mb-2">{beforeLink.trim()}</p>
+                                        {targetTab && (
+                                          <button
+                                            onClick={() => setTabId(targetTab)}
+                                            className="text-blue-600 hover:text-blue-800 underline text-sm font-medium transition-colors duration-200"
+                                          >
+                                            {linkText}
+                                          </button>
+                                        )}
+                                      </div>
+                                    );
+                                  } else {
+                                    // If it's just the link, render it as a button
+                                    return (
+                                      <div key={lineIndex} className="mt-2">
+                                        {targetTab && (
+                                          <button
+                                            onClick={() => setTabId(targetTab)}
+                                            className="text-blue-600 hover:text-blue-800 underline text-sm font-medium transition-colors duration-200"
+                                          >
+                                            {linkText}
+                                          </button>
+                                        )}
+                                      </div>
+                                    );
+                                  }
+                                }
+                              }
+                              return <p key={lineIndex} className="mb-2">{line}</p>;
+                            })}
+                          </div>
+                          
+                          {!isMainAttractions && !isQuickIntro && !isExpanded && section.content.length > (isWeatherClimate ? 1 : 2) && (
+                            <div className="text-gray-600 text-sm italic">
+                              Click "Show more" to see additional information
+                            </div>
+                          )}
+                        </div>
+                      );
+                    });
+                  })()}
                 </div>
               </div>
             )}
@@ -328,7 +511,7 @@ export default function DestinationSearchNew() {
 
         {tabId === 'stats' && (
           <div className="space-y-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Quick Stats</h3>
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Country Stats</h3>
             
             {/* Primary Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -355,7 +538,7 @@ export default function DestinationSearchNew() {
                 )}
               </div>
               <div className="text-center p-3 bg-purple-50 rounded-lg">
-                <div className="text-lg font-semibold text-purple-600">${result.supabaseData?.gdp_per_capita_usd?.toLocaleString()}</div>
+                <div className="text-lg font-semibold text-purple-600">{result.supabaseData?.gdp_text || `$${result.supabaseData?.gdp_per_capita_usd?.toLocaleString()}`}</div>
                 <div className="text-xs text-gray-600">GDP Per Capita</div>
                 {result.comparisonData?.gdpSimilar && result.comparisonData.gdpSimilar.length > 0 && (
                   <div className="text-xs text-gray-500 mt-1">
@@ -660,24 +843,17 @@ export default function DestinationSearchNew() {
                 )}
               </div>
                 
-              <button
-                  onClick={handleSearch}
-                  disabled={isSearching}
-                  className="px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 font-medium"
-                >
-                  {isSearching ? 'Searching...' : 'Search'}
-              </button>
             </div>
               
               {/* Search History */}
               {searchHistory.length > 0 && (
                 <div className="mt-2">
-                  <button
+              <button
                     onClick={() => setShowHistory(!showHistory)}
                     className="text-sm text-gray-600 hover:text-gray-800 transition-colors duration-200"
-                  >
+              >
                     {showHistory ? 'Hide' : 'Show'} Recent Searches
-                  </button>
+              </button>
                   {showHistory && (
                     <div className="mt-2 p-2 bg-gray-100 border border-gray-300 rounded-lg">
                       {searchHistory.slice(0, 5).map((item, index) => (
@@ -689,7 +865,7 @@ export default function DestinationSearchNew() {
                           {item.destination}
                         </button>
                       ))}
-                    </div>
+            </div>
                   )}
                 </div>
               )}
@@ -765,15 +941,13 @@ export default function DestinationSearchNew() {
         )}
 
         {/* Map Display - Always below search */}
-        {(results || secondResults) && (
-          <div className="mb-8">
+        <div className="mb-2">
       <CountryMap 
-              searchQuery={searchQuery}
+            searchQuery={searchQuery}
         coordinates={results?.coordinates}
-              secondCoordinates={secondResults?.coordinates}
-            />
-        </div>
-      )}
+            secondCoordinates={secondResults?.coordinates}
+          />
+          </div>
 
       {/* Results Display */}
       {results && (

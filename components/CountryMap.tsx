@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import type { Map } from 'leaflet';
+import { useMap } from 'react-leaflet';
 
 // Dynamically import Leaflet components to prevent SSR issues
 const MapContainer = dynamic(() => import('react-leaflet').then(mod => mod.MapContainer), { ssr: false });
@@ -35,6 +36,147 @@ interface CountryMapProps {
   onCountrySelect?: (country: string) => void;
 }
 
+// MapContent component that only renders when map is ready
+function MapContent({ 
+  mapLayer, 
+  coords, 
+  secondCoords, 
+  locationName, 
+  secondLocationName,
+  searchQuery,
+  secondDestination
+}: { 
+  mapLayer: 'street' | 'satellite';
+  coords: [number, number] | null;
+  secondCoords: [number, number] | null;
+  locationName: string;
+  secondLocationName: string;
+  searchQuery: string;
+  secondDestination?: string;
+}) {
+  const map = useMap();
+  const [isMapReady, setIsMapReady] = useState(false);
+  const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    if (map && map.getContainer && map.getContainer()) {
+      // Wait for map to be fully initialized with an even longer delay
+      const timer = setTimeout(() => {
+        // Double-check that map is still ready before setting state
+        if (map && map.getContainer && map.getContainer() && map.getPane && map.getPane('overlayPane')) {
+          setIsMapReady(true);
+        }
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [map]);
+
+  // Don't render anything if map isn't ready or there's an error
+  if (!isMapReady || hasError) {
+    return null;
+  }
+
+  // Wrap each component in try-catch to prevent individual component errors
+  const renderTileLayer = () => {
+    try {
+      // Additional safety check - ensure map is fully ready
+      if (!map || !map.getContainer || !map.getContainer() || !map.getPane) {
+        console.log('Map not ready for TileLayer');
+        return null;
+      }
+
+      if (mapLayer === 'street') {
+        return (
+          <TileLayer
+            url="https://tiles.stadiamaps.com/tiles/stamen_toner_lite/{z}/{x}/{y}{r}.png"
+            attribution='&copy; <a href="https://stadiamaps.com/" target="_blank">Stadia Maps</a> &copy; <a href="https://stamen.com/" target="_blank">Stamen Design</a> &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>'
+            maxZoom={20}
+          />
+        );
+      } else if (mapLayer === 'satellite') {
+        return (
+          <TileLayer
+            attribution='&copy; <a href="https://www.esri.com/">Esri</a>'
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+          />
+        );
+      }
+    } catch (error) {
+      console.log('TileLayer error:', error);
+      setHasError(true);
+      return null;
+    }
+    return null;
+  };
+
+  const renderMarkers = () => {
+    try {
+      // Additional safety check - ensure map is fully ready
+      if (!map || !map.getContainer || !map.getContainer() || !map.getPane) {
+        console.log('Map not ready for Markers');
+        return null;
+      }
+
+      return (
+        <>
+          {/* First Location Marker */}
+          {coords && (
+            <Marker 
+              position={coords}
+              icon={(window.L || L) ? (window.L || L).divIcon({
+                className: 'custom-pin-primary',
+                html: '<div style="background-color: #F59E0B; width: 24px; height: 24px; border-radius: 50% 50% 50% 0; border: 3px solid white; box-shadow: 0 0 15px rgba(245, 158, 11, 0.8); transform: rotate(-45deg);"></div>',
+                iconSize: [24, 24],
+                iconAnchor: [12, 24]
+              }) : undefined}
+            >
+              <Popup className="text-white">
+                <div className="text-center text-white">
+                  <strong className="text-white">{locationName}</strong>
+                  <br />
+                  <span className="text-white">{searchQuery}</span>
+                </div>
+              </Popup>
+            </Marker>
+          )}
+          
+          {/* Second Location Marker */}
+          {secondCoords && (
+            <Marker 
+              position={secondCoords}
+              icon={(window.L || L) ? (window.L || L).divIcon({
+                className: 'custom-pin-secondary',
+                html: '<div style="background-color: #3B82F6; width: 24px; height: 24px; border-radius: 50% 50% 50% 0; border: 3px solid white; box-shadow: 0 0 15px rgba(59, 130, 246, 0.8); transform: rotate(-45deg);"></div>',
+                iconSize: [24, 24],
+                iconAnchor: [12, 24]
+              }) : undefined}
+            >
+              <Popup className="text-white">
+                <div className="text-center text-white">
+                  <strong className="text-white">{secondLocationName}</strong>
+                  <br />
+                  <span className="text-white">{secondDestination}</span>
+                </div>
+              </Popup>
+            </Marker>
+          )}
+        </>
+      );
+    } catch (error) {
+      console.log('Marker error:', error);
+      setHasError(true);
+      return null;
+    }
+  };
+
+  return (
+    <>
+      {renderTileLayer()}
+      {renderMarkers()}
+    </>
+  );
+}
+
 export default function CountryMap({ searchQuery, secondDestination, coordinates, secondCoordinates, onCountrySelect }: CountryMapProps) {
   const [coords, setCoords] = useState<[number, number] | null>(null);
   const [secondCoords, setSecondCoords] = useState<[number, number] | null>(null);
@@ -45,6 +187,9 @@ export default function CountryMap({ searchQuery, secondDestination, coordinates
   const [isLeafletReady, setIsLeafletReady] = useState(false);
   const [mapLayer, setMapLayer] = useState<'street' | 'satellite'>('street');
   const mapRef = useRef<Map | null>(null);
+  const lastCoordsRef = useRef<[number, number] | null>(null);
+  const lastSecondCoordsRef = useRef<[number, number] | null>(null);
+  const isUpdatingRef = useRef<boolean>(false);
 
   // Set client state
   useEffect(() => {
@@ -118,32 +263,64 @@ export default function CountryMap({ searchQuery, secondDestination, coordinates
   // Update coordinates when search query changes (only if coordinates prop is not provided)
   useEffect(() => {
     const updateCoords = async () => {
-      if (searchQuery.trim() && !coordinates) {
+      // Only fetch if we have a search query, no coordinates prop, and not currently updating
+      if (searchQuery.trim() && !coordinates && !isUpdatingRef.current) {
+        isUpdatingRef.current = true;
         setIsLoading(true);
-        const result = await fetchCoords(searchQuery);
-        if (result) {
-          setCoords([result.lat, result.lon]);
-          setLocationName(result.name);
+        try {
+          const result = await fetchCoords(searchQuery);
+          if (result) {
+            setCoords([result.lat, result.lon]);
+            setLocationName(result.name);
+          }
+        } finally {
+          setIsLoading(false);
+          isUpdatingRef.current = false;
         }
-        setIsLoading(false);
       }
     };
-    updateCoords();
+    
+    // Add a small delay to prevent rapid successive calls
+    const timeoutId = setTimeout(updateCoords, 300);
+    return () => clearTimeout(timeoutId);
   }, [searchQuery, coordinates]);
 
   // Update second coordinates when second destination changes (only if secondCoordinates prop is not provided)
   useEffect(() => {
     const updateSecondCoords = async () => {
-      if (secondDestination && secondDestination.trim() && !secondCoordinates) {
-        const result = await fetchCoords(secondDestination);
-        if (result) {
-          setSecondCoords([result.lat, result.lon]);
-          setSecondLocationName(result.name);
+      if (secondDestination && secondDestination.trim() && !secondCoordinates && !isUpdatingRef.current) {
+        isUpdatingRef.current = true;
+        try {
+          const result = await fetchCoords(secondDestination);
+          if (result) {
+            setSecondCoords([result.lat, result.lon]);
+            setSecondLocationName(result.name);
+          }
+        } finally {
+          isUpdatingRef.current = false;
         }
       }
     };
-    updateSecondCoords();
+    
+    // Add a small delay to prevent rapid successive calls
+    const timeoutId = setTimeout(updateSecondCoords, 300);
+    return () => clearTimeout(timeoutId);
   }, [secondDestination, secondCoordinates]);
+
+  // Sync coordinates from props
+  useEffect(() => {
+    if (coordinates && !isUpdatingRef.current) {
+      setCoords([coordinates.lat, coordinates.lng]);
+      setLocationName(coordinates.cityName || '');
+    }
+  }, [coordinates]);
+
+  useEffect(() => {
+    if (secondCoordinates && !isUpdatingRef.current) {
+      setSecondCoords([secondCoordinates.lat, secondCoordinates.lng]);
+      setSecondLocationName(secondCoordinates.cityName || '');
+    }
+  }, [secondCoordinates]);
 
   // Update map view when coordinates change (with debounce to prevent rapid updates)
   useEffect(() => {
@@ -152,14 +329,32 @@ export default function CountryMap({ searchQuery, secondDestination, coordinates
       const center = getMapCenter();
       const zoom = getMapZoom();
       
+      // Check if coordinates have actually changed
+      const coordsChanged = 
+        (coords && (!lastCoordsRef.current || 
+          Math.abs(coords[0] - lastCoordsRef.current[0]) > 0.001 || 
+          Math.abs(coords[1] - lastCoordsRef.current[1]) > 0.001)) ||
+        (secondCoords && (!lastSecondCoordsRef.current || 
+          Math.abs(secondCoords[0] - lastSecondCoordsRef.current[0]) > 0.001 || 
+          Math.abs(secondCoords[1] - lastSecondCoordsRef.current[1]) > 0.001));
+      
+      if (!coordsChanged) return;
+      
+      // Update refs
+      lastCoordsRef.current = coords;
+      lastSecondCoordsRef.current = secondCoords;
+      
       // Debounce map updates to prevent rapid successive calls
       const timeoutId = setTimeout(() => {
-        // Use flyTo for smooth transition
-        map.flyTo(center, zoom, {
-          duration: 1.5,
-          easeLinearity: 0.1
-        });
-      }, 100); // 100ms debounce
+        // Check if map is still mounted and coordinates are valid
+        if (mapRef.current && center && center.length === 2 && !isNaN(center[0]) && !isNaN(center[1])) {
+          // Use flyTo for smooth transition
+          map.flyTo(center, zoom, {
+            duration: 1.5,
+            easeLinearity: 0.1
+          });
+        }
+      }, 1200); // Increased debounce to 1200ms for better stability
       
       return () => clearTimeout(timeoutId);
     }
@@ -247,7 +442,7 @@ export default function CountryMap({ searchQuery, secondDestination, coordinates
   console.log('Rendering map with coords:', coords, 'secondCoords:', secondCoords);
 
   return (
-      <div className="space-y-4">
+      <div className="space-y-2">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold text-black">Location Map</h3>
           <div className="flex items-center space-x-4">
@@ -284,7 +479,7 @@ export default function CountryMap({ searchQuery, secondDestination, coordinates
           </div>
         </div>
         
-        <div className="relative h-64 w-full bg-white rounded-lg overflow-hidden border-2 border-black">
+        <div className="relative h-80 w-full bg-white rounded-lg overflow-hidden border-2 border-black">
           {(() => {
             try {
               return (
@@ -295,64 +490,15 @@ export default function CountryMap({ searchQuery, secondDestination, coordinates
                   ref={mapRef}
                   className="z-10"
                 >
-                  {/* Street Map Layer - Stamen Toner Lite */}
-                  {mapLayer === 'street' && (
-                    <TileLayer
-                      url="https://tiles.stadiamaps.com/tiles/stamen_toner_lite/{z}/{x}/{y}{r}.png"
-                      attribution='&copy; <a href="https://stadiamaps.com/" target="_blank">Stadia Maps</a> &copy; <a href="https://stamen.com/" target="_blank">Stamen Design</a> &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>'
-                      maxZoom={20}
-                    />
-                  )}
-                  
-                  {/* Satellite Map Layer */}
-                  {mapLayer === 'satellite' && (
-                    <TileLayer
-                      attribution='&copy; <a href="https://www.esri.com/">Esri</a>'
-                      url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-                    />
-                  )}
-                  
-                  {/* First Location Marker */}
-                  {coords && (
-                    <Marker 
-                      position={coords}
-                      icon={(window.L || L) ? (window.L || L).divIcon({
-                        className: 'custom-pin-primary',
-                        html: '<div style="background-color: #F59E0B; width: 24px; height: 24px; border-radius: 50% 50% 50% 0; border: 3px solid white; box-shadow: 0 0 15px rgba(245, 158, 11, 0.8); transform: rotate(-45deg);"></div>',
-                        iconSize: [24, 24],
-                        iconAnchor: [12, 24]
-                      }) : undefined}
-                    >
-                      <Popup className="text-white">
-                        <div className="text-center text-white">
-                          <strong className="text-white">{locationName}</strong>
-                          <br />
-                          <span className="text-white">{searchQuery}</span>
-                        </div>
-                      </Popup>
-                    </Marker>
-                  )}
-                  
-                  {/* Second Location Marker */}
-                  {secondCoords && (
-                    <Marker 
-                      position={secondCoords}
-                      icon={(window.L || L) ? (window.L || L).divIcon({
-                        className: 'custom-pin-secondary',
-                        html: '<div style="background-color: #3B82F6; width: 24px; height: 24px; border-radius: 50% 50% 50% 0; border: 3px solid white; box-shadow: 0 0 15px rgba(59, 130, 246, 0.8); transform: rotate(-45deg);"></div>',
-                        iconSize: [24, 24],
-                        iconAnchor: [12, 24]
-                      }) : undefined}
-                    >
-                      <Popup className="text-white">
-                        <div className="text-center text-white">
-                          <strong className="text-white">{secondLocationName}</strong>
-                          <br />
-                          <span className="text-white">{secondDestination}</span>
-                        </div>
-                      </Popup>
-                    </Marker>
-                  )}
+                  <MapContent 
+                    mapLayer={mapLayer}
+                    coords={coords}
+                    secondCoords={secondCoords}
+                    locationName={locationName}
+                    secondLocationName={secondLocationName}
+                    searchQuery={searchQuery}
+                    secondDestination={secondDestination}
+                  />
                 </MapContainer>
               );
             } catch (error) {

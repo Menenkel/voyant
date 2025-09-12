@@ -21,7 +21,9 @@ export async function generateSummary(
   secondDestination?: string,
   isCityQuery: boolean = false,
   weatherData?: any,
-  secondWeatherData?: any
+  secondWeatherData?: any,
+  citySafetyData?: { safetyInfo: string; safetyLevel: string } | null,
+  cityPopulationData?: { population: number; populationText: string } | null
 ): Promise<string> {
   const apiKey = process.env.OPENAI_API_KEY;
   
@@ -52,37 +54,49 @@ Guidelines:
 - ALWAYS include airport distance information in the Airport Access section (AI generated)
 - ALWAYS include hotel price estimates in the Accommodation section (AI generated)
 - ALWAYS include drinking water quality information in the Drinking Water Quality section (AI generated)
+- ALWAYS include a Safety Overview section with 1-2 key safety facts based on the risk_class and global_peace_rank, plus city-specific safety information if available
+- ALWAYS include a Health & Vaccinations section with specific recommended vaccinations for the destination and disclaimer about checking latest requirements online
+- ALWAYS include air quality information in the Weather and Climate section (if air quality data is available)
+- WEATHER SECTION MUST BE CONCISE: Use exactly one sentence each for current conditions, 16-day forecast, air quality, and best travel times
 - Do NOT include any Risks section - end your summary after the last available section
 - Never mention specific INFORM numbers (like "epidemic risk is 1.8")
 - Use the provided real-time weather data and 16-day forecast to enhance the Weather and Climate section with specific temperature and rain predictions (if available)
 - Be engaging and informative for travelers
-- Keep the summary concise and focused (maximum 350 words)
+- Keep the summary concise and focused (maximum 400 words)
 - Structure with clear headlines (use ## for all sections)
 - NEVER use ** for bold formatting - this is strictly forbidden
 - Use simple bullet points (-) for lists without any bold formatting
 - Write in plain text with headlines only - no markdown bold formatting
 - CONFIDENCE LEVELS: For each section, add a confidence level at the end in parentheses: (confidence: low/medium/high)
-- AI GENERATION: Generate airport access, accommodation, and drinking water quality information based on your knowledge of the destination
-- Example format for country queries: "## Quick Intro\nBrief overview (confidence: high)\n\n## Main Attractions\n- Attraction 1\n- Attraction 2 (confidence: medium)\n\n## Airport Access\nAirport information (confidence: high)\n\n## Accommodation\nHotel prices (confidence: medium)\n\n## Drinking Water Quality\nWater safety info (confidence: high)\n\n## Weather and Climate\nCurrent weather info and best times to visit (confidence: high)"
-- Example format for city queries: "## Quick Intro\nBrief overview (confidence: high)\n\n## Main Attractions\n- Attraction 1\n- Attraction 2 (confidence: medium)\n\n## Airport Access\nAirport information (confidence: high)\n\n## Accommodation\nHotel prices (confidence: medium)\n\n## Drinking Water Quality\nWater safety info (confidence: high)\n\n## Weather and Climate\nCurrent weather info and best times to visit (confidence: high)"
+- AI GENERATION: Generate airport access, accommodation, drinking water quality, and safety information based on your knowledge of the destination
+- NAVIGATION LINKS: Only add navigation links for Weather and Climate sections in this format: [View detailed {section} information →] where {section} can be "climate"
+- Example format for country queries: "## Quick Intro\nBrief 1-2 sentence overview including population information (confidence: high)\n\n## Main Attractions\n- Attraction 1\n- Attraction 2\n- Attraction 3 (confidence: medium)\n\n## Airport Access\n1-2 sentences about airport access (confidence: high)\n\n## Accommodation\n1-2 sentences about accommodation options (confidence: medium)\n\n## Drinking Water Quality\n1-2 sentences about water safety (confidence: high)\n\n## Safety Overview\n1-2 sentences about safety (confidence: high)\n\n## Health & Vaccinations\nSpecific recommended vaccinations for the destination (e.g., Hepatitis A, Typhoid, Yellow Fever for certain regions). IMPORTANT: Check the latest vaccination requirements online before traveling. (confidence: high)\n\n## Weather and Climate\nCurrent conditions: One sentence. 16-day forecast insights: One sentence. Air quality: One sentence. Best travel times: One sentence. (confidence: high)\n[View detailed climate information →]"
+- Example format for city queries: "## Quick Intro\nBrief 1-2 sentence overview including population information (confidence: high)\n\n## Main Attractions\n- Attraction 1\n- Attraction 2\n- Attraction 3 (confidence: medium)\n\n## Airport Access\n1-2 sentences about airport access (confidence: high)\n\n## Accommodation\n1-2 sentences about accommodation options (confidence: medium)\n\n## Drinking Water Quality\n1-2 sentences about water safety (confidence: high)\n\n## Safety Overview\n1-2 sentences about safety (confidence: high)\n\n## Health & Vaccinations\nSpecific recommended vaccinations for the destination (e.g., Hepatitis A, Typhoid, Yellow Fever for certain regions). IMPORTANT: Check the latest vaccination requirements online before traveling. (confidence: high)\n\n## Weather and Climate\nCurrent conditions: One sentence. 16-day forecast insights: One sentence. Air quality: One sentence. Best travel times: One sentence. (confidence: high)\n[View detailed climate information →]"
 - If comparing two locations, highlight key differences for tourists
 - Focus on what makes each destination special and worth visiting
 - IMPORTANT: For city queries, focus on city-specific information and avoid mentioning national-level statistics (like population, GDP, life expectancy, HDI) or any natural disaster risks in your summary. For city queries, do NOT include a Risks section at all - end your summary after the Weather and Climate section`
   };
 
   // Prepare the user message with data
-  let userContent = `Please create a comprehensive travel guide for ${destination} based on the following data. IMPORTANT: Do not use ** for bold formatting anywhere in your response. Use only headlines (# and ##) and simple bullet points (-). CRITICAL: ALWAYS include: Quick Intro, Main Attractions, Airport Access, Accommodation, and Drinking Water Quality (all AI generated). CONDITIONALLY include: Weather and Climate (only if weather data available). Do NOT include a Risks section. CONFIDENCE LEVELS: Add confidence levels (low/medium/high) at the end of each section in parentheses.
+  let userContent = `Please create a concise travel guide for ${destination} based on the following data. IMPORTANT: Do not use ** for bold formatting anywhere in your response. Use only headlines (# and ##) and simple bullet points (-). CRITICAL: ALWAYS include: Quick Intro, Main Attractions, Airport Access, Accommodation, Drinking Water Quality, Safety Overview, and Health & Vaccinations (all AI generated). CONDITIONALLY include: Weather and Climate (only if weather data available). Do NOT include a Risks section. CONFIDENCE LEVELS: Add confidence levels (low/medium/high) at the end of each section in parentheses. NAVIGATION LINKS: Only add [View detailed {section} information →] links for Weather and Climate sections. Do NOT add navigation links for Main Attractions, Airport Access, Accommodation, Drinking Water Quality, Safety Overview, or Health & Vaccinations sections. CONCISENESS: Keep each section to 1-2 sentences maximum, except Main Attractions which should be a bullet list. HEALTH REQUIREMENTS: Provide specific recommended vaccinations for the destination (e.g., Hepatitis A, Typhoid, Yellow Fever for certain regions) followed by "IMPORTANT: Check the latest vaccination requirements online before traveling." WEATHER INSIGHTS: Include specific insights about the next 16 days in the Weather and Climate section. QUICK INTRO REQUIREMENT: The Quick Intro section MUST include population information from the provided data. For city queries, use the City Population if available, otherwise use Country Population. Always specify whether it's city or country population in your description.
 
 DATA LIMITATION WARNING: If the provided data does not contain sufficient information about the specific city (e.g., if Wikipedia data is missing or refers to a different city), you must clearly state this limitation and only provide information that is directly supported by the provided data. Do not use external knowledge to fill in missing information.
 
 DESTINATION DATA:
 - Country: ${supabaseData.country}
 - Overall Safety Level: ${supabaseData.risk_class}
-- Population: ${supabaseData.population_mio} million
+- Global Peace Rank: ${supabaseData.global_peace_rank} (higher = more peaceful)
+- Global Risk Rank: ${supabaseData.global_rank} (higher = safer)
+- Country Population: ${supabaseData.population_mio} million${cityPopulationData ? `
+- City Population: ${cityPopulationData.populationText}` : ''}
 - Life Expectancy: ${supabaseData.life_expectancy} years
 - GDP per Capita: $${supabaseData.gdp_per_capita_usd}
 - Human Development Index: ${supabaseData.human_dev_index}
 - Fun Fact: ${supabaseData.fun_fact?.replace(/^"|"$/g, '') || 'No fun fact available'}
+
+${citySafetyData ? `CITY-SPECIFIC SAFETY DATA:
+- Safety Level: ${citySafetyData.safetyLevel}
+- Safety Information: ${citySafetyData.safetyInfo}` : ''}
 
 DATA AVAILABILITY INDICATORS:
 - Airport Access Data: AI GENERATED (based on destination knowledge)
@@ -105,13 +119,13 @@ REAL-TIME WEATHER DATA:
 - Next 24 Hours Precipitation: ${weatherData.forecast.next_24h.total_precipitation}mm
 
 16-DAY WEATHER FORECAST:
-${weatherData.forecast.next_16_days.slice(0, 7).map((day, index) => {
+${weatherData.forecast.next_16_days.slice(0, 7).map((day: any, index: number) => {
   const date = new Date(day.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
   return `- ${date}: ${day.min_temp}°C to ${day.max_temp}°C, ${day.precipitation}mm rain, ${day.weather_description}`;
 }).join('\n')}
 
 EXTENDED FORECAST (Days 8-16):
-${weatherData.forecast.next_16_days.slice(7, 16).map((day, index) => {
+${weatherData.forecast.next_16_days.slice(7, 16).map((day: any, index: number) => {
   const date = new Date(day.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
   return `- ${date}: ${day.min_temp}°C to ${day.max_temp}°C, ${day.precipitation}mm rain, ${day.weather_description}`;
 }).join('\n')}`;
@@ -216,13 +230,13 @@ SECOND LOCATION REAL-TIME WEATHER DATA:
 - Next 24 Hours Precipitation: ${secondWeatherData.forecast.next_24h.total_precipitation}mm
 
 SECOND LOCATION 16-DAY WEATHER FORECAST:
-${secondWeatherData.forecast.next_16_days.slice(0, 7).map((day, index) => {
+${secondWeatherData.forecast.next_16_days.slice(0, 7).map((day: any, index: number) => {
   const date = new Date(day.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
   return `- ${date}: ${day.min_temp}°C to ${day.max_temp}°C, ${day.precipitation}mm rain, ${day.weather_description}`;
 }).join('\n')}
 
 SECOND LOCATION EXTENDED FORECAST (Days 8-16):
-${secondWeatherData.forecast.next_16_days.slice(7, 16).map((day, index) => {
+${secondWeatherData.forecast.next_16_days.slice(7, 16).map((day: any, index: number) => {
   const date = new Date(day.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
   return `- ${date}: ${day.min_temp}°C to ${day.max_temp}°C, ${day.precipitation}mm rain, ${day.weather_description}`;
 }).join('\n')}`;
@@ -265,7 +279,7 @@ SECOND LOCATION WEATHER DATA: No real-time weather data available for this locat
       body: JSON.stringify({
         model: 'gpt-3.5-turbo',
         messages: [systemMessage, userMessage],
-        max_tokens: 500,
+        max_tokens: 600,
         temperature: 0.7,
       }),
     });
@@ -584,6 +598,137 @@ IMPORTANT:
     return {
       population: 0,
       populationText: 'N/A'
+    };
+  }
+}
+
+// Generate GDP per capita data for a country
+export async function generateGDPData(countryName: string): Promise<{ gdp: number; gdpText: string }> {
+  const apiKey = process.env.OPENAI_API_KEY;
+  
+  if (!apiKey) {
+    throw new Error('OpenAI API key not found');
+  }
+
+  const systemMessage: ChatGPTMessage = {
+    role: 'system',
+    content: `You are a data extraction assistant. Extract the most recent GDP per capita (PPP) in USD for the given country. Return ONLY a JSON object with the exact format: {"gdp": number, "gdpText": "formatted string"}. Use the most recent data available (2023-2024). The gdp should be a number in USD, and gdpText should be a formatted string like "$45,000" or "$1,200".`
+  };
+
+  const userMessage: ChatGPTMessage = {
+    role: 'user',
+    content: `Extract GDP per capita (PPP) in USD for: ${countryName}`
+  };
+
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-3.5-turbo',
+        messages: [systemMessage, userMessage],
+        temperature: 0.1,
+        max_tokens: 100
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`OpenAI API error: ${response.status} - ${errorData.error?.message || 'Unknown error'}`);
+    }
+
+    const data: ChatGPTResponse = await response.json();
+    const content = data.choices[0]?.message?.content;
+    
+    if (!content) {
+      throw new Error('No response from ChatGPT');
+    }
+
+    const parsed = JSON.parse(content);
+    if (typeof parsed.gdp !== 'number' || typeof parsed.gdpText !== 'string') {
+      throw new Error('Invalid JSON response from ChatGPT');
+    }
+
+    return parsed;
+  } catch (error) {
+    console.error('ChatGPT GDP generation error:', error);
+    return {
+      gdp: 0,
+      gdpText: 'N/A'
+    };
+  }
+}
+
+// Generate city-specific safety information
+export async function generateCitySafetyInfo(cityName: string, countryName: string): Promise<{ safetyInfo: string; safetyLevel: string }> {
+  const apiKey = process.env.OPENAI_API_KEY;
+  
+  if (!apiKey) {
+    throw new Error('OpenAI API key not found');
+  }
+
+  const systemMessage: ChatGPTMessage = {
+    role: 'system',
+    content: `You are a travel safety expert who provides accurate, city-specific safety information. Return ONLY a JSON object with the exact format: {"safetyInfo": "string", "safetyLevel": "string"}. 
+
+The safetyInfo should be 1-2 sentences about city-specific safety conditions, including:
+- Crime rates and types of crime to be aware of
+- Safe and unsafe areas within the city
+- Transportation safety
+- Tourist-specific safety concerns
+- Any recent safety trends or changes
+
+The safetyLevel should be one of: "Very Safe", "Safe", "Moderately Safe", "Caution Advised", "High Risk"
+
+Use current, factual information based on recent data and trends.`
+  };
+
+  const userMessage: ChatGPTMessage = {
+    role: 'user',
+    content: `Provide city-specific safety information for ${cityName}, ${countryName}. Focus on practical safety advice for tourists and travelers.`
+  };
+
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-3.5-turbo',
+        messages: [systemMessage, userMessage],
+        temperature: 0.1,
+        max_tokens: 200
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`OpenAI API error: ${response.status} - ${errorData.error?.message || 'Unknown error'}`);
+    }
+
+    const data: ChatGPTResponse = await response.json();
+    const content = data.choices[0]?.message?.content;
+    
+    if (!content) {
+      throw new Error('No response from ChatGPT');
+    }
+
+    const parsed = JSON.parse(content);
+    if (typeof parsed.safetyInfo !== 'string' || typeof parsed.safetyLevel !== 'string') {
+      throw new Error('Invalid JSON response from ChatGPT');
+    }
+
+    return parsed;
+  } catch (error) {
+    console.error('ChatGPT city safety generation error:', error);
+    return {
+      safetyInfo: 'Safety information not available for this city.',
+      safetyLevel: 'Unknown'
     };
   }
 }

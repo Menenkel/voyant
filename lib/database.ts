@@ -26,6 +26,7 @@ export interface CountryData {
   fun_fact: string;
   languages?: string;
   currency?: string;
+  gdpData?: { gdp: number; gdpText: string };
 }
 
 export interface ComparisonData {
@@ -378,7 +379,7 @@ export async function getCountriesWithSimilarRankings(
 }
 
 // Convert Supabase data to the format expected by your app
-export function transformCountryData(countryData: CountryData, cityCoordinates?: { lat: number; lng: number; cityName?: string }, originalDestination?: string, languagesAndCurrency?: { languages: string; currency: string } | null, cityPopulationData?: { population: number; populationText: string } | null) {
+export function transformCountryData(countryData: CountryData, cityCoordinates?: { lat: number; lng: number; cityName?: string }, originalDestination?: string, languagesAndCurrency?: { languages: string; currency: string } | null, cityPopulationData?: { population: number; populationText: string } | null, gdpData?: { gdp: number; gdpText: string } | null, citySafetyData?: { safetyInfo: string; safetyLevel: string } | null) {
   // Generate realistic fake weather data
   const weatherConditions = ['Sunny', 'Partly Cloudy', 'Cloudy', 'Rainy', 'Stormy'];
   const precipitationLevels = ['Low', 'Moderate', 'High'];
@@ -421,6 +422,7 @@ export function transformCountryData(countryData: CountryData, cityCoordinates?:
     fun_fact: countryData.fun_fact?.replace(/^"|"$/g, '') || 'No fun fact available',
     coordinates: cityCoordinates,
     cityPopulation: cityPopulationData,
+    citySafety: citySafetyData,
     // Supabase data
     supabaseData: {
       country: countryData.country,
@@ -441,7 +443,8 @@ export function transformCountryData(countryData: CountryData, cityCoordinates?:
       projected_conflict: countryData.projected_conflict,
       current_conflict: countryData.current_conflict,
       life_expectancy: countryData.life_expectancy,
-      gdp_per_capita_usd: countryData.gdp_per_capita_usd,
+      gdp_per_capita_usd: gdpData?.gdp || countryData.gdp_per_capita_usd,
+      gdp_text: gdpData?.gdpText || `$${countryData.gdp_per_capita_usd?.toLocaleString()}`,
       human_dev_index: countryData.human_dev_index,
       fun_fact: countryData.fun_fact?.replace(/^"|"$/g, '') || 'No fun fact available',
       area_km2: areaData?.area_km2,

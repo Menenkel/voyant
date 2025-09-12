@@ -8,13 +8,13 @@ export default function Home() {
       <Hero />
       
       {/* Search Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
         <DestinationSearch />
       </div>
       
       {/* Pricing CTA Section */}
       <div className="bg-white border-t-2 border-black">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
             <h2 className="text-3xl font-bold text-black mb-4 animate-fade-in">
               Ready to Travel Smarter?
