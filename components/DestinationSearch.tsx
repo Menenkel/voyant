@@ -520,11 +520,15 @@ export default function DestinationSearchNew() {
                 <div className="text-xs text-gray-600">Country</div>
               </div>
               <div className="text-center p-3 bg-green-50 rounded-lg">
-                <div className="text-lg font-semibold text-green-600">{result.supabaseData?.population_mio}M</div>
-                <div className="text-xs text-gray-600">Country Population</div>
-                {result.cityPopulation && (
+                <div className="text-lg font-semibold text-green-600">
+                  {result.cityPopulation ? result.cityPopulation.populationText : `${result.supabaseData?.population_mio}M`}
+                </div>
+                <div className="text-xs text-gray-600">
+                  {result.cityPopulation ? 'City Population' : 'Country Population'}
+                </div>
+                {result.cityPopulation && result.supabaseData?.population_mio && (
                   <div className="text-xs text-gray-500 mt-1">
-                    City: {result.cityPopulation.populationText}
+                    Country: {result.supabaseData.population_mio}M
                   </div>
                 )}
               </div>
