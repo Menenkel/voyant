@@ -28,28 +28,22 @@ export default function Hero() {
 
   return (
     <div className="relative bg-white overflow-hidden min-h-[25vh] flex items-center justify-center">
-      {/* Animated background elements */}
-      <div className="absolute inset-0">
-        <div className="absolute top-0 left-1/4 w-72 h-72 bg-yellow-500/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-yellow-500/5 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-yellow-500/8 rounded-full blur-3xl animate-pulse delay-500"></div>
-      </div>
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-8">
         <div className="text-center">
           {/* Centered Logo */}
           <div className="mb-6 animate-fade-in flex justify-center">
-            <Logo className="text-4xl md:text-6xl" />
+            <Logo className="text-4xl md:text-6xl logo-gentle-float" />
           </div>
           
           {/* Tagline */}
-          <p className="text-lg md:text-xl text-gray-600 mb-6 animate-fade-in-delay">
+          <p className="text-lg md:text-xl text-gray-600 mb-6 animate-fade-in-delay tagline-shimmer">
             Discover, compare, and prepare — get travel risk ratings and live updates before you go.
           </p>
           
           {/* Cycling Questions */}
           <div className="text-base md:text-lg text-black max-w-4xl mx-auto animate-fade-in-delay-2 min-h-[1.5rem] flex items-center justify-center">
-            <span className="transition-all duration-500 ease-in-out">
+            <span className="transition-all duration-500 ease-in-out question-smooth-transition">
               {questions[currentQuestionIndex]}
             </span>
           </div>

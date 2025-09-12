@@ -25,13 +25,13 @@ export default function Home() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-fade-in-delay" style={{animationDelay: '0.2s'}}>
               <Link
                 href="/pricing"
-                className="bg-black text-white px-8 py-3 rounded-lg font-medium hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 focus:ring-offset-white transition-all duration-300 hover-lift hover-glow border-2 border-black"
+                className="bg-black text-white px-8 py-3 rounded-lg font-medium hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 focus:ring-offset-white transition-all duration-300 hover-lift hover-glow border-2 border-black button-micro-bounce"
               >
                 View Pricing Plans
               </Link>
               <Link
                 href="/features"
-                className="text-black hover:text-gray-600 px-8 py-3 font-medium transition-colors"
+                className="text-black hover:text-gray-600 px-8 py-3 font-medium transition-colors button-micro-bounce"
               >
                 Learn More →
               </Link>
