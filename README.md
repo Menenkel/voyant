@@ -52,10 +52,13 @@ VOYANT helps travelers make informed decisions by providing detailed risk assess
 - **Robust error handling**: Multiple safety checks prevent crashes and ensure stable rendering
 - **Satellite and Toner Lite view options**: Toggle between different map styles
 
-### ⚖️ **Destination Comparison**
-- Compare risk profiles between two locations
-- Side-by-side analysis of multiple destinations
-- Comprehensive comparison of all risk factors
+### ⚖️ **Enhanced Destination Comparison**
+- **Side-by-side analysis**: Compare risk profiles between two locations with equal height columns
+- **Dual spider charts**: Both columns show complete comparison data with different color schemes
+- **Consistent layout**: Fixed height issues and improved alignment for better visual comparison
+- **Comprehensive comparison**: All risk factors, weather data, and insights displayed consistently
+- **Improved daily forecast cards**: Equal heights and proper text wrapping for long weather descriptions
+- **Enhanced user experience**: Smooth transitions and professional layout design
 
 ### 🤖 **Globaltrot-Bot AI Travel Guide**
 - AI-powered travel summaries using ChatGPT integration with strict factual accuracy
@@ -82,19 +85,28 @@ VOYANT helps travelers make informed decisions by providing detailed risk assess
 - **Pop culture focus**: Enhanced ChatGPT prompts for fascinating, lesser-known city facts
 - **Wikipedia integration**: Improved data fetching for comprehensive pop culture information
 
-### 📰 **City-Specific News Integration (Latest Feature)**
-- **Multi-source RSS feed integration**: 15+ international news sources including BBC, CNN, NPR, Al Jazeera, DW News, France 24, and more
-- **Global coverage**: Works for cities worldwide, not just UK-focused content
+### 📰 **Enhanced City-Specific News Integration**
+- **Expanded RSS feed coverage**: 17+ international news sources including BBC, CNN, NPR, Al Jazeera, DW News, Reuters, AP News, and more
+- **Global coverage**: Works for cities worldwide with improved international news sources
 - **Intelligent city name matching**: Handles city names with countries (e.g., "London, United Kingdom" → matches "London")
 - **Enhanced city aliases**: Supports alternative names (NYC → New York, LA → Los Angeles, SF → San Francisco)
 - **Tourism-focused filtering**: Keywords for events, safety, transport, weather, festivals, concerts, hotels, restaurants
 - **Configurable time windows**: Default 72 hours (3 days), extendable to 168 hours (7 days) via API parameter
-- **Smart caching**: 6-hour TTL to reduce API calls and improve performance
-- **Relevance scoring**: Articles ranked by city mentions and tourism keyword matches with word boundary matching
-- **Collapsed by default**: Clean interface with expandable news sections
-- **Source attribution**: Each article shows its news source (BBC, Guardian, CNN, etc.)
-- **Error handling**: Graceful fallbacks for network issues or missing data
-- **Race condition prevention**: Robust component lifecycle management
+- **Improved caching strategy**: Reduced TTL from 6 hours to 1 hour for faster updates with forceRefresh option
+- **Advanced relevance scoring**: Word boundary matching and comprehensive publication exclusions to prevent false positives
+- **Collapsed by default**: Clean interface with expandable news sections and dynamic button text
+- **Source attribution**: Each article shows its news source (BBC, Guardian, CNN, Reuters, AP News, etc.)
+- **Enhanced error handling**: Graceful fallbacks for network issues, timeouts, and missing data
+- **Race condition prevention**: Robust component lifecycle management with AbortController
+- **Publication exclusions**: Prevents false matches from newspaper names (e.g., "Washington Post" for Washington, DC)
+
+### 🎯 **Latest UI/UX Improvements (December 2024)**
+- **Comparison view enhancements**: Fixed height consistency issues with flex layouts and proper alignment
+- **Dual spider chart support**: Both comparison columns now show complete risk data for both cities
+- **Daily forecast improvements**: Equal height cards with proper text wrapping for long weather descriptions
+- **Enhanced news system**: Added Reuters and AP News feeds with improved caching and filtering
+- **Better city disambiguation**: Improved ChatGPT prompts for Washington DC vs Washington state accuracy
+- **Professional layout**: Consistent spacing, alignment, and visual hierarchy throughout the application
 
 ## 🚀 Getting Started
 
