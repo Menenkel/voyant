@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { searchDestinations, getCountryByName, transformCountryData, getComparisonData, getCountriesWithSimilarRankings } from '@/lib/database';
 import { getWikipediaData, getWikipediaDataForCountry, getWikipediaContentForPopCulture } from '@/lib/wikipedia';
-import { generateSummary, generateCityFunFact } from '@/lib/chatgpt';
+import { generateSummary, generateCityFunFact, generateLanguagesAndCurrency } from '@/lib/chatgpt';
 import { getWeatherForCity, getWeatherForCoordinates, getWeatherDescription, getAirQualityDescription, getWindSpeedDescription, getPM10Description, getUVIndexDescription, getOzoneDescription, generateWeatherAlerts } from '@/lib/weather';
 
 export async function GET(request: NextRequest) {
@@ -67,7 +67,16 @@ export async function GET(request: NextRequest) {
         }
       }
       
-      const result = transformCountryData(countryData, cityCoordinates || undefined, destination);
+      // Get languages and currency from ChatGPT
+      let languagesAndCurrency = null;
+      try {
+        languagesAndCurrency = await generateLanguagesAndCurrency(countryData.country);
+        console.log(`Languages and currency fetched for ${countryData.country}:`, languagesAndCurrency);
+      } catch (error) {
+        console.error('ChatGPT languages/currency fetch error:', error);
+      }
+      
+      const result = transformCountryData(countryData, cityCoordinates || undefined, destination, languagesAndCurrency);
       const comparisonData = await getComparisonData(countryData);
       
       // Get countries with similar rankings for better context
@@ -80,7 +89,8 @@ export async function GET(request: NextRequest) {
       // Merge the similar rankings data with existing comparison data
       const enhancedComparisonData = {
         ...comparisonData,
-        ...similarRankings
+        ...similarRankings,
+        gdpSimilar: comparisonData.gdpSimilar || []
       };
       
       // Get Wikipedia data for summarization

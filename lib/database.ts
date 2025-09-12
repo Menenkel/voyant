@@ -24,6 +24,8 @@ export interface CountryData {
   gdp_per_capita_usd: number;
   human_dev_index: number;
   fun_fact: string;
+  languages?: string;
+  currency?: string;
 }
 
 export interface ComparisonData {
@@ -34,6 +36,7 @@ export interface ComparisonData {
   peaceRankBelow: { country: string; rank: number }[];
   globalRankSimilar: { country: string; rank: number }[];
   peaceRankSimilar: { country: string; rank: number }[];
+  gdpSimilar: { country: string; gdp: number }[];
 }
 
 export async function searchCountries(query: string): Promise<CountryData[]> {
@@ -273,7 +276,7 @@ export async function getCountriesWithSimilarRankings(
   try {
     const { data, error } = await supabase
       .from('Voyant2')
-      .select('country, global_rank, global_peace_rank, inform_index')
+      .select('country, global_rank, global_peace_rank, inform_index, gdp_per_capita_usd')
       .neq('country', currentCountry)
       .order('global_rank', { ascending: true });
 
@@ -285,7 +288,8 @@ export async function getCountriesWithSimilarRankings(
         peaceRankAbove: [],
         peaceRankBelow: [],
         globalRankSimilar: [],
-        peaceRankSimilar: []
+        peaceRankSimilar: [],
+        gdpSimilar: []
       };
     }
 
@@ -331,6 +335,23 @@ export async function getCountriesWithSimilarRankings(
       .slice(0, 2)
       .map(country => ({ country: country.country, rank: country.global_peace_rank }));
 
+    // Find countries with similar GDP per capita
+    const currentCountryData = data.find(c => c.country === currentCountry);
+    const currentGDP = currentCountryData?.gdp_per_capita_usd || 0;
+    const gdpSimilar = data
+      .filter(country => country.gdp_per_capita_usd > 0)
+      .map(country => ({
+        country: country.country,
+        gdp: country.gdp_per_capita_usd,
+        distance: Math.abs(country.gdp_per_capita_usd - currentGDP)
+      }))
+      .sort((a, b) => a.distance - b.distance)
+      .slice(0, 3)
+      .map(country => ({
+        country: country.country,
+        gdp: country.gdp
+      }));
+
     return {
       informSimilar,
       globalRankAbove,
@@ -338,7 +359,8 @@ export async function getCountriesWithSimilarRankings(
       peaceRankAbove,
       peaceRankBelow,
       globalRankSimilar,
-      peaceRankSimilar
+      peaceRankSimilar,
+      gdpSimilar
     };
   } catch (error) {
     console.error('Error getting similar rankings:', error);
@@ -349,13 +371,14 @@ export async function getCountriesWithSimilarRankings(
       peaceRankAbove: [],
       peaceRankBelow: [],
       globalRankSimilar: [],
-      peaceRankSimilar: []
+      peaceRankSimilar: [],
+      gdpSimilar: []
     };
   }
 }
 
 // Convert Supabase data to the format expected by your app
-export function transformCountryData(countryData: CountryData, cityCoordinates?: { lat: number; lng: number; cityName?: string }, originalDestination?: string) {
+export function transformCountryData(countryData: CountryData, cityCoordinates?: { lat: number; lng: number; cityName?: string }, originalDestination?: string, languagesAndCurrency?: { languages: string; currency: string } | null) {
   // Generate realistic fake weather data
   const weatherConditions = ['Sunny', 'Partly Cloudy', 'Cloudy', 'Rainy', 'Stormy'];
   const precipitationLevels = ['Low', 'Moderate', 'High'];
@@ -422,7 +445,9 @@ export function transformCountryData(countryData: CountryData, cityCoordinates?:
       fun_fact: countryData.fun_fact?.replace(/^"|"$/g, '') || 'No fun fact available',
       area_km2: areaData?.area_km2,
       area_sq_miles: areaData?.area_sq_miles,
-      similar_size_country: similarSizeCountry
+      similar_size_country: similarSizeCountry,
+      languages: languagesAndCurrency?.languages || 'N/A',
+      currency: languagesAndCurrency?.currency || 'N/A'
     },
     // Weather data
     weatherData: {
@@ -504,7 +529,10 @@ export async function getComparisonData(countryData: CountryData): Promise<Compa
         globalRankAbove: [],
         globalRankBelow: [],
         peaceRankAbove: [],
-        peaceRankBelow: []
+        peaceRankBelow: [],
+        globalRankSimilar: [],
+        peaceRankSimilar: [],
+        gdpSimilar: []
       };
     }
 
@@ -524,32 +552,32 @@ export async function getComparisonData(countryData: CountryData): Promise<Compa
       }));
 
     // Find countries above and below in global rank (closest available ranks)
-    const currentGlobalRank = parseInt(countryData.global_rank) || 0;
+    const currentGlobalRank = countryData.global_rank || 0;
     
     // Find countries with the closest rank below current (directly above)
     const globalRankAbove = allCountries
       .filter(country => {
-        const rank = parseInt(country.global_rank) || 0;
+        const rank = country.global_rank || 0;
         return rank < currentGlobalRank && rank > 0;
       })
-      .sort((a, b) => parseInt(b.global_rank) - parseInt(a.global_rank))
+      .sort((a, b) => (b.global_rank || 0) - (a.global_rank || 0))
       .slice(0, 1)
       .map(country => ({
         country: country.country,
-        rank: parseInt(country.global_rank)
+        rank: country.global_rank || 0
       }));
 
     // Find countries with the closest rank above current (directly below)
     const globalRankBelow = allCountries
       .filter(country => {
-        const rank = parseInt(country.global_rank) || 0;
+        const rank = country.global_rank || 0;
         return rank > currentGlobalRank && rank > 0;
       })
-      .sort((a, b) => parseInt(a.global_rank) - parseInt(b.global_rank))
+      .sort((a, b) => (a.global_rank || 0) - (b.global_rank || 0))
       .slice(0, 1)
       .map(country => ({
         country: country.country,
-        rank: parseInt(country.global_rank)
+        rank: country.global_rank || 0
       }));
 
     // Find countries above and below in peace rank (closest available ranks)
@@ -579,12 +607,30 @@ export async function getComparisonData(countryData: CountryData): Promise<Compa
         rank: country.global_peace_rank
       }));
 
+    // Find countries with similar GDP per capita
+    const gdpSimilar = allCountries
+      .filter(country => country.ISO3 !== countryData.ISO3 && country.gdp_per_capita_usd > 0)
+      .map(country => ({
+        country: country.country,
+        gdp: country.gdp_per_capita_usd,
+        distance: Math.abs(country.gdp_per_capita_usd - countryData.gdp_per_capita_usd)
+      }))
+      .sort((a, b) => a.distance - b.distance)
+      .slice(0, 3)
+      .map(country => ({
+        country: country.country,
+        gdp: country.gdp
+      }));
+
     return {
       informSimilar,
       globalRankAbove,
       globalRankBelow,
       peaceRankAbove,
-      peaceRankBelow
+      peaceRankBelow,
+      globalRankSimilar: [],
+      peaceRankSimilar: [],
+      gdpSimilar
     };
   } catch (error) {
     console.error('Error getting comparison data:', error);
@@ -593,7 +639,11 @@ export async function getComparisonData(countryData: CountryData): Promise<Compa
       globalRankAbove: [],
       globalRankBelow: [],
       peaceRankAbove: [],
-      peaceRankBelow: []
+      peaceRankBelow: [],
+      globalRankSimilar: [],
+      peaceRankSimilar: [],
+      gdpSimilar: []
     };
   }
 }
+

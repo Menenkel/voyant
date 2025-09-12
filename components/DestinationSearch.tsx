@@ -26,6 +26,7 @@ interface SearchResult {
     peaceRankBelow: { country: string; rank: number }[];
     globalRankSimilar: { country: string; rank: number }[];
     peaceRankSimilar: { country: string; rank: number }[];
+    gdpSimilar: { country: string; gdp: number }[];
   };
   supabaseData?: {
     country: string;
@@ -52,6 +53,8 @@ interface SearchResult {
     area_km2?: number;
     area_sq_miles?: number;
     similar_size_country?: string;
+    languages?: string;
+    currency?: string;
   };
   weatherData?: {
     location: string;
@@ -62,17 +65,8 @@ interface SearchResult {
   };
   seasonalClimate?: {
     period: string;
-    temperature: {
-      trend: string;
-      average: number;
-      min: number;
-      max: number;
-    };
-    precipitation: {
-      trend: string;
-      average: number;
-      days: number;
-    };
+    temperature: { trend: string; average: number; min: number; max: number };
+    precipitation: { trend: string; average: number; days: number };
   };
   waterQuality?: {
     safety_level: string;
@@ -86,7 +80,7 @@ interface SearchResult {
   weatherAlerts?: any;
 }
 
-export default function DestinationSearch() {
+export default function DestinationSearchNew() {
   const [searchQuery, setSearchQuery] = useState('');
   const [compareMode, setCompareMode] = useState(false);
   const [secondDestination, setSecondDestination] = useState('');
@@ -114,19 +108,20 @@ export default function DestinationSearch() {
     isCapital: boolean;
   }>>([]);
   const [showSecondSuggestions, setShowSecondSuggestions] = useState(false);
-  const [isGlobetrotBotExpanded, setIsGlobetrotBotExpanded] = useState(true);
-  const [isSecondGlobetrotBotExpanded, setIsSecondGlobetrotBotExpanded] = useState(true);
-  const [isCountryInfoExpanded, setIsCountryInfoExpanded] = useState(false);
-  const [isSecondCountryInfoExpanded, setIsSecondCountryInfoExpanded] = useState(false);
+  
+  // Tab-based navigation for organized information display
+  const [activeTab, setActiveTab] = useState('summary');
+  const [secondActiveTab, setSecondActiveTab] = useState('summary');
+  
   const [useImperialUnits, setUseImperialUnits] = useState(false);
 
   // Unit conversion functions
   const convertTemperature = (celsius: number): number => {
-    return useImperialUnits ? Math.round((celsius * 9/5 + 32) * 10) / 10 : Math.round(celsius * 10) / 10;
+    return useImperialUnits ? Math.round((celsius * 9/5) + 32) : Math.round(celsius);
   };
 
   const convertWindSpeed = (kmh: number): number => {
-    return useImperialUnits ? Math.round((kmh * 0.621371) * 10) / 10 : Math.round(kmh * 10) / 10;
+    return useImperialUnits ? Math.round(kmh * 0.621371) : Math.round(kmh);
   };
 
   const getTemperatureUnit = (): string => {
@@ -134,253 +129,56 @@ export default function DestinationSearch() {
   };
 
   const getWindSpeedUnit = (): string => {
-    return useImperialUnits ? 'mph' : 'km/h';
+    return useImperialUnits ? ' mph' : ' km/h';
   };
 
-  // Load search history from localStorage on component mount
-  useEffect(() => {
-    const savedHistory = localStorage.getItem('travelRiskSearchHistory');
-    if (savedHistory) {
-      try {
-        setSearchHistory(JSON.parse(savedHistory));
-      } catch (e) {
-        console.error('Failed to parse search history:', e);
-      }
-    }
-  }, []);
-
-
-
-  const saveToHistory = (destination: string) => {
-    const newHistory = [
-      { destination, timestamp: Date.now() },
-      ...searchHistory.filter(item => item.destination !== destination)
-    ].slice(0, 10);
-    
-    setSearchHistory(newHistory);
-    localStorage.setItem('travelRiskSearchHistory', JSON.stringify(newHistory));
+  const isCountrySearch = (result: SearchResult): boolean => {
+    return !result.coordinates || !result.coordinates.cityName;
   };
 
-  const handleSearch = async (query?: string) => {
-    const searchTerm = query || searchQuery;
-    
-    if (!searchTerm.trim()) {
-      return;
-    }
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) return;
 
     setIsSearching(true);
     setError('');
-    setResults(null);
-    setShowHistory(false);
-
+    
     try {
-      const response = await fetch(`/api/search?destination=${encodeURIComponent(searchTerm)}&t=${Date.now()}`, {
-        headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error('Search failed');
-      }
-      
+      const response = await fetch(`/api/search?destination=${encodeURIComponent(searchQuery)}&t=${Date.now()}`);
       const data = await response.json();
+      
+      if (data.error) {
+        setError(data.error);
+      } else {
       setResults(data);
-      saveToHistory(searchTerm.trim());
+        setSearchHistory(prev => [
+          { destination: searchQuery, timestamp: Date.now() },
+          ...prev.filter(h => h.destination !== searchQuery).slice(0, 9)
+        ]);
+      }
     } catch (err) {
-      console.error('Search error:', err);
-      setError('Failed to search destination. Please try again.');
+      setError('Failed to fetch data. Please try again.');
     } finally {
       setIsSearching(false);
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleSearch();
-    }
-  };
-
-  // City search suggestions
-  const searchCitySuggestions = async (query: string) => {
-    if (query.length < 2) {
-      setCitySuggestions([]);
-      setShowSuggestions(false);
-      return;
-    }
-
+  const handleSecondSearch = async () => {
+    if (!secondDestination.trim()) return;
+    
     try {
-      console.log('Fetching city suggestions for:', query);
-      const response = await fetch(`/api/city-search?q=${encodeURIComponent(query)}&limit=8`);
-      if (response.ok) {
+      const response = await fetch(`/api/search?destination=${encodeURIComponent(secondDestination)}&t=${Date.now()}`);
         const data = await response.json();
-        console.log('City suggestions received:', data.suggestions);
-        setCitySuggestions(data.suggestions || []);
-        setShowSuggestions(true);
-      }
-    } catch (error) {
-      console.error('City search error:', error);
-    }
-  };
-
-  const searchSecondCitySuggestions = async (query: string) => {
-    if (query.length < 2) {
-      setSecondCitySuggestions([]);
-      setShowSecondSuggestions(false);
-      return;
-    }
-
-    try {
-      console.log('Fetching second city suggestions for:', query);
-      const response = await fetch(`/api/city-search?q=${encodeURIComponent(query)}&limit=8`);
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Second city suggestions received:', data.suggestions);
-        setSecondCitySuggestions(data.suggestions || []);
-        setShowSecondSuggestions(true);
-      }
-    } catch (error) {
-      console.error('Second city search error:', error);
-    }
-  };
-
-  // Handle input change
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setSearchQuery(value);
-  };
-
-  const handleSecondInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setSecondDestination(value);
-  };
-
-  // Debounced city search effect
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (searchQuery.length >= 2) {
-        searchCitySuggestions(searchQuery);
-      } else {
-        setCitySuggestions([]);
-        setShowSuggestions(false);
-      }
-    }, 300);
-
-    return () => clearTimeout(timeoutId);
-  }, [searchQuery]);
-
-  // Debounced city search effect for second destination
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (secondDestination.length >= 2) {
-        searchSecondCitySuggestions(secondDestination);
-      } else {
-        setSecondCitySuggestions([]);
-        setShowSecondSuggestions(false);
-      }
-    }, 300);
-
-    return () => clearTimeout(timeoutId);
-  }, [secondDestination]);
-
-  // Handle city suggestion selection
-  const handleCitySelect = (suggestion: any) => {
-    setSearchQuery(suggestion.display);
-    setShowSuggestions(false);
-    setCitySuggestions([]);
-    handleSearch(suggestion.display);
-  };
-
-  const handleSecondCitySelect = (suggestion: any) => {
-    setSecondDestination(suggestion.display);
-    setShowSecondSuggestions(false);
-    setSecondCitySuggestions([]);
-    handleSecondSearch(suggestion.display);
-  };
-
-  const handleHistoryClick = (destination: string) => {
-    setSearchQuery(destination);
-    handleSearch(destination);
-  };
-
-  const clearHistory = () => {
-    setSearchHistory([]);
-    localStorage.removeItem('travelRiskSearchHistory');
-  };
-
-  // Handle country selection from map
-  const handleCountrySelect = (countryName: string) => {
-    setSearchQuery(countryName);
-    handleSearch(countryName);
-  };
-
-  // Handle second destination search
-  const handleSecondSearch = async (query?: string) => {
-    const searchTerm = query || secondDestination;
-    if (!searchTerm.trim()) return;
-
-    setIsSearching(true);
-    setError('');
-
-    try {
-      const response = await fetch(`/api/search?destination=${encodeURIComponent(searchTerm)}&t=${Date.now()}`, {
-        headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
-        }
-      });
-      if (!response.ok) {
-        throw new Error('Search failed');
-      }
-      const data = await response.json();
-      setSecondResults(data);
-      saveToHistory(searchTerm.trim());
       
-      // Generate comparison summary if we have both results
-      if (results && data) {
-        try {
-          const comparisonResponse = await fetch('/api/compare', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              firstDestination: results.destination,
-              secondDestination: data.destination
-            })
-          });
-          
-          if (comparisonResponse.ok) {
-            const comparisonData = await comparisonResponse.json();
-          }
-        } catch (error) {
-          console.error('Comparison summary error:', error);
-        }
+      if (data.error) {
+        setError(data.error);
+      } else {
+        setSecondResults(data);
       }
     } catch (err) {
-      setError('Failed to search second destination. Please try again.');
-      console.error('Search error:', err);
-    } finally {
-      setIsSearching(false);
+      setError('Failed to fetch second destination data. Please try again.');
     }
   };
 
-  // Color coding for hazard values
-  const getHazardColor = (value: number | undefined) => {
-    if (value === undefined || value === null) return 'bg-gray-700';
-    if (value <= 3) return 'bg-green-600/20 border border-green-500/30';
-    if (value <= 6) return 'bg-orange-600/20 border border-orange-500/30';
-    return 'bg-red-600/20 border border-red-500/30';
-  };
-
-  // Helper function to determine if search is for a country or city
-  const isCountrySearch = (result: SearchResult | null) => {
-    return result?.coordinates === undefined || result?.coordinates === null;
-  };
-
-  // Toggle comparison mode
   const toggleCompareMode = () => {
     setCompareMode(!compareMode);
     if (compareMode) {
@@ -389,9 +187,380 @@ export default function DestinationSearch() {
     }
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    
+    if (value.length > 2) {
+      fetchCitySuggestions(value);
+      } else {
+        setCitySuggestions([]);
+        setShowSuggestions(false);
+      }
+  };
+
+  const handleSecondInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSecondDestination(value);
+    
+    if (value.length > 2) {
+      fetchSecondCitySuggestions(value);
+      } else {
+        setSecondCitySuggestions([]);
+        setShowSecondSuggestions(false);
+      }
+  };
+
+  const fetchCitySuggestions = async (query: string) => {
+    try {
+      const response = await fetch(`/api/city-search?q=${encodeURIComponent(query)}&limit=8`);
+      const data = await response.json();
+      setCitySuggestions(data.suggestions || []);
+      setShowSuggestions(true);
+    } catch (err) {
+      console.error('Failed to fetch city suggestions:', err);
+    }
+  };
+
+  const fetchSecondCitySuggestions = async (query: string) => {
+    try {
+      const response = await fetch(`/api/city-search?q=${encodeURIComponent(query)}&limit=8`);
+      const data = await response.json();
+      setSecondCitySuggestions(data.suggestions || []);
+      setShowSecondSuggestions(true);
+    } catch (err) {
+      console.error('Failed to fetch city suggestions:', err);
+    }
+  };
+
+  const handleCitySelect = (suggestion: any) => {
+    setSearchQuery(suggestion.display);
+    setCitySuggestions([]);
+    setShowSuggestions(false);
+  };
+
+  const handleSecondCitySelect = (suggestion: any) => {
+    setSecondDestination(suggestion.display);
+    setSecondCitySuggestions([]);
+    setShowSecondSuggestions(false);
+  };
+
+  const handleHistorySelect = (destination: string) => {
+    setSearchQuery(destination);
+    setShowHistory(false);
+  };
+
+  const TabContent = ({ result, tabId, setTabId }: { result: SearchResult; tabId: string; setTabId: (tab: string) => void }) => (
+    <div className="bg-white rounded-lg border-2 border-gray-200 shadow-sm">
+      {/* Tab Navigation */}
+      <div className="flex border-b border-gray-200">
+        {[
+          { id: 'summary', label: '30 Second Summary', color: 'blue' },
+          { id: 'stats', label: 'Quick Stats', color: 'green' },
+          { id: 'weather', label: 'Weather', color: 'sky' },
+          { id: 'airquality', label: 'Air Quality', color: 'teal' },
+          { id: 'safety', label: 'Safety', color: 'red' },
+          { id: 'funfact', label: 'Good to know?', color: 'amber' },
+          { id: 'news', label: 'News', color: 'purple' }
+        ].map((tab) => {
+          const isActive = tabId === tab.id;
+          const colorClasses = {
+            blue: isActive ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50' : 'text-blue-600 hover:text-blue-800 hover:bg-blue-50',
+            green: isActive ? 'text-green-600 border-b-2 border-green-600 bg-green-50' : 'text-green-600 hover:text-green-800 hover:bg-green-50',
+            sky: isActive ? 'text-sky-600 border-b-2 border-sky-600 bg-sky-50' : 'text-sky-600 hover:text-sky-800 hover:bg-sky-50',
+            teal: isActive ? 'text-teal-600 border-b-2 border-teal-600 bg-teal-50' : 'text-teal-600 hover:text-teal-800 hover:bg-teal-50',
+            red: isActive ? 'text-red-600 border-b-2 border-red-600 bg-red-50' : 'text-red-600 hover:text-red-800 hover:bg-red-50',
+            amber: isActive ? 'text-amber-600 border-b-2 border-amber-600 bg-amber-50' : 'text-amber-600 hover:text-amber-800 hover:bg-amber-50',
+            purple: isActive ? 'text-purple-600 border-b-2 border-purple-600 bg-purple-50' : 'text-purple-600 hover:text-purple-800 hover:bg-purple-50'
+          };
+          
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setTabId(tab.id)}
+              className={`flex-1 px-4 py-3 text-sm font-medium transition-colors duration-200 ${colorClasses[tab.color as keyof typeof colorClasses]}`}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Tab Content */}
+      <div className="p-6">
+        {tabId === 'summary' && (
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">30 Second Summary</h3>
+            
+            {/* Summary */}
+            {result.chatgptSummary && (
+              <div className="p-6 bg-gradient-to-r from-blue-50 to-green-50 rounded-lg border border-blue-200">
+                <div className="text-black leading-relaxed whitespace-pre-line">
+                  {result.chatgptSummary.split('\n').map((line, index) => {
+                    const cleanLine = line.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1');
+                    
+                    if (cleanLine.startsWith('# ')) {
+                      return <h1 key={index} className="text-xl font-bold text-blue-600 mb-3 mt-4">{cleanLine.substring(2)}</h1>;
+                    } else if (cleanLine.startsWith('## ')) {
+                      return <h2 key={index} className="text-lg font-semibold text-blue-500 mb-2 mt-3">{cleanLine.substring(3)}</h2>;
+                    } else if (cleanLine.startsWith('- ')) {
+                      return <div key={index} className="ml-4 mb-1 text-black">• {cleanLine.substring(2)}</div>;
+                    } else if (cleanLine.trim() === '') {
+                      return <br key={index} />;
+                    } else {
+                      return <p key={index} className="mb-2 text-black">{cleanLine}</p>;
+                    }
+                  })}
+                </div>
+              </div>
+            )}
+            {!result.chatgptSummary && (
+              <div className="text-center py-8 text-gray-500">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-2xl">🤖</span>
+                </div>
+                <p>AI summary not available for this destination</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {tabId === 'stats' && (
+          <div className="space-y-6">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Quick Stats</h3>
+            
+            {/* Primary Stats */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="text-center p-3 bg-blue-50 rounded-lg">
+                <div className="text-lg font-semibold text-blue-600">{result.supabaseData?.country}</div>
+                <div className="text-xs text-gray-600">Country</div>
+              </div>
+              <div className="text-center p-3 bg-green-50 rounded-lg">
+                <div className="text-lg font-semibold text-green-600">{result.supabaseData?.population_mio}M</div>
+                <div className="text-xs text-gray-600">Population</div>
+              </div>
+              <div className="text-center p-3 bg-orange-50 rounded-lg">
+                <div className="text-lg font-semibold text-orange-600">{result.supabaseData?.area_km2?.toLocaleString()} km²</div>
+                <div className="text-xs text-gray-600">Country Size</div>
+                {result.supabaseData?.similar_size_country && (
+                  <div className="text-xs text-gray-500 mt-1">
+                    Similar: {result.supabaseData.similar_size_country}
+                  </div>
+                )}
+              </div>
+              <div className="text-center p-3 bg-purple-50 rounded-lg">
+                <div className="text-lg font-semibold text-purple-600">${result.supabaseData?.gdp_per_capita_usd?.toLocaleString()}</div>
+                <div className="text-xs text-gray-600">GDP Per Capita</div>
+                {result.comparisonData?.gdpSimilar && result.comparisonData.gdpSimilar.length > 0 && (
+                  <div className="text-xs text-gray-500 mt-1">
+                    Similar: {result.comparisonData.gdpSimilar[0]?.country}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Additional Stats */}
+            {result.supabaseData && (
+              <div>
+                <h4 className="text-md font-semibold text-gray-700 mb-3">Additional Information</h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="text-center p-3 bg-gray-50 rounded-lg">
+                    <div className="text-lg font-semibold text-gray-600">{result.supabaseData.life_expectancy} years</div>
+                    <div className="text-xs text-gray-600">Life Expectancy</div>
+                  </div>
+                  <div className="text-center p-3 bg-gray-50 rounded-lg">
+                    <div className="text-lg font-semibold text-gray-600">{result.supabaseData.population_electricity}%</div>
+                    <div className="text-xs text-gray-600">Electricity Access</div>
+                  </div>
+                  <div className="text-center p-3 bg-gray-50 rounded-lg">
+                    <div className="text-lg font-semibold text-gray-600">{result.supabaseData.languages || 'N/A'}</div>
+                    <div className="text-xs text-gray-600">Spoken Languages</div>
+                  </div>
+                  <div className="text-center p-3 bg-gray-50 rounded-lg">
+                    <div className="text-lg font-semibold text-gray-600">{result.supabaseData.currency || 'N/A'}</div>
+                    <div className="text-xs text-gray-600">Currency</div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {tabId === 'weather' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-800">Weather & Climate</h3>
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-gray-600">Units:</span>
+                <button
+                  onClick={() => setUseImperialUnits(!useImperialUnits)}
+                  className={`px-3 py-1 rounded-md text-sm font-medium transition-all duration-200 ${
+                    useImperialUnits 
+                      ? 'bg-blue-500 text-white' 
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {useImperialUnits ? '°F / mph' : '°C / km/h'}
+                </button>
+              </div>
+            </div>
+            {result.realWeatherData ? (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="text-center p-3 bg-blue-50 rounded-lg">
+                    <div className="text-lg font-semibold text-blue-600">{convertTemperature(result.realWeatherData.current.temperature)}{getTemperatureUnit()}</div>
+                    <div className="text-xs text-gray-600">Current</div>
+                  </div>
+                  <div className="text-center p-3 bg-green-50 rounded-lg">
+                    <div className="text-lg font-semibold text-green-600">{result.realWeatherData.current.precipitation}mm</div>
+                    <div className="text-xs text-gray-600">Precipitation</div>
+                  </div>
+                  <div className="text-center p-3 bg-orange-50 rounded-lg">
+                    <div className="text-lg font-semibold text-orange-600">{convertWindSpeed(result.realWeatherData.current.wind_speed)}{getWindSpeedUnit()}</div>
+                    <div className="text-xs text-gray-600">Wind</div>
+                  </div>
+                  <div className="text-center p-3 bg-purple-50 rounded-lg">
+                    <div className="text-lg font-semibold text-purple-600">{result.realWeatherData.current.relative_humidity}%</div>
+                    <div className="text-xs text-gray-600">Humidity</div>
+                  </div>
+                </div>
+                <WeatherChart 
+                  forecast={result.realWeatherData.forecast?.next_16_days} 
+                  location={result.realWeatherData.location}
+                  useImperialUnits={useImperialUnits} 
+                />
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">Weather data not available</div>
+            )}
+          </div>
+        )}
+
+        {tabId === 'airquality' && (
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Air Quality</h3>
+            {result.realWeatherData?.air_quality ? (
+              <AirQuality airQuality={result.realWeatherData.air_quality} title="" />
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-2xl">🌬️</span>
+                </div>
+                <p>Air quality data not available</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {tabId === 'safety' && (
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Safety & Risk Assessment</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="text-center p-4 bg-red-50 rounded-lg">
+                <div className="text-lg font-semibold text-red-600">{result.supabaseData?.risk_class}</div>
+                <div className="text-xs text-gray-600 mb-2">Risk Class</div>
+                <div className="text-xs text-gray-700">
+                  {result.supabaseData?.risk_class === 'Very Low' && 'Very safe, stable place.'}
+                  {result.supabaseData?.risk_class === 'Low' && 'Mostly safe, some minor risks.'}
+                  {result.supabaseData?.risk_class === 'Medium' && 'Some safety or disaster concerns — be prepared.'}
+                  {result.supabaseData?.risk_class === 'High' && 'Big risks from disasters or instability — caution needed.'}
+                  {result.supabaseData?.risk_class === 'Very High' && 'Very unsafe, serious disaster or conflict risks — avoid travel.'}
+                </div>
+              </div>
+              <div className="text-center p-3 bg-yellow-50 rounded-lg">
+                <div className="text-lg font-semibold text-yellow-600">#{result.supabaseData?.global_rank}</div>
+                <div className="text-xs text-gray-600">Risk Rank</div>
+                <div className="text-xs text-gray-500 mt-1">Higher = Safer</div>
+                {result.comparisonData?.globalRankSimilar && result.comparisonData.globalRankSimilar.length > 0 && (
+                  <div className="text-xs text-gray-500 mt-1">
+                    Similar: {result.comparisonData.globalRankSimilar[0]?.country}
+                  </div>
+                )}
+              </div>
+              <div className="text-center p-3 bg-green-50 rounded-lg">
+                <div className="text-lg font-semibold text-green-600">#{result.supabaseData?.global_peace_rank}</div>
+                <div className="text-xs text-gray-600">Peace Rank</div>
+                <div className="text-xs text-gray-500 mt-1">Higher = More Peaceful</div>
+                {result.comparisonData?.peaceRankSimilar && result.comparisonData.peaceRankSimilar.length > 0 && (
+                  <div className="text-xs text-gray-500 mt-1">
+                    Similar: {result.comparisonData.peaceRankSimilar[0]?.country}
+                  </div>
+                )}
+              </div>
+            </div>
+            {result.supabaseData && (
+              <div>
+                <h4 className="text-md font-semibold text-gray-700 mb-3">Natural Hazards</h4>
+                <RiskRadarChart
+                  hazardIndicators={{
+                    earthquake: result.supabaseData.earthquake,
+                    river_flood: result.supabaseData.river_flood,
+                    tsunami: result.supabaseData.tsunami,
+                    tropical_storm: result.supabaseData.tropical_storm,
+                    coastal_flood: result.supabaseData.coastal_flood,
+                    drought: result.supabaseData.drought,
+                    epidemic: result.supabaseData.epidemic,
+                    projected_conflict: result.supabaseData.projected_conflict,
+                    current_conflict: result.supabaseData.current_conflict
+                  }}
+                  secondHazardIndicators={compareMode && secondResults?.supabaseData ? {
+                    earthquake: secondResults.supabaseData.earthquake,
+                    river_flood: secondResults.supabaseData.river_flood,
+                    tsunami: secondResults.supabaseData.tsunami,
+                    tropical_storm: secondResults.supabaseData.tropical_storm,
+                    coastal_flood: secondResults.supabaseData.coastal_flood,
+                    drought: secondResults.supabaseData.drought,
+                    epidemic: secondResults.supabaseData.epidemic,
+                    projected_conflict: secondResults.supabaseData.projected_conflict,
+                    current_conflict: secondResults.supabaseData.current_conflict
+                  } : undefined}
+                  firstDestination={result.supabaseData.country}
+                  secondDestination={compareMode && secondResults?.supabaseData ? secondResults.supabaseData.country : undefined}
+                />
+              </div>
+            )}
+            
+            {/* Weather Alerts */}
+            {result.weatherAlerts && (
+              <div className="mt-6">
+                <WeatherAlerts alerts={result.weatherAlerts} title="Weather Alerts" />
+              </div>
+            )}
+          </div>
+        )}
+
+        {tabId === 'funfact' && (
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Good to know?</h3>
+            {result.fun_fact && (
+              <div className="p-6 bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg border border-amber-200">
+                <p className="text-gray-700 italic text-lg leading-relaxed">"{result.fun_fact?.replace(/^"|"$/g, '')}"</p>
+              </div>
+            )}
+            {!result.fun_fact && (
+              <div className="text-center py-8 text-gray-500">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-2xl">❓</span>
+                </div>
+                <p>No interesting information available for this destination</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {tabId === 'news' && (
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Latest News</h3>
+            <CityNews city={result.destination} title="" />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
   return (
-    <div className="w-full max-w-6xl mx-auto px-4 py-8 bg-white">
-      {/* Search Section */}
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-6xl mx-auto px-4 py-8">
       <div className="bg-white rounded-lg p-6 border-2 border-black shadow-lg mb-8">
         
         {/* Search Animation */}
@@ -435,9 +604,9 @@ export default function DestinationSearch() {
           )}
         </div>
         
-        <div className={`max-w-4xl mx-auto ${compareMode ? 'grid grid-cols-1 md:grid-cols-2 gap-6 items-start' : 'max-w-lg'}`}>
+          <div className={`max-w-4xl mx-auto ${compareMode ? 'grid grid-cols-1 md:grid-cols-2 gap-6 items-start' : 'max-w-lg'}`}>
           {/* First Destination */}
-          <div className={`relative ${compareMode ? 'h-full flex flex-col' : ''}`}>
+            <div className={`relative ${compareMode ? 'h-full flex flex-col' : ''}`}>
             <label className="block text-left text-sm font-medium text-black mb-2">
               {compareMode ? 'First Destination' : 'Search for any city or country'}
             </label>
@@ -447,11 +616,11 @@ export default function DestinationSearch() {
                   type="text"
                   value={searchQuery}
                   onChange={handleInputChange}
-                  onKeyDown={handleKeyPress}
-                  onFocus={() => setShowHistory(false)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                    onFocus={() => setShowSuggestions(false)}
                   onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                   placeholder="Enter a city or country"
-                  className="w-full px-4 py-3 bg-white border-2 border-black rounded-lg text-black placeholder-gray-500 focus:outline-none focus:border-gray-600 focus:ring-2 focus:ring-black/20 transition-all duration-200"
+                    className="w-full px-4 py-3 bg-white border-2 border-black rounded-lg text-black placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
                   autoComplete="off"
                   spellCheck="false"
                 />
@@ -470,7 +639,7 @@ export default function DestinationSearch() {
                             <div className="font-medium flex items-center">
                               {suggestion.city}
                               {suggestion.isCapital && (
-                                <span className="ml-2 text-xs bg-yellow-500 text-black px-2 py-1 rounded">Capital</span>
+                                  <span className="ml-2 text-xs bg-black text-white px-2 py-1 rounded">Capital</span>
                               )}
                             </div>
                             <div className="text-sm text-gray-400">{suggestion.country}</div>
@@ -484,14 +653,40 @@ export default function DestinationSearch() {
                   </div>
                 )}
               </div>
+                
               <button
-                onClick={() => handleSearch()}
-                disabled={isSearching || !searchQuery.trim()}
-                className="px-4 py-3 bg-black text-white font-medium rounded-lg hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 focus:ring-offset-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed border-2 border-black"
-              >
-                Search
+                  onClick={handleSearch}
+                  disabled={isSearching}
+                  className="px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 font-medium"
+                >
+                  {isSearching ? 'Searching...' : 'Search'}
               </button>
             </div>
+              
+              {/* Search History */}
+              {searchHistory.length > 0 && (
+                <div className="mt-2">
+                  <button
+                    onClick={() => setShowHistory(!showHistory)}
+                    className="text-sm text-gray-600 hover:text-gray-800 transition-colors duration-200"
+                  >
+                    {showHistory ? 'Hide' : 'Show'} Recent Searches
+                  </button>
+                  {showHistory && (
+                    <div className="mt-2 p-2 bg-gray-100 border border-gray-300 rounded-lg">
+                      {searchHistory.slice(0, 5).map((item, index) => (
+                        <button
+                          key={index}
+                          onClick={() => handleHistorySelect(item.destination)}
+                          className="block w-full text-left px-2 py-1 text-sm text-gray-700 hover:bg-gray-200 rounded transition-colors duration-200"
+                        >
+                          {item.destination}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
           </div>
 
           {/* Second Destination (Comparison Mode) */}
@@ -543,801 +738,51 @@ export default function DestinationSearch() {
                     </div>
                   )}
                 </div>
+                  
                 <button
-                  onClick={() => handleSecondSearch()}
-                  disabled={isSearching || !secondDestination.trim()}
-                  className="px-4 py-3 bg-black text-white font-medium rounded-lg hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 focus:ring-offset-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed border-2 border-black"
+                    onClick={handleSecondSearch}
+                    className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200 font-medium"
                 >
                   Search
                 </button>
               </div>
             </div>
           )}
+          </div>
         </div>
           
+        {/* Error Display */}
         {error && (
-          <div className="mt-4 p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
-            <p className="text-red-400 text-center">{error}</p>
+          <div className="mb-6 p-4 bg-red-100 border-2 border-red-500 rounded-lg">
+            <p className="text-red-800 font-medium">{error}</p>
           </div>
         )}
-      </div>
 
-      {/* Map Section */}
+        {/* Map Display - Always below search */}
+        {(results || secondResults) && (
+          <div className="mb-8">
       <CountryMap 
-        searchQuery={results?.destination || ''} 
-        secondDestination={compareMode && secondResults ? secondResults.destination : undefined}
+              searchQuery={searchQuery}
         coordinates={results?.coordinates}
-        secondCoordinates={compareMode && secondResults ? secondResults.coordinates : undefined}
-        onCountrySelect={handleCountrySelect}
-      />
-
-      {/* Basic Country Information - Right after map, collapsed by default */}
-      {results && !isCountrySearch(results) && (
-        <div className="bg-white rounded-lg p-6 border-2 border-black shadow-lg">
-          <div className="flex items-center justify-between mb-4">
-            <h4 className="text-lg font-semibold text-black">Basic Country Information</h4>
-            <button
-              onClick={() => setIsCountryInfoExpanded(!isCountryInfoExpanded)}
-              className="text-black hover:text-gray-600 transition-colors duration-200 flex items-center space-x-2"
-            >
-              <span className="text-sm">
-                {isCountryInfoExpanded ? 'Show Less' : 'Show More'}
-              </span>
-              <span className={`transform transition-transform duration-200 ${isCountryInfoExpanded ? 'rotate-180' : ''}`}>
-                ▼
-              </span>
-            </button>
-          </div>
-          {isCountryInfoExpanded && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-4 bg-gray-100 rounded-lg border-2 border-black">
-                <span className="text-gray-600 text-sm">Country:</span>
-                <p className="text-black font-semibold">{results.supabaseData?.country}</p>
-              </div>
-              <div className="p-4 bg-gray-100 rounded-lg border-2 border-black">
-                <span className="text-gray-600 text-sm">Population:</span>
-                <p className="text-black font-semibold">{results.supabaseData?.population_mio} million</p>
-              </div>
-              <div className="p-4 bg-gray-100 rounded-lg border-2 border-black">
-                <span className="text-gray-600 text-sm">GDP Per Capita:</span>
-                <p className="text-black font-semibold">${results.supabaseData?.gdp_per_capita_usd?.toLocaleString()}</p>
-              </div>
-              <div className="p-4 bg-gray-100 rounded-lg border-2 border-black">
-                <span className="text-gray-600 text-sm">Life Expectancy:</span>
-                <p className="text-black font-semibold">{results.supabaseData?.life_expectancy} years</p>
-              </div>
-              <div className="p-4 bg-gray-100 rounded-lg border-2 border-black">
-                <span className="text-gray-600 text-sm">Global Risk Rank:</span>
-                <p className="text-black font-semibold">#{results.supabaseData?.global_rank}</p>
-                <p className="text-xs text-gray-500 mt-1">
-                  Lower numbers = safer countries
-                </p>
-                {results.comparisonData?.globalRankSimilar && results.comparisonData.globalRankSimilar.length > 0 && (
-                  <div className="mt-2 text-xs text-gray-500">
-                    Similar: {results.comparisonData.globalRankSimilar.map(c => `${c.country} (#${c.rank})`).join(', ')}
-                  </div>
-                )}
-              </div>
-              <div className="p-4 bg-gray-100 rounded-lg border-2 border-black">
-                <span className="text-gray-600 text-sm">Peace Index Rank:</span>
-                <p className="text-black font-semibold">#{results.supabaseData?.global_peace_rank}</p>
-                <p className="text-xs text-gray-500 mt-1">
-                  Lower numbers = more peaceful countries
-                </p>
-                {results.comparisonData?.peaceRankSimilar && results.comparisonData.peaceRankSimilar.length > 0 && (
-                  <div className="mt-2 text-xs text-gray-500">
-                    Similar: {results.comparisonData.peaceRankSimilar.map(c => `${c.country} (#${c.rank})`).join(', ')}
-                  </div>
-                )}
-              </div>
-              <div className="p-4 bg-gray-100 rounded-lg border-2 border-black">
-                <span className="text-gray-600 text-sm">Electricity Access:</span>
-                <p className="text-black font-semibold">{results.supabaseData?.population_electricity}%</p>
-              </div>
-              {results.supabaseData?.area_km2 && (
-                <div className="p-4 bg-gray-100 rounded-lg border-2 border-black">
-                  <span className="text-gray-600 text-sm">Country Size:</span>
-                  <p className="text-black font-semibold">{results.supabaseData.area_km2.toLocaleString()} km²</p>
-                  <p className="text-black font-semibold">{results.supabaseData.area_sq_miles?.toLocaleString()} sq miles</p>
-                  {results.supabaseData.similar_size_country && (
-                    <p className="text-gray-500 text-xs mt-1">
-                      Similar size: {results.supabaseData.similar_size_country}
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Basic Country Information for Second Destination - Right after map, collapsed by default */}
-      {secondResults && !isCountrySearch(secondResults) && (
-        <div className="bg-white rounded-lg p-6 border-2 border-black shadow-lg">
-          <div className="flex items-center justify-between mb-4">
-            <h4 className="text-lg font-semibold text-black">Basic Country Information</h4>
-            <button
-              onClick={() => setIsSecondCountryInfoExpanded(!isSecondCountryInfoExpanded)}
-              className="text-black hover:text-gray-600 transition-colors duration-200 flex items-center space-x-2"
-            >
-              <span className="text-sm">
-                {isSecondCountryInfoExpanded ? 'Show Less' : 'Show More'}
-              </span>
-              <span className={`transform transition-transform duration-200 ${isSecondCountryInfoExpanded ? 'rotate-180' : ''}`}>
-                ▼
-              </span>
-            </button>
-          </div>
-          {isSecondCountryInfoExpanded && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-4 bg-gray-100 rounded-lg border-2 border-black">
-                <span className="text-gray-600 text-sm">Country:</span>
-                <p className="text-black font-semibold">{secondResults.supabaseData?.country}</p>
-              </div>
-              <div className="p-4 bg-gray-100 rounded-lg border-2 border-black">
-                <span className="text-gray-600 text-sm">Population:</span>
-                <p className="text-black font-semibold">{secondResults.supabaseData?.population_mio} million</p>
-              </div>
-              <div className="p-4 bg-gray-100 rounded-lg border-2 border-black">
-                <span className="text-gray-600 text-sm">GDP Per Capita:</span>
-                <p className="text-black font-semibold">${secondResults.supabaseData?.gdp_per_capita_usd?.toLocaleString()}</p>
-              </div>
-              <div className="p-4 bg-gray-100 rounded-lg border-2 border-black">
-                <span className="text-gray-600 text-sm">Life Expectancy:</span>
-                <p className="text-black font-semibold">{secondResults.supabaseData?.life_expectancy} years</p>
-              </div>
-              <div className="p-4 bg-gray-100 rounded-lg border-2 border-black">
-                <span className="text-gray-600 text-sm">Global Risk Rank:</span>
-                <p className="text-black font-semibold">#{secondResults.supabaseData?.global_rank}</p>
-                <p className="text-xs text-gray-500 mt-1">
-                  Lower numbers = safer countries
-                </p>
-                {secondResults.comparisonData?.globalRankSimilar && secondResults.comparisonData.globalRankSimilar.length > 0 && (
-                  <div className="mt-2 text-xs text-gray-500">
-                    Similar: {secondResults.comparisonData.globalRankSimilar.map(c => `${c.country} (#${c.rank})`).join(', ')}
-                  </div>
-                )}
-              </div>
-              <div className="p-4 bg-gray-100 rounded-lg border-2 border-black">
-                <span className="text-gray-600 text-sm">Peace Index Rank:</span>
-                <p className="text-black font-semibold">#{secondResults.supabaseData?.global_peace_rank}</p>
-                <p className="text-xs text-gray-500 mt-1">
-                  Lower numbers = more peaceful countries
-                </p>
-                {secondResults.comparisonData?.peaceRankSimilar && secondResults.comparisonData.peaceRankSimilar.length > 0 && (
-                  <div className="mt-2 text-xs text-gray-500">
-                    Similar: {secondResults.comparisonData.peaceRankSimilar.map(c => `${c.country} (#${c.rank})`).join(', ')}
-                  </div>
-                )}
-              </div>
-              <div className="p-4 bg-gray-100 rounded-lg border-2 border-black">
-                <span className="text-gray-600 text-sm">Electricity Access:</span>
-                <p className="text-black font-semibold">{secondResults.supabaseData?.population_electricity}%</p>
-              </div>
-              {secondResults.supabaseData?.area_km2 && (
-                <div className="p-4 bg-gray-100 rounded-lg border-2 border-black">
-                  <span className="text-gray-600 text-sm">Country Size:</span>
-                  <p className="text-black font-semibold">{secondResults.supabaseData.area_km2.toLocaleString()} km²</p>
-                  <p className="text-black font-semibold">{secondResults.supabaseData.area_sq_miles?.toLocaleString()} sq miles</p>
-                  {secondResults.supabaseData.similar_size_country && (
-                    <p className="text-gray-500 text-xs mt-1">
-                      Similar size: {secondResults.supabaseData.similar_size_country}
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
+              secondCoordinates={secondResults?.coordinates}
+            />
         </div>
       )}
 
       {/* Results Display */}
       {results && (
-        <div className={`space-y-6 ${compareMode && secondResults ? 'grid grid-cols-1 lg:grid-cols-2 gap-8 items-start' : ''}`}>
-          {/* First Destination Results */}
-          <div className={`space-y-6 ${compareMode && secondResults ? 'h-full flex flex-col' : ''}`}>
-            
-
-            {/* Globaltrot-Bot Summary */}
-            {results.chatgptSummary && (
-              <div className="bg-white rounded-lg p-6 border-2 border-green-600 shadow-lg mt-8">
-                <div className="flex items-center justify-between mb-4">
-                  <h4 className="text-lg font-semibold text-green-600">Globetrot-Bot Summary</h4>
-                  <button
-                    onClick={() => setIsGlobetrotBotExpanded(!isGlobetrotBotExpanded)}
-                    className="text-green-600 hover:text-green-500 transition-colors duration-200 flex items-center space-x-2"
-                  >
-                    <span className="text-sm">
-                      {isGlobetrotBotExpanded ? 'Show Less' : 'Show More'}
-                    </span>
-                    <span className={`transform transition-transform duration-200 ${isGlobetrotBotExpanded ? 'rotate-180' : ''}`}>
-                      ▼
-                    </span>
-                  </button>
-                </div>
-                {isGlobetrotBotExpanded && (
-                  <div className="p-4 bg-gray-100 rounded-lg">
-                    <div className="text-black leading-relaxed whitespace-pre-line">
-                      {results.chatgptSummary.split('\n').map((line, index) => {
-                        // Remove any markdown formatting that might slip through
-                        const cleanLine = line.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1');
-                        
-                        if (cleanLine.startsWith('# ')) {
-                          return <h1 key={index} className="text-xl font-bold text-green-600 mb-3 mt-4">{cleanLine.substring(2)}</h1>;
-                        } else if (cleanLine.startsWith('## ')) {
-                          return <h2 key={index} className="text-lg font-semibold text-green-500 mb-2 mt-3">{cleanLine.substring(3)}</h2>;
-                        } else if (cleanLine.startsWith('- ')) {
-                          return <div key={index} className="ml-4 mb-1 text-black">• {cleanLine.substring(2)}</div>;
-                        } else if (cleanLine.trim() === '') {
-                          return <br key={index} />;
-                        } else {
-                          return <p key={index} className="mb-2 text-black">{cleanLine}</p>;
-                        }
-                      })}
-                </div>
-                  </div>
-                )}
+          <div className="space-y-6">
+            <TabContent result={results} tabId={activeTab} setTabId={setActiveTab} />
               </div>
             )}
 
-            {/* Not really important, but still good to know */}
-            {results.fun_fact && (
-              <div className="bg-white rounded-lg p-6 border-2 border-blue-800 shadow-lg">
-                <h4 className="text-lg font-semibold text-blue-800 mb-4">Not really important, but still good to know</h4>
-                <div className="p-4 bg-gray-100 rounded-lg">
-                  <p className="text-black font-medium italic">"{results.fun_fact?.replace(/^"|"$/g, '') || 'No fun fact available'}"</p>
-                </div>
-              </div>
-            )}
-
-            {/* Economic Data - Only for Country Searches */}
-            {isCountrySearch(results) && (
-            <div className="bg-white rounded-lg p-6 border-2 border-green-500 shadow-lg">
-              <h4 className="text-lg font-semibold text-green-600 mb-4">Economic Data</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-4 bg-gray-100 rounded-lg">
-                  <span className="text-gray-600 text-sm">GDP Per Capita:</span>
-                  <p className="text-black font-semibold">${results.supabaseData?.gdp_per_capita_usd?.toLocaleString()}</p>
-                </div>
-                <div className="p-4 bg-gray-100 rounded-lg">
-                  <span className="text-gray-600 text-sm">Human Development Index:</span>
-                  <p className="text-black font-semibold">{results.supabaseData?.human_dev_index}</p>
-                </div>
-                <div className="p-4 bg-gray-100 rounded-lg">
-                  <span className="text-gray-600 text-sm">Electricity Access:</span>
-                  <p className="text-black font-semibold">{results.supabaseData?.population_electricity}%</p>
-                </div>
-                <div className="p-4 bg-gray-100 rounded-lg">
-                  <span className="text-gray-600 text-sm">Average Hotel Price:</span>
-                  <p className="text-black font-semibold">${Math.floor(Math.random() * 200 + 50)}/night</p>
-                </div>
-              </div>
-            </div>
-            )}
-
-            {/* Risk Assessment with Comparisons - Only for Country Searches */}
-            {isCountrySearch(results) && (
-            <div className="bg-white rounded-lg p-6 border-2 border-red-500 shadow-lg">
-              <h4 className="text-lg font-semibold text-red-600 mb-4">Risk Assessment</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-4 bg-gray-100 rounded-lg">
-                  <span className="text-gray-600 text-sm">Risk Class:</span>
-                  <p className="text-black font-semibold">{results.supabaseData?.risk_class}</p>
-                </div>
-                <div className="p-4 bg-gray-100 rounded-lg">
-                  <span className="text-gray-600 text-sm">INFORM Index:</span>
-                  <p className="text-black font-semibold">{results.supabaseData?.inform_index}</p>
-                  {results.comparisonData?.informSimilar && results.comparisonData.informSimilar.length > 0 && (
-                    <div className="mt-2 text-xs text-gray-500">
-                      Similar: {results.comparisonData.informSimilar.map(c => `${c.country} (${c.value})`).join(', ')}
-                    </div>
-                  )}
-                </div>
-                <div className="p-4 bg-gray-100 rounded-lg">
-                  <span className="text-gray-600 text-sm">Global Risk Rank:</span>
-                  <p className="text-black font-semibold">#{results.supabaseData?.global_rank}</p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Lower numbers = safer countries
-                  </p>
-                  {results.comparisonData?.globalRankSimilar && results.comparisonData.globalRankSimilar.length > 0 && (
-                    <div className="mt-2 text-xs text-gray-500">
-                      Similar: {results.comparisonData.globalRankSimilar.map(c => `${c.country} (#${c.rank})`).join(', ')}
-                    </div>
-                  )}
-                  {results.comparisonData?.globalRankAbove && results.comparisonData.globalRankAbove.length > 0 && (
-                    <div className="mt-1 text-xs text-green-600">
-                      Safer: {results.comparisonData.globalRankAbove.map(c => `${c.country} (#${c.rank})`).join(', ')}
-                    </div>
-                  )}
-                  {results.comparisonData?.globalRankBelow && results.comparisonData.globalRankBelow.length > 0 && (
-                    <div className="mt-1 text-xs text-red-600">
-                      Riskier: {results.comparisonData.globalRankBelow.map(c => `${c.country} (#${c.rank})`).join(', ')}
-                    </div>
-                  )}
-                </div>
-                <div className="p-4 bg-gray-100 rounded-lg">
-                  <span className="text-gray-600 text-sm">Peace Index Rank:</span>
-                  <p className="text-black font-semibold">#{results.supabaseData?.global_peace_rank}</p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Lower numbers = more peaceful countries
-                  </p>
-                  {results.comparisonData?.peaceRankSimilar && results.comparisonData.peaceRankSimilar.length > 0 && (
-                    <div className="mt-2 text-xs text-gray-500">
-                      Similar: {results.comparisonData.peaceRankSimilar.map(c => `${c.country} (#${c.rank})`).join(', ')}
-                    </div>
-                  )}
-                  {results.comparisonData?.peaceRankAbove && results.comparisonData.peaceRankAbove.length > 0 && (
-                    <div className="mt-1 text-xs text-green-600">
-                      More peaceful: {results.comparisonData.peaceRankAbove.map(c => `${c.country} (#${c.rank})`).join(', ')}
-                    </div>
-                  )}
-                  {results.comparisonData?.peaceRankBelow && results.comparisonData.peaceRankBelow.length > 0 && (
-                    <div className="mt-1 text-xs text-red-600">
-                      Less peaceful: {results.comparisonData.peaceRankBelow.map(c => `${c.country} (#${c.rank})`).join(', ')}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-            )}
-
-            {/* Natural Hazards Spider Chart - For All Queries */}
-            {results.supabaseData && (
-            <div className="bg-white rounded-lg p-6 border-2 border-orange-500 shadow-lg">
-              <h4 className="text-lg font-semibold text-orange-600 mb-4">Natural Hazards (0-10 Scale)</h4>
-                <div className="mb-4">
-                  <p className="text-gray-600 text-sm">
-                    National-level natural hazard risks for {results.supabaseData.country}
-                  </p>
-                  <p className="text-gray-600 text-xs mt-1">
-                    <strong>Higher values = Higher risk</strong> • Scale: 0 (no risk) to 10 (extreme risk)
-                  </p>
-                </div>
-                <RiskRadarChart
-                  hazardIndicators={{
-                    earthquake: results.supabaseData.earthquake,
-                    river_flood: results.supabaseData.river_flood,
-                    tsunami: results.supabaseData.tsunami,
-                    tropical_storm: results.supabaseData.tropical_storm,
-                    coastal_flood: results.supabaseData.coastal_flood,
-                    drought: results.supabaseData.drought,
-                    epidemic: results.supabaseData.epidemic,
-                    projected_conflict: results.supabaseData.projected_conflict,
-                    current_conflict: results.supabaseData.current_conflict
-                  }}
-                  secondHazardIndicators={compareMode && secondResults?.supabaseData ? {
-                    earthquake: secondResults.supabaseData.earthquake,
-                    river_flood: secondResults.supabaseData.river_flood,
-                    tsunami: secondResults.supabaseData.tsunami,
-                    tropical_storm: secondResults.supabaseData.tropical_storm,
-                    coastal_flood: secondResults.supabaseData.coastal_flood,
-                    drought: secondResults.supabaseData.drought,
-                    epidemic: secondResults.supabaseData.epidemic,
-                    projected_conflict: secondResults.supabaseData.projected_conflict,
-                    current_conflict: secondResults.supabaseData.current_conflict
-                  } : undefined}
-                  firstDestination={results.supabaseData.country}
-                  secondDestination={compareMode && secondResults?.supabaseData ? secondResults.supabaseData.country : undefined}
-                />
-                </div>
-            )}
-
-            {/* Weather & Climate Data */}
-            <div className="bg-white rounded-lg p-6 border-2 border-blue-500 shadow-lg">
-              <div className="flex items-center justify-between mb-4">
-                <h4 className="text-lg font-semibold text-blue-600">🌤️ Weather & Climate</h4>
-                
-                {/* Units Switch */}
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm text-gray-600">Units:</span>
-                  <button
-                    onClick={() => setUseImperialUnits(!useImperialUnits)}
-                    className={`px-3 py-1 rounded-lg text-sm font-medium transition-all duration-200 border-2 ${
-                      useImperialUnits 
-                        ? 'bg-black text-white border-black' 
-                        : 'bg-white text-black border-gray-300 hover:bg-gray-100'
-                    }`}
-                  >
-                    {useImperialUnits ? '°F / mph' : '°C / km/h'}
-                  </button>
-                </div>
-              </div>
-              
-              {results.realWeatherData ? (
-                <div className="space-y-6">
-                  {/* Current Weather */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="p-4 bg-gray-100 rounded-lg">
-                  <span className="text-gray-600 text-sm">Current Temperature:</span>
-                      <p className="text-black font-semibold text-xl">{convertTemperature(results.realWeatherData.current.temperature)}{getTemperatureUnit()}</p>
-                      <p className="text-gray-500 text-xs">Feels like {convertTemperature(results.realWeatherData.current.apparent_temperature)}{getTemperatureUnit()}</p>
-                </div>
-                <div className="p-4 bg-gray-100 rounded-lg">
-                      <span className="text-gray-600 text-sm">Weather:</span>
-                      <p className="text-black font-semibold">{results.realWeatherData.current.weather_description}</p>
-                </div>
-                <div className="p-4 bg-gray-100 rounded-lg">
-                      <span className="text-gray-600 text-sm">Wind:</span>
-                      <p className="text-black font-semibold">{convertWindSpeed(results.realWeatherData.current.wind_speed)} {getWindSpeedUnit()}</p>
-                      <p className="text-gray-500 text-xs">{results.realWeatherData.current.wind_description}</p>
-                </div>
-                <div className="p-4 bg-gray-100 rounded-lg">
-                      <span className="text-gray-600 text-sm">Humidity:</span>
-                      <p className="text-black font-semibold">{results.realWeatherData.current.humidity}%</p>
-              </div>
-            </div>
-
-                  {/* 24h Forecast */}
-                <div className="p-4 bg-gray-100 rounded-lg">
-                    <h5 className="text-blue-600 font-semibold mb-3">Next 24 Hours</h5>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div>
-                        <span className="text-gray-600 text-sm">Max Temp:</span>
-                        <p className="text-black font-semibold">{results.realWeatherData.forecast.next_24h.max_temp}°C</p>
-                </div>
-                      <div>
-                        <span className="text-gray-600 text-sm">Min Temp:</span>
-                        <p className="text-black font-semibold">{results.realWeatherData.forecast.next_24h.min_temp}°C</p>
-                </div>
-                      <div>
-                        <span className="text-gray-600 text-sm">Precipitation:</span>
-                        <p className="text-black font-semibold">{results.realWeatherData.forecast.next_24h.total_precipitation}mm</p>
-                </div>
-                      <div>
-                        <span className="text-gray-600 text-sm">Avg Wind:</span>
-                        <p className="text-black font-semibold">{convertWindSpeed(results.realWeatherData.forecast.next_24h.avg_wind_speed)} {getWindSpeedUnit()}</p>
-                </div>
-              </div>
-            </div>
-
-                  {/* 16-Day Forecast Chart */}
-                <div className="p-4 bg-gray-100 rounded-lg">
-                    <WeatherChart 
-                      forecast={results.realWeatherData.forecast.next_16_days} 
-                      location={results.realWeatherData.location}
-                      useImperialUnits={useImperialUnits}
-                    />
-                </div>
-
-                  {/* Weather Alerts */}
-                 <WeatherAlerts 
-                   alerts={results.weatherAlerts} 
-                   title="Weather Alerts"
-                 />
-
-                  {/* Air Quality */}
-                  <AirQuality 
-                    airQuality={results.realWeatherData.air_quality} 
-                    title="Air Quality"
-                  />
-
-                </div>
-              ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-4 bg-gray-100 rounded-lg">
-                  <span className="text-gray-600 text-sm">Current Temperature:</span>
-                  <p className="text-black font-semibold">{results.weatherData?.temperature ? convertTemperature(results.weatherData.temperature) + getTemperatureUnit() : 'N/A'}</p>
-                </div>
-                <div className="p-4 bg-gray-100 rounded-lg">
-                  <span className="text-gray-600 text-sm">Precipitation:</span>
-                  <p className="text-black font-semibold">{results.weatherData?.precipitation || 'N/A'}</p>
-                </div>
-                <div className="p-4 bg-gray-100 rounded-lg">
-                  <span className="text-gray-600 text-sm">Outlook:</span>
-                  <p className="text-black font-semibold">{results.weatherData?.outlook || 'N/A'}</p>
-                </div>
-                <div className="p-4 bg-gray-100 rounded-lg">
-                  <span className="text-gray-600 text-sm">Forecast Date:</span>
-                  <p className="text-black font-semibold">{results.weatherData?.forecast_date || 'N/A'}</p>
-                </div>
-              </div>
-              )}
-            </div>
-
-            {/* City News - Always rendered */}
-            <CityNews 
-              city={results.destination} 
-              title="Latest News"
-            />
-
-          </div>
-
-          {/* Second Destination Results */}
+        {/* Second Results Display */}
           {secondResults && (
-            <div className={`space-y-6 ${compareMode ? 'h-full flex flex-col' : ''}`}>
-              
-
-              {/* Globaltrot-Bot Summary */}
-              {secondResults.chatgptSummary && (
-              <div className="bg-white rounded-lg p-6 border-2 border-green-600 shadow-lg mt-8">
-                  <div className="flex items-center justify-between mb-4">
-                    <h4 className="text-lg font-semibold text-green-600">Globetrot-Bot Summary</h4>
-                    <button
-                      onClick={() => setIsSecondGlobetrotBotExpanded(!isSecondGlobetrotBotExpanded)}
-                      className="text-green-600 hover:text-green-500 transition-colors duration-200 flex items-center space-x-2"
-                    >
-                      <span className="text-sm">
-                        {isSecondGlobetrotBotExpanded ? 'Show Less' : 'Show More'}
-                      </span>
-                      <span className={`transform transition-transform duration-200 ${isSecondGlobetrotBotExpanded ? 'rotate-180' : ''}`}>
-                        ▼
-                      </span>
-                    </button>
-                  </div>
-                  {isSecondGlobetrotBotExpanded && (
-                  <div className="p-4 bg-gray-100 rounded-lg">
-                    <div className="text-black leading-relaxed whitespace-pre-line">
-                        {secondResults.chatgptSummary.split('\n').map((line, index) => {
-                          // Remove any markdown formatting that might slip through
-                          const cleanLine = line.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1');
-                          
-                          if (cleanLine.startsWith('# ')) {
-                            return <h1 key={index} className="text-xl font-bold text-green-600 mb-3 mt-4">{cleanLine.substring(2)}</h1>;
-                          } else if (cleanLine.startsWith('## ')) {
-                            return <h2 key={index} className="text-lg font-semibold text-green-500 mb-2 mt-3">{cleanLine.substring(3)}</h2>;
-                          } else if (cleanLine.startsWith('- ')) {
-                            return <div key={index} className="ml-4 mb-1 text-black">• {cleanLine.substring(2)}</div>;
-                          } else if (cleanLine.trim() === '') {
-                            return <br key={index} />;
-                          } else {
-                            return <p key={index} className="mb-2 text-black">{cleanLine}</p>;
-                          }
-                        })}
-                  </div>
+          <div className="space-y-6 mt-6">
+            <TabContent result={secondResults} tabId={secondActiveTab} setTabId={setSecondActiveTab} />
                 </div>
                   )}
                 </div>
-              )}
-
-              {/* Not really important, but still good to know */}
-              {secondResults.fun_fact && (
-                <div className="bg-white rounded-lg p-6 border-2 border-purple-500 shadow-lg">
-                  <h4 className="text-lg font-semibold text-purple-600 mb-4">🎭 Not really important, but still good to know</h4>
-                  <div className="p-4 bg-gray-100 rounded-lg">
-                    <p className="text-black font-medium italic">"{secondResults.fun_fact?.replace(/^"|"$/g, '') || 'No fun fact available'}"</p>
-                  </div>
-                </div>
-              )}
-
-              {/* Economic Data - Only for Country Searches */}
-              {isCountrySearch(secondResults) && (
-              <div className="bg-white rounded-lg p-6 border-2 border-green-500 shadow-lg">
-                <h4 className="text-lg font-semibold text-green-600 mb-4">Economic Data</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="p-4 bg-gray-100 rounded-lg">
-                    <span className="text-gray-600 text-sm">GDP Per Capita:</span>
-                    <p className="text-black font-semibold">${secondResults.supabaseData?.gdp_per_capita_usd?.toLocaleString()}</p>
-                  </div>
-                  <div className="p-4 bg-gray-100 rounded-lg">
-                    <span className="text-gray-600 text-sm">Human Development Index:</span>
-                    <p className="text-black font-semibold">{secondResults.supabaseData?.human_dev_index}</p>
-                  </div>
-                  <div className="p-4 bg-gray-100 rounded-lg">
-                    <span className="text-gray-600 text-sm">Electricity Access:</span>
-                    <p className="text-black font-semibold">{secondResults.supabaseData?.population_electricity}%</p>
-                  </div>
-                  <div className="p-4 bg-gray-100 rounded-lg">
-                    <span className="text-gray-600 text-sm">Average Hotel Price:</span>
-                    <p className="text-black font-semibold">${Math.floor(Math.random() * 200 + 50)}/night</p>
-                  </div>
-                </div>
-              </div>
-              )}
-
-              {/* Risk Assessment with Comparisons - Only for Country Searches */}
-              {isCountrySearch(secondResults) && (
-              <div className="bg-white rounded-lg p-6 border-2 border-red-500 shadow-lg">
-                <h4 className="text-lg font-semibold text-red-600 mb-4">Risk Assessment</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="p-4 bg-gray-100 rounded-lg">
-                    <span className="text-gray-600 text-sm">Risk Class:</span>
-                    <p className="text-black font-semibold">{secondResults.supabaseData?.risk_class}</p>
-                  </div>
-                  <div className="p-4 bg-gray-100 rounded-lg">
-                    <span className="text-gray-600 text-sm">INFORM Index:</span>
-                    <p className="text-black font-semibold">{secondResults.supabaseData?.inform_index}</p>
-                    {secondResults.comparisonData?.informSimilar && secondResults.comparisonData.informSimilar.length > 0 && (
-                      <div className="mt-2 text-xs text-gray-500">
-                        Similar: {secondResults.comparisonData.informSimilar.map(c => `${c.country} (${c.value})`).join(', ')}
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-4 bg-gray-100 rounded-lg">
-                    <span className="text-gray-600 text-sm">Global Risk Rank:</span>
-                    <p className="text-black font-semibold">#{secondResults.supabaseData?.global_rank}</p>
-                    {secondResults.comparisonData?.globalRankAbove && secondResults.comparisonData.globalRankAbove.length > 0 && (
-                      <div className="mt-2 text-xs text-gray-500">
-                        Above: {secondResults.comparisonData.globalRankAbove.map(c => `${c.country} (#${c.rank})`).join(', ')}
-                      </div>
-                    )}
-                    {secondResults.comparisonData?.globalRankBelow && secondResults.comparisonData.globalRankBelow.length > 0 && (
-                      <div className="mt-2 text-xs text-gray-500">
-                        Below: {secondResults.comparisonData.globalRankBelow.map(c => `${c.country} (#${c.rank})`).join(', ')}
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-4 bg-gray-100 rounded-lg">
-                    <span className="text-gray-600 text-sm">Peace Index Rank:</span>
-                    <p className="text-black font-semibold">#{secondResults.supabaseData?.global_peace_rank}</p>
-                    {secondResults.comparisonData?.peaceRankAbove && secondResults.comparisonData.peaceRankAbove.length > 0 && (
-                      <div className="mt-2 text-xs text-gray-500">
-                        Above: {secondResults.comparisonData.peaceRankAbove.map(c => `${c.country} (#${c.rank})`).join(', ')}
-                      </div>
-                    )}
-                    {secondResults.comparisonData?.peaceRankBelow && secondResults.comparisonData.peaceRankBelow.length > 0 && (
-                      <div className="mt-2 text-xs text-gray-500">
-                        Below: {secondResults.comparisonData.peaceRankBelow.map(c => `${c.country} (#${c.rank})`).join(', ')}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-              )}
-
-              {/* Natural Hazards Spider Chart - For All Queries */}
-              {secondResults.supabaseData && (
-              <div className="bg-white rounded-lg p-6 border-2 border-orange-500 shadow-lg">
-                <h4 className="text-lg font-semibold text-orange-600 mb-4">Natural Hazards (0-10 Scale)</h4>
-                  <div className="mb-4">
-                    <p className="text-gray-600 text-sm">
-                      National-level natural hazard risks for {secondResults.supabaseData.country}
-                    </p>
-                    <p className="text-gray-600 text-xs mt-1">
-                      <strong>Higher values = Higher risk</strong> • Scale: 0 (low risk) to 10 (extreme risk)
-                    </p>
-                  </div>
-                  <RiskRadarChart
-                    hazardIndicators={{
-                      earthquake: secondResults.supabaseData.earthquake,
-                      river_flood: secondResults.supabaseData.river_flood,
-                      tsunami: secondResults.supabaseData.tsunami,
-                      tropical_storm: secondResults.supabaseData.tropical_storm,
-                      coastal_flood: secondResults.supabaseData.coastal_flood,
-                      drought: secondResults.supabaseData.drought,
-                      epidemic: secondResults.supabaseData.epidemic,
-                      projected_conflict: secondResults.supabaseData.projected_conflict,
-                      current_conflict: secondResults.supabaseData.current_conflict
-                    }}
-                    secondHazardIndicators={compareMode && results?.supabaseData ? {
-                      earthquake: results.supabaseData.earthquake,
-                      river_flood: results.supabaseData.river_flood,
-                      tsunami: results.supabaseData.tsunami,
-                      tropical_storm: results.supabaseData.tropical_storm,
-                      coastal_flood: results.supabaseData.coastal_flood,
-                      drought: results.supabaseData.drought,
-                      epidemic: results.supabaseData.epidemic,
-                      projected_conflict: results.supabaseData.projected_conflict,
-                      current_conflict: results.supabaseData.current_conflict
-                    } : undefined}
-                    firstDestination={secondResults.supabaseData.country}
-                    secondDestination={compareMode && results?.supabaseData ? results.supabaseData.country : undefined}
-                    color="#dc2626"
-                  />
-                </div>
-              )}
-
-              {/* Weather & Climate Data */}
-              <div className="bg-white rounded-lg p-6 border-2 border-blue-500 shadow-lg">
-                <div className="flex items-center justify-between mb-4">
-                  <h4 className="text-lg font-semibold text-blue-600">Weather & Climate</h4>
-                  
-                  {/* Units Switch */}
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm text-gray-600">Units:</span>
-                    <button
-                      onClick={() => setUseImperialUnits(!useImperialUnits)}
-                      className={`px-3 py-1 rounded-lg text-sm font-medium transition-all duration-200 border-2 ${
-                        useImperialUnits 
-                          ? 'bg-black text-white border-black' 
-                          : 'bg-white text-black border-gray-300 hover:bg-gray-100'
-                      }`}
-                    >
-                      {useImperialUnits ? '°F / mph' : '°C / km/h'}
-                    </button>
-                  </div>
-                </div>
-                
-                {secondResults.realWeatherData ? (
-                  <div className="space-y-6">
-                    {/* Current Weather */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="p-4 bg-gray-100 rounded-lg">
-                    <span className="text-gray-600 text-sm">Current Temperature:</span>
-                        <p className="text-black font-semibold text-xl">{convertTemperature(secondResults.realWeatherData.current.temperature)}{getTemperatureUnit()}</p>
-                        <p className="text-gray-500 text-xs">Feels like {convertTemperature(secondResults.realWeatherData.current.apparent_temperature)}{getTemperatureUnit()}</p>
-                  </div>
-                  <div className="p-4 bg-gray-100 rounded-lg">
-                        <span className="text-gray-600 text-sm">Weather:</span>
-                        <p className="text-black font-semibold">{secondResults.realWeatherData.current.weather_description}</p>
-                  </div>
-                  <div className="p-4 bg-gray-100 rounded-lg">
-                        <span className="text-gray-600 text-sm">Wind:</span>
-                        <p className="text-black font-semibold">{convertWindSpeed(secondResults.realWeatherData.current.wind_speed)} {getWindSpeedUnit()}</p>
-                        <p className="text-gray-500 text-xs">{secondResults.realWeatherData.current.wind_description}</p>
-                  </div>
-                  <div className="p-4 bg-gray-100 rounded-lg">
-                        <span className="text-gray-600 text-sm">Humidity:</span>
-                        <p className="text-black font-semibold">{secondResults.realWeatherData.current.humidity}%</p>
-                </div>
-              </div>
-
-                    {/* 24h Forecast */}
-                  <div className="p-4 bg-gray-100 rounded-lg">
-                      <h5 className="text-blue-600 font-semibold mb-3">Next 24 Hours</h5>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div>
-                          <span className="text-gray-600 text-sm">Max Temp:</span>
-                          <p className="text-black font-semibold">{secondResults.realWeatherData.forecast.next_24h.max_temp}°C</p>
-                  </div>
-                        <div>
-                          <span className="text-gray-600 text-sm">Min Temp:</span>
-                          <p className="text-black font-semibold">{secondResults.realWeatherData.forecast.next_24h.min_temp}°C</p>
-                  </div>
-                        <div>
-                    <span className="text-gray-600 text-sm">Precipitation:</span>
-                          <p className="text-black font-semibold">{secondResults.realWeatherData.forecast.next_24h.total_precipitation}mm</p>
-                  </div>
-                        <div>
-                          <span className="text-gray-600 text-sm">Avg Wind:</span>
-                          <p className="text-black font-semibold">{convertWindSpeed(secondResults.realWeatherData.forecast.next_24h.avg_wind_speed)} {getWindSpeedUnit()}</p>
-                  </div>
-                </div>
-              </div>
-
-                    {/* 16-Day Forecast Chart */}
-                  <div className="p-4 bg-gray-100 rounded-lg">
-                      <WeatherChart 
-                        forecast={secondResults.realWeatherData.forecast.next_16_days} 
-                        location={secondResults.realWeatherData.location}
-                        useImperialUnits={useImperialUnits}
-                      />
-                  </div>
-
-                    {/* Weather Alerts */}
-                    <WeatherAlerts 
-                      alerts={secondResults.weatherAlerts} 
-                      title="Weather Alerts"
-                    />
-
-                    {/* Air Quality */}
-                    <AirQuality 
-                      airQuality={secondResults.realWeatherData.air_quality} 
-                      title="Air Quality"
-                    />
-
-                    {/* City News */}
-                    <CityNews 
-                      city={secondResults.destination} 
-                      title="Latest News"
-                    />
-                  </div>
-                ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="p-4 bg-gray-100 rounded-lg">
-                    <span className="text-gray-600 text-sm">Current Temperature:</span>
-                    <p className="text-black font-semibold">{secondResults.weatherData?.temperature ? convertTemperature(secondResults.weatherData.temperature) + getTemperatureUnit() : 'N/A'}</p>
-                  </div>
-                  <div className="p-4 bg-gray-100 rounded-lg">
-                    <span className="text-gray-600 text-sm">Precipitation:</span>
-                    <p className="text-black font-semibold">{secondResults.weatherData?.precipitation || 'N/A'}</p>
-                  </div>
-                  <div className="p-4 bg-gray-100 rounded-lg">
-                    <span className="text-gray-600 text-sm">Outlook:</span>
-                    <p className="text-black font-semibold">{secondResults.weatherData?.outlook || 'N/A'}</p>
-                  </div>
-                  <div className="p-4 bg-gray-100 rounded-lg">
-                    <span className="text-gray-600 text-sm">Forecast Date:</span>
-                    <p className="text-black font-semibold">{secondResults.weatherData?.forecast_date || 'N/A'}</p>
-                  </div>
-                </div>
-          )}
-              </div>
-
-            </div>
-          )}
-
-        </div>
-      )}
     </div>
   );
 }

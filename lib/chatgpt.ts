@@ -397,3 +397,96 @@ CRITICAL: If the city name is "Washington" in the United States, you MUST focus 
     return 'Fun fact generation temporarily unavailable.';
   }
 }
+
+// Generate languages and currency information using ChatGPT
+export async function generateLanguagesAndCurrency(
+  countryName: string
+): Promise<{ languages: string; currency: string }> {
+  const apiKey = process.env.OPENAI_API_KEY;
+  
+  if (!apiKey) {
+    throw new Error('OpenAI API key not found');
+  }
+
+  const systemMessage: ChatGPTMessage = {
+    role: 'system',
+    content: `You are a geography expert who provides accurate information about countries. Your task is to extract the official languages and currency for a given country.
+
+CRITICAL REQUIREMENTS:
+- Provide ONLY factual, verifiable information
+- Return the response in a specific JSON format
+- Include ALL official languages (not just the primary one)
+- Use the official currency name and symbol
+- Be concise but comprehensive
+
+RESPONSE FORMAT:
+Return ONLY a valid JSON object with this exact structure:
+{
+  "languages": "Language1, Language2, Language3",
+  "currency": "Currency Name (Symbol)"
+}
+
+EXAMPLES:
+- For France: {"languages": "French", "currency": "Euro (€)"}
+- For Canada: {"languages": "English, French", "currency": "Canadian Dollar (C$)"}
+- For India: {"languages": "Hindi, English, 22 other official languages", "currency": "Indian Rupee (₹)"}
+- For Switzerland: {"languages": "German, French, Italian, Romansh", "currency": "Swiss Franc (CHF)"}
+
+IMPORTANT:
+- Do not include any text before or after the JSON
+- Do not use markdown formatting
+- Do not include explanations or additional information
+- Ensure the JSON is valid and parseable`
+  };
+
+  const userMessage: ChatGPTMessage = {
+    role: 'user',
+    content: `Provide the official languages and currency for ${countryName}. Return only the JSON object as specified.`
+  };
+
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-3.5-turbo',
+        messages: [systemMessage, userMessage],
+        max_tokens: 150,
+        temperature: 0.1, // Low temperature for factual accuracy
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`OpenAI API error: ${response.status} - ${errorData.error?.message || 'Unknown error'}`);
+    }
+
+    const data: ChatGPTResponse = await response.json();
+    const content = data.choices[0]?.message?.content?.trim();
+    
+    if (!content) {
+      throw new Error('No response from ChatGPT');
+    }
+
+    // Parse the JSON response
+    try {
+      const parsed = JSON.parse(content);
+      return {
+        languages: parsed.languages || 'N/A',
+        currency: parsed.currency || 'N/A'
+      };
+    } catch (parseError) {
+      console.error('Failed to parse ChatGPT response:', content);
+      throw new Error('Invalid JSON response from ChatGPT');
+    }
+  } catch (error) {
+    console.error('ChatGPT languages/currency generation error:', error);
+    return {
+      languages: 'N/A',
+      currency: 'N/A'
+    };
+  }
+}
