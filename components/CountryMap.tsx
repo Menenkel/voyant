@@ -63,25 +63,64 @@ function MapContent({
       // Wait for map to be fully initialized with an even longer delay
       const timer = setTimeout(() => {
         // Double-check that map is still ready before setting state
-        if (map && map.getContainer && map.getContainer() && map.getPane && map.getPane('overlayPane')) {
-          setIsMapReady(true);
+        if (map && map.getContainer && map.getContainer() && map.getPane && typeof map.getPane === 'function') {
+          try {
+            // Test if getPane actually works
+            const pane = map.getPane('overlayPane');
+            if (pane) {
+              setIsMapReady(true);
+            }
+          } catch (error) {
+            console.log('Map pane check failed:', error);
+            // Try again after a longer delay
+            setTimeout(() => {
+              try {
+                const pane = map.getPane('overlayPane');
+                if (pane) {
+                  setIsMapReady(true);
+                }
+              } catch (retryError) {
+                console.log('Map pane retry failed:', retryError);
+                setHasError(true);
+              }
+            }, 1000);
+          }
         }
-      }, 1500);
+      }, 2000); // Increased delay
       return () => clearTimeout(timer);
     }
   }, [map]);
 
   // Don't render anything if map isn't ready or there's an error
   if (!isMapReady || hasError) {
-    return null;
+    return (
+      <div className="flex items-center justify-center h-full bg-gray-100 rounded-lg">
+        <div className="text-center text-gray-600">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-600 mx-auto mb-2"></div>
+          <p className="text-sm">Loading map...</p>
+        </div>
+      </div>
+    );
   }
 
   // Wrap each component in try-catch to prevent individual component errors
   const renderTileLayer = () => {
     try {
       // Additional safety check - ensure map is fully ready
-      if (!map || !map.getContainer || !map.getContainer() || !map.getPane) {
+      if (!map || !map.getContainer || !map.getContainer() || !map.getPane || typeof map.getPane !== 'function') {
         console.log('Map not ready for TileLayer');
+        return null;
+      }
+      
+      // Test if getPane actually works
+      try {
+        const pane = map.getPane('overlayPane');
+        if (!pane) {
+          console.log('Map pane not available for TileLayer');
+          return null;
+        }
+      } catch (paneError) {
+        console.log('Map pane test failed for TileLayer:', paneError);
         return null;
       }
 
@@ -112,8 +151,20 @@ function MapContent({
   const renderMarkers = () => {
     try {
       // Additional safety check - ensure map is fully ready
-      if (!map || !map.getContainer || !map.getContainer() || !map.getPane) {
+      if (!map || !map.getContainer || !map.getContainer() || !map.getPane || typeof map.getPane !== 'function') {
         console.log('Map not ready for Markers');
+        return null;
+      }
+      
+      // Test if getPane actually works
+      try {
+        const pane = map.getPane('overlayPane');
+        if (!pane) {
+          console.log('Map pane not available for Markers');
+          return null;
+        }
+      } catch (paneError) {
+        console.log('Map pane test failed for Markers:', paneError);
         return null;
       }
 
@@ -415,7 +466,7 @@ export default function CountryMap({ searchQuery, secondDestination, coordinates
   if (!isClient || !isLeafletReady) {
     return (
       <div className="bg-white rounded-lg p-6 border-2 border-black shadow-lg">
-        <div className="flex items-center justify-center h-64">
+        <div className="flex items-center justify-center h-48">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
           <span className="ml-2 text-gray-600">
             {!isClient ? 'Initializing...' : 'Loading map...'}
@@ -429,7 +480,7 @@ export default function CountryMap({ searchQuery, secondDestination, coordinates
   if (typeof window === 'undefined' || (!window.L && !L)) {
     return (
       <div className="bg-white rounded-lg p-6 border-2 border-red-500 shadow-lg">
-        <div className="flex items-center justify-center h-64">
+        <div className="flex items-center justify-center h-48">
           <div className="text-red-600 text-center">
             <p className="text-lg font-semibold mb-2">Map Error</p>
             <p className="text-sm">Leaflet not available</p>
@@ -479,7 +530,7 @@ export default function CountryMap({ searchQuery, secondDestination, coordinates
           </div>
         </div>
         
-        <div className="relative h-80 w-full bg-white rounded-lg overflow-hidden border-2 border-black">
+        <div className="relative h-64 w-full bg-white rounded-lg overflow-hidden border-2 border-black">
           {(() => {
             try {
               return (
