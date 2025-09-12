@@ -356,7 +356,11 @@ export default function DestinationSearchNew() {
           return (
             <button
               key={tab.id}
-              onClick={() => setTabId(tab.id)}
+              onClick={() => {
+                setTabId(tab.id);
+                // Scroll to top of the page to show map and tabs
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
               className={`flex-1 px-4 py-3 text-sm font-medium transition-colors duration-200 ${colorClasses[tab.color as keyof typeof colorClasses]}`}
             >
               {tab.label}
