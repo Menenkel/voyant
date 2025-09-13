@@ -539,6 +539,9 @@ CRITICAL REQUIREMENTS:
 - Use the most recent available population data (2024-2025)
 - For countries, provide total population in millions
 - For cities, provide population in thousands or millions as appropriate
+- For small cities (under 100,000), use decimal format: 0.052 for 52,000
+- For medium cities (100,000-1M), use decimal format: 0.39 for 390,000
+- For large cities (1M+), use decimal format: 37.4 for 37.4 million
 - Be concise but accurate
 
 RESPONSE FORMAT:
@@ -553,13 +556,18 @@ EXAMPLES:
 - For Botswana: {"population": 2.7, "populationText": "2.7 million"}
 - For Tokyo: {"population": 37.4, "populationText": "37.4 million"}
 - For Windhoek: {"population": 0.39, "populationText": "390,000"}
+- For Dornbirn: {"population": 0.052, "populationText": "52,000"}
+- For Salzburg: {"population": 0.16, "populationText": "160,000"}
 
 IMPORTANT:
 - Do not include any text before or after the JSON
 - Do not use markdown formatting
 - Do not include explanations or additional information
 - Ensure the JSON is valid and parseable
-- Use decimal format for population (e.g., 3.07 not 3,070,000)`
+- Use decimal format for population (e.g., 3.07 not 3,070,000)
+- For small cities: 0.052 = 52,000, 0.108 = 108,000
+- For medium cities: 0.39 = 390,000, 0.85 = 850,000
+- For large cities: 1.2 = 1.2 million, 37.4 = 37.4 million`
   };
 
   const locationType = isCity ? 'city' : 'country';
